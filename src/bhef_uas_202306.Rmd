@@ -19,7 +19,7 @@ knit: (function(inputFile, encoding){
 
 This project summarizes processed point cloud data created using structure from motion (SfM) photogrammetry methods on imagery collected from Unmanned Aircraft System (UAS) flights completed in June 2023. UAS imagery was collected using a DJI Phantom 4 Pro equipped with a 20 megapixel metal oxide semiconductor red-green-blue camera at a fixed 8.8 mm focal length. Flights followed a pre-programmed serpentine flight paths at an altitude of 120 m above ground level, using a nadir camera orientation, with 80% forward and side image overlap.The UAV imagery was processed in Agisoft Metashape using the routine outlined by [Tinkham and Swayze (2021)](https://scholar.google.com/scholar?cluster=11260597505702247290&hl=en&as_sdt=0,6) to produce an SfM point cloud for optimized tree detection. 
 
-The SfM-derived point cloud was processed using the methods outlined by [Swayze and Tinkham (2022)](https://scholar.google.com/scholar?oi=bibs&hl=en&cluster=10655866445299954513). Specifically, [this script](https://github.com/georgewoolsey/point_cloud_tree_detection_ex/blob/da5c8a13e9b2f2914b306201605e907643b3006d/src/point_cloud_processing.R) which is outlined in detail at it's [parent Github repository](https://georgewoolsey.github.io/point_cloud_tree_detection_ex/) was used to process the raw point cloud data.
+The SfM-derived point cloud was processed using the methods outlined by [Swayze and Tinkham (2022)](https://scholar.google.com/scholar?oi=bibs&hl=en&cluster=10655866445299954513). Specifically, [this script](https://github.com/georgewoolsey/point_cloud_tree_detection_ex/blob/da5c8a13e9b2f2914b306201605e907643b3006d/src/point_cloud_processing.R) which is outlined in detail at it's [parent Github repository](https://georgewoolsey.github.io/point_cloud_tree_detection_ex/) was used to process the raw point cloud data. UAS point cloud files (`laz` files) were processed in two batches with the outputs combined using [this script](https://github.com/georgewoolsey/point_cloud_tree_detection_ex/blob/6813f499e127b474dd91b480a993beb3d5225a11/src/point_cloud_processing_run_combine.R) from the same repository.
 
 ## Objective
 
@@ -57,6 +57,8 @@ library(sf) # simple features
 library(kableExtra)
 library(patchwork) # ! better align plots in grid
 library(mapview) # interactive html maps
+library(leafpop) # interactive html maps
+
 # option to put satellite imagery as base layer of mapview maps
   mapview::mapviewOptions(
     homebutton = FALSE
@@ -67,11 +69,409 @@ library(mapview) # interactive html maps
 # Data Load and Setup
 
 ```{r dta-load}
+# where is the processed data from point_cloud_processing_run_combine.R ?
+input_dir = "../data/point_cloud_processing_BHEF_202306_combined"
+# set output directory
+delivery_dir = "../data/delivery"
+dir.create(delivery_dir, showWarnings = FALSE)
 
+# read data from point_cloud_processing
+# dtm_rast = terra::rast(paste0(input_dir, "/dtm_1m.tif"))
+chm_rast = terra::rast(paste0(input_dir, "/chm_0.25m.tif"))
+# crowns = terra::rast(paste0(input_dir, "/top_down_detected_tree_crowns.tif"))
+crowns_sf_with_dbh = sf::st_read(paste0(input_dir, "/final_detected_crowns.gpkg"))
+treetops_sf_with_dbh = sf::st_read(paste0(input_dir, "/final_detected_tree_tops.gpkg"))
+las_ctg_dta = sf::st_read(paste0(input_dir, "/raw_las_ctg_info.gpkg"))
+
+# read data from FACTS
+# harvests
+  harvests = sf::st_read("../data/bhef_harvests.gpkg") %>% 
+    dplyr::filter(
+      year_id == 2021
+      # year_id >= year(Sys.time()) - 15 
+      & !(treatment_type_grp %in% c("Improvement/Liberation Cut", "Other", "Sanitation Cut"))
+    )
+# bhef bounds
+  bhef_boundary = sf::st_read("../data/bhef_boundary.gpkg")
 ```
-
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
 remove(list = ls()[grep("_temp",ls())])
 gc()
 ```
+
+## Combine harvest units with tree locations
+
+Spatially combine harvest units with tree locations. One tree can be located in multiple harvest units if the harvest units spatially overlap; I'll allow it. Trees are matched to a harvest unit based on the location of the tree top which may or may not align with the location of the tree bole at DBH.
+
+```{r harvest-trees}
+#################################################################################
+#################################################################################
+# Join tree tops with forest stands
+#################################################################################
+#################################################################################
+harvests_trees = harvests %>%
+  dplyr::mutate(
+    stand_area_m2 = sf::st_area(.) %>% as.numeric()
+    , stand_area_ha = stand_area_m2/10000
+  ) %>% 
+  sf::st_intersection(las_ctg_dta) %>% 
+  dplyr::mutate(
+    intrsct_stand_area_m2 = sf::st_area(.) %>% as.numeric()
+  ) %>% 
+  dplyr::filter(round(intrsct_stand_area_m2, 0) == round(stand_area_m2, 0)) %>% 
+  dplyr::select(
+    suid, forest_commonname, admin_region_code, activity_name
+    , treatment_type, treatment_type_grp, date_compl, year_id
+    , stand_area_m2, stand_area_ha
+  ) %>% 
+  sf::st_intersection(treetops_sf_with_dbh)
+```
+
+# Exploratory Analysis
+
+High-level summaries of the data.
+
+## Study Location
+
+Map of the BHEF, 2021 harvest boundaries, and 2023-06 UAS flight boundaries.
+
+```{r map}
+# map
+mapview::mapview(
+  bhef_boundary
+  , color = "black"
+  , lwd = 3
+  , alpha.regions = 0
+  , layer.name = "BHEF"
+  , label = FALSE
+  , legend = FALSE
+  , popup = FALSE
+) +
+mapview::mapview(
+  las_ctg_dta
+  , color = "firebrick"
+  , lwd = 2
+  , col.regions = c("firebrick")
+  , alpha.regions = 0.3
+  , layer.name = "UAS Flight Boundaries"
+  , legend = T
+  , popup = FALSE
+) +
+mapview::mapview(
+  harvests
+  , zcol = "treatment_type_grp"
+  , col.regions = viridis::viridis(n=length(unique(harvests$treatment_type_grp)))
+  , alpha.regions = 0.6
+  , layer.name = "Harvests (2021)"
+  , legend = T
+    , popup = leafpop::popupTable(
+        harvests
+        , zcol = c(
+          "year_id"
+          , "treatment_type_grp"
+          , "activity_name"
+        )
+        , row.numbers = FALSE
+        , feature.id = FALSE
+      )
+)
+```
+
+## Canopy height model (CHM)
+
+Map the SfM-derived canopy height model which is a measurement of the height of trees above the ground topography.
+
+```{r chm}
+mapview::mapview(
+  bhef_boundary
+  , color = "black"
+  , lwd = 3
+  , alpha.regions = 0
+  , layer.name = "BHEF"
+  , label = FALSE
+  , legend = FALSE
+  , popup = FALSE
+) +
+# aggregate raster and map
+    mapview::mapview(
+      chm_rast %>%
+        terra::aggregate(fact=4) %>% 
+        stars::st_as_stars()
+      , layer.name = "canopy ht.(m)"
+      , alpha.regions = 0.7
+      , na.color = "transparent"
+    )
+```
+
+## DBH Distribution
+
+DBH distribution of trees that are in a harvested unit
+
+```{r dbh-dist}
+harvests_trees %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::select(treeID, dbh_cm) %>% 
+  dplyr::distinct() %>% 
+  ggplot(
+    mapping = aes(x = dbh_cm)
+  ) +
+    geom_density(alpha = 0.8, fill = "navy", color = NA) + 
+    labs(
+      x = "DBH (cm)"
+      , y = "density"
+      , title = "SfM derived tree DBH distribution"
+    ) +
+    scale_x_continuous(breaks = scales::extended_breaks(n=20)) +
+    theme_light() +
+    theme(
+      legend.position = "none"
+    )
+```
+
+## Height Distribution
+
+Height distribution of trees that are in a harvested unit
+
+```{r ht-dist}
+harvests_trees %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::select(treeID, tree_height_m) %>% 
+  dplyr::distinct() %>% 
+  ggplot(
+    mapping = aes(x = tree_height_m)
+  ) +
+    geom_density(alpha = 0.8, fill = "cadetblue", color = NA) + 
+    labs(
+      x = "Height (cm)"
+      , y = "density"
+      , title = "SfM derived tree height distribution"
+    ) +
+    scale_x_continuous(breaks = scales::extended_breaks(n=10)) +
+    theme_light() +
+    theme(
+      legend.position = "none"
+    )
+  
+
+```
+
+## Relationship between height and DBH
+
+```{r ht-dbh}
+### plot
+harvests_trees %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::slice_sample(prop = 0.5) %>% 
+  dplyr::select(treeID, tree_height_m, dbh_cm) %>% 
+  dplyr::distinct() %>% 
+  ggplot(
+    mapping = aes(y=tree_height_m, x = dbh_cm)
+  ) +
+  geom_point(
+    alpha = 0.6
+    , size = 0.5
+    , color = "gray"
+  ) + 
+  geom_smooth(
+    method = "loess"
+    , se = F
+    , span = 1
+    , color = "gray33"
+    , alpha = 0.7
+  ) +
+  labs(
+    x = "DBH (cm)"
+    , y = "Tree Ht. (m)"
+    , title = "SfM derived tree height and DBH relationship"
+  ) +
+  theme_light() +
+  theme(
+    legend.position = "none"
+  )
+```
+
+# Silvicultural Metrics 
+
+Silvicultural metrics are calculated based on the SfM-derived DBH and height measurements.
+
+```{r silv-calc}
+# Common silvicultural metrics are calculated for the entire extent.
+  # Note, that stand-level summaries can be computed if stand vector data is provided.
+  # metrics include:
+    # "n_trees"
+    # "stand_area_ha"
+    # "trees_per_ha"
+    # "mean_dbh_cm"
+    # "qmd_cm"
+    # "mean_tree_height_m"
+    # "loreys_height_m"
+    # "basal_area_m2"
+    # "basal_area_m2_per_ha"
+
+### stand-level summaries
+  silv_metrics = harvests_trees %>%
+    sf::st_drop_geometry() %>%
+    dplyr::ungroup() %>%
+    dplyr::group_by(suid,stand_area_ha) %>%
+    dplyr::summarise(
+      n_trees = dplyr::n_distinct(treeID)
+      , mean_dbh_cm = mean(dbh_cm, na.rm = T)
+      , mean_tree_height_m = mean(tree_height_m, na.rm = T)
+      , loreys_height_m = sum(basal_area_m2*tree_height_m, na.rm = T) / sum(basal_area_m2, na.rm = T)
+      , basal_area_m2 = sum(basal_area_m2, na.rm = T)
+      , sum_dbh_cm_sq = sum(dbh_cm^2, na.rm = T)
+    ) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(
+      trees_per_ha = (n_trees/stand_area_ha)
+      , basal_area_m2_per_ha = (basal_area_m2/stand_area_ha)
+      , qmd_cm = sqrt(sum_dbh_cm_sq/n_trees)
+    ) %>%
+    dplyr::select(-c(sum_dbh_cm_sq)) %>%
+    # convert to imperial units
+    dplyr::mutate(
+      dplyr::across(
+        .cols = tidyselect::ends_with("_cm")
+        , ~ .x * 0.394
+        , .names = "{.col}_in"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_m")
+        , ~ .x * 3.28
+        , .names = "{.col}_ft"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_m2_per_ha")
+        , ~ .x * 4.359
+        , .names = "{.col}_ftac"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_per_ha") & !tidyselect::ends_with("_m2_per_ha")
+        , ~ .x * 0.405
+        , .names = "{.col}_ac"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_area_ha")
+        , ~ .x * 2.471
+        , .names = "{.col}_ac"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_m2")
+        , ~ .x * 10.764
+        , .names = "{.col}_ft2"
+      )
+    ) %>%
+    dplyr::rename_with(
+      .fn = function(x){dplyr::case_when(
+        stringr::str_ends(x,"_cm_in") ~ stringr::str_replace(x,"_cm_in","_in")
+        , stringr::str_ends(x,"_m_ft") ~ stringr::str_replace(x,"_m_ft","_ft")
+        , stringr::str_ends(x,"_m2_per_ha_ftac") ~ stringr::str_replace(x,"_m2_per_ha_ftac","_ft2_per_ac")
+        , stringr::str_ends(x,"_per_ha_ac") ~ stringr::str_replace(x,"_per_ha_ac","_per_ac")
+        , stringr::str_ends(x,"_area_ha_ac") ~ stringr::str_replace(x,"_area_ha_ac","_area_ac")
+        , stringr::str_ends(x,"_m2_ft2") ~ stringr::str_replace(x,"_m2_ft2","_ft2")
+        , TRUE ~ x
+      )}
+    ) %>%
+    dplyr::select(
+      "suid"
+      , "n_trees"
+      , "stand_area_ha"
+      , "trees_per_ha"
+      , "mean_dbh_cm"
+      , "qmd_cm"
+      , "mean_tree_height_m"
+      , "loreys_height_m"
+      , "basal_area_m2"
+      , "basal_area_m2_per_ha"
+      # imperial
+      , "stand_area_ac"
+      , "trees_per_ac"
+      , "mean_dbh_in"
+      , "qmd_in"
+      , "mean_tree_height_ft"
+      , "loreys_height_ft"
+      , "basal_area_ft2"
+      , "basal_area_ft2_per_ac"
+    )
+
+### export tabular
+  write.csv(
+      silv_metrics
+      , paste0(delivery_dir, "/stand_silv_metrics.csv")
+      , row.names = F
+    )
+
+  # join with spatial data
+  silv_metrics = harvests %>% 
+    # join with plot data data
+    dplyr::inner_join(
+      silv_metrics
+      , by = dplyr::join_by("suid")
+    )
+```
+
+## Stand-level silviculture summaries
+
+```{r site-metrics, fig.height = 9}
+silv_metrics %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::select(
+    "suid"
+    , "stand_area_ha"
+    , "n_trees"
+    , "trees_per_ha"
+    , "mean_dbh_cm"
+    , "qmd_cm"
+    , "mean_tree_height_m"
+    , "loreys_height_m"
+    # , "basal_area_m2"
+    , "basal_area_m2_per_ha"
+  ) %>% 
+  tidyr::pivot_longer(
+    cols = -c(suid), names_to = "metric", values_to = "val"
+  ) %>% 
+  ggplot(
+    mapping = aes(
+      x = val
+      , y = suid
+      , fill = metric
+    )
+  ) +
+  geom_col(width = 0.7, alpha = 0.8) +
+  facet_wrap(facets = vars(metric), ncol = 2, scales = "free_x") +
+  scale_fill_viridis_d(option = "turbo") +
+  labs(
+    y = ""
+    , x = ""
+    , title = "Silvicultural metrics by stand"
+  ) +
+  theme_light() + 
+  theme(
+    legend.position = "none"
+    , strip.text = element_text(color = "black", face = "bold")
+  )
+```
+
+
+
+```{r include=FALSE, eval=FALSE}
+## summary table
+silv_metrics %>%
+  sf::st_drop_geometry() %>%
+  dplyr::filter(plotID==silv_metrics_temp$plotID[1]) %>%
+  tidyr::pivot_longer(
+    cols = -c(plotID)
+    , names_to = "measure"
+    , values_to = "value"
+  ) %>%
+  kableExtra::kbl(
+    caption = "Silvicultural metrics in both metric and imperial units"
+    , digits = 2
+  ) %>%
+  kableExtra::kable_styling()
+
+
+
+```
+
