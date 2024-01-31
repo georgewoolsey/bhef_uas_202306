@@ -1,0 +1,77 @@
+---
+title: "Black Hills Experimental Forest UAS Mission Data Summary"
+author: "George Woolsey"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+editor_options: 
+  chunk_output_type: console
+knit: (function(inputFile, encoding){ 
+    out_dir <- '../';
+    rmarkdown::render(inputFile, encoding = encoding, output_file=file.path(dirname(inputFile), out_dir, 'index.html')) 
+  })
+---
+
+# Introduction
+
+This project summarizes processed point cloud data created using structure from motion (SfM) photogrammetry methods on imagery collected from Unmanned Aircraft System (UAS) flights completed in June 2023. UAS imagery was collected using a DJI Phantom 4 Pro equipped with a 20 megapixel metal oxide semiconductor red-green-blue camera at a fixed 8.8 mm focal length. Flights followed a pre-programmed serpentine flight paths at an altitude of 120 m above ground level, using a nadir camera orientation, with 80% forward and side image overlap.The UAV imagery was processed in Agisoft Metashape using the routine outlined by [Tinkham and Swayze (2021)](https://scholar.google.com/scholar?cluster=11260597505702247290&hl=en&as_sdt=0,6) to produce an SfM point cloud for optimized tree detection. 
+
+The SfM-derived point cloud was processed using the methods outlined by [Swayze and Tinkham (2022)](https://scholar.google.com/scholar?oi=bibs&hl=en&cluster=10655866445299954513). Specifically, [this script](https://github.com/georgewoolsey/point_cloud_tree_detection_ex/blob/da5c8a13e9b2f2914b306201605e907643b3006d/src/point_cloud_processing.R) which is outlined in detail at it's [parent Github repository](https://georgewoolsey.github.io/point_cloud_tree_detection_ex/) was used to process the raw point cloud data.
+
+## Objective
+
+The objective of this analysis is to summarize forest stand characteristics using the UAS-derived tree list which includes tree location, height, and DBH measurements. Forest stands in this analysis include stands which were harvested in 2021 using single-tree and group-selection silvicultural prescriptions. 
+
+The Forest Activity Tracking System (FACTS) [database](https://data.fs.usda.gov/geodata/edw/datasets.php?xmlKeyword) maintained by the U.S. Department of Agriculture, Forest Service (USFS) was used to delineate georeferenced boundaries of forest harvest activities.
+
+# Setup
+  
+```{r, include=FALSE, warning=F, message=F}
+# knit options
+knitr::opts_chunk$set(
+  echo = TRUE
+  , warning = FALSE
+  , message = FALSE
+  # , results='hide'
+  , fig.width = 10
+  , fig.height = 7
+)
+```
+
+## Load packages
+
+Load all packages used in program.
+
+```{r pkg-load}
+# library
+library(tidyverse) # the tidyverse
+library(viridis) # viridis colors
+library(scales) # work with number and plot scales
+# spatial analysis
+library(terra) # raster
+library(sf) # simple features
+# visualization
+library(kableExtra)
+library(patchwork) # ! better align plots in grid
+library(mapview) # interactive html maps
+# option to put satellite imagery as base layer of mapview maps
+  mapview::mapviewOptions(
+    homebutton = FALSE
+    , basemaps = c("Esri.WorldImagery","OpenStreetMap")
+  )
+```
+
+# Data Load and Setup
+
+```{r dta-load}
+
+```
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(list = ls()[grep("_temp",ls())])
+gc()
+```
