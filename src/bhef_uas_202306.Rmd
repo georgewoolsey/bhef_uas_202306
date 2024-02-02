@@ -63,6 +63,8 @@ library(patchwork) # ! better align plots in grid
 library(mapview) # interactive html maps
 library(leafpop) # interactive html maps
 library(ggnewscale) # add another scale to ggplot
+library(ggtext) # customize plot text colors
+library(pdftools) # combine pdf files
 
 # option to put satellite imagery as base layer of mapview maps
   mapview::mapviewOptions(
@@ -445,7 +447,7 @@ harvests_trees %>%
     labs(
       x = "DBH (in)"
       , y = "density"
-      , title = "SfM derived tree DBH distribution"
+      , title = "SfM-derived tree DBH distribution"
     ) +
     scale_x_continuous(breaks = scales::extended_breaks(n=20)) +
     theme_light() +
@@ -470,7 +472,7 @@ harvests_trees %>%
     labs(
       x = "Height (ft)"
       , y = "density"
-      , title = "SfM derived tree height distribution"
+      , title = "SfM-derived tree height distribution"
     ) +
     scale_x_continuous(breaks = scales::extended_breaks(n=10)) +
     theme_light() +
@@ -506,7 +508,7 @@ harvests_trees %>%
   labs(
     x = "DBH (in)"
     , y = "Tree Ht. (ft)"
-    , title = "SfM derived tree height and DBH relationship"
+    , title = "SfM-derived tree height and DBH relationship"
   ) +
   theme_light() +
   theme(
@@ -772,9 +774,16 @@ mapview::mapview(
     ) 
 ```
 
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(list = ls()[grep("_temp",ls())])
+gc()
+```
+
 # Harvested Stand Summaries
 
 Create plots to combine for report
+
+1) orthomosaic + chm + tree tops + stand plot
 
 ```{r ortho-plt-fn}
 ######################################################################################
@@ -840,7 +849,7 @@ ortho_plt_fn = function(my_suid){
     geom_sf(
       data = harvests %>% dplyr::filter(suid==my_suid)
       , alpha = 0
-      , lwd = 2
+      , lwd = 1.5
       , color = "#b22222"
     ) +
     geom_sf(
@@ -855,11 +864,12 @@ ortho_plt_fn = function(my_suid){
       , title = "<span><span style='color:#330099;'><b><i>Trees</i></b></span> identified within <span style='color:#b22222;'><b><i>stand</i></b></span> boundary</span>"
     ) +
     theme(
-      legend.position = "bottom" # c(0.5,1)
+      legend.position = "top" # c(0.5,1)
       , legend.direction = "horizontal"
+      , legend.margin = margin(0,0,-1,0)
       , legend.text = element_text(size = 8)
       , legend.title = element_text(size = 8)
-      , plot.title = ggtext::element_markdown(size = 10)
+      , plot.title = ggtext::element_markdown(size = 10, hjust = 0.5)
     )
   return(plt_combine)
 }
@@ -927,6 +937,8 @@ ortho_plt_fn = function(my_suid){
 # ortho_1()
 ```
 
+2) dbh distribution plot
+
 ```{r dbh-dist-fn}
 dbh_dist_fn = function(my_suid){
   harvests_trees %>% 
@@ -941,7 +953,7 @@ dbh_dist_fn = function(my_suid){
       labs(
         x = "DBH (in)"
         , y = "density"
-        , title = "SfM derived tree DBH distribution"
+        , title = "SfM-derived tree DBH distribution"
       ) +
       scale_x_continuous(breaks = scales::extended_breaks(n=20)) +
       theme_light() +
@@ -951,6 +963,8 @@ dbh_dist_fn = function(my_suid){
 }
 # dbh_dist_fn(harvests$suid[1])
 ```
+
+3) height distribution plot
 
 ```{r ht-dist-fn}
 ht_dist_fn = function(my_suid){
@@ -966,7 +980,7 @@ ht_dist_fn = function(my_suid){
       labs(
         x = "Height (ft)"
         , y = "density"
-        , title = "SfM derived tree height distribution"
+        , title = "SfM-derived tree height distribution"
       ) +
       scale_x_continuous(breaks = scales::extended_breaks(n=10)) +
       theme_light() +
@@ -976,6 +990,8 @@ ht_dist_fn = function(my_suid){
 }
 # ht_dist_fn(harvests$suid[1])
 ```
+
+4) silvicultural metrics imperial table
 
 ```{r tbl-fn}
 tab_imp_fn = function(my_suid){
@@ -1030,15 +1046,23 @@ tab_imp_fn = function(my_suid){
       , cols = rep("", 2)
       , theme = ggpubr::ttheme(
         base_style = "blank"
-        , tbody.style = ggpubr::tbody_style(parse = T, fill = "white", linecolor = "gray")
+        , tbody.style = ggpubr::tbody_style(
+          parse = T, fill = "white", linecolor = "gray"
+          , size = 10
+        )
       )
     ) %>% 
-    ggpubr::tab_add_title(text = "Silvicultural Metrics (imperial)", face = "bold", padding = unit(0.5, "line"))
+    ggpubr::tab_add_title(
+      text = "Silvicultural Metrics (imperial)", face = "bold"
+      , size = 10, padding = unit(0.5, "line")
+    )
 }
 
 # tab_imp_fn(harvests$suid[2])
 
 ```
+
+5) silvicultural metrics metric table
 
 ```{r tbl-fn2}
 tab_met_fn = function(my_suid){
@@ -1093,20 +1117,29 @@ tab_met_fn = function(my_suid){
       , cols = rep("", 2)
       , theme = ggpubr::ttheme(
         base_style = "blank"
-        , tbody.style = ggpubr::tbody_style(parse = T, fill = "white", linecolor = "gray")
+        , tbody.style = ggpubr::tbody_style(
+          parse = T, fill = "white", linecolor = "gray"
+          , size = 10
+        )
       )
     ) %>% 
-    ggpubr::tab_add_title(text = "Silvicultural Metrics (metric)", face = "bold", padding = unit(0.5, "line"))
+    ggpubr::tab_add_title(
+      text = "Silvicultural Metrics (metric)", face = "bold"
+      , size = 10, padding = unit(0.5, "line")
+    )
 }
 
 # tab_met_fn(harvests$suid[2])
 ```
+
+6) inset map plot
 
 ```{r inset-map}
 plt_inset_map_fn <- function(my_suid){
   (
     ggplot() +
       geom_sf(data = bhef_boundary, alpha = 0, lwd = 1, color = "black") +
+      geom_sf(data = harvests, alpha = 0, lwd = 0.4, color = "gray") +
       geom_sf(
         data = harvests %>% dplyr::filter(suid == my_suid)
         , fill = "firebrick"
@@ -1134,67 +1167,214 @@ plt_inset_map_fn <- function(my_suid){
 
   )
 }
-# plt_inset_map_fn(harvests$suid[2])
+# plt_inset_map_fn(harvests$suid[4])
 ```
 
+7) contour + elevation map plot
 
-```{r include=FALSE, eval=FALSE}
-ortho_plt_temp = ortho_plt_fn(harvests$suid[1])
-dbh_dist_temp = dbh_dist_fn(harvests$suid[1])
-ht_dist_temp = ht_dist_fn(harvests$suid[1]) 
-plt_inset_map_temp = plt_inset_map_fn(harvests$suid[1])
-tab_imp_temp = tab_imp_fn(harvests$suid[1])
-tab_met_temp = tab_met_fn(harvests$suid[1]) 
+```{r elev-plt-inset}
+# sequence by 5's to get 5m breaks list for contour
+contour_int_m <- 5
+seq_brk <- seq(0, 40000, contour_int_m)
+# create contour data
+elev_contour <- dtm_rast %>% 
+  stars::st_as_stars() %>% 
+  stars::st_contour(
+    na.rm = TRUE
+    , contour_lines = FALSE
+    , breaks = # classInt::classIntervals(na.omit(as.vector(x[[1]])))$brks
+        seq_brk[
+          seq_brk > min(na.omit(as.vector(dtm_rast[[1]]))) - contour_int_m
+          & seq_brk < max(na.omit(as.vector(dtm_rast[[1]]))) + contour_int_m
+        ]
+  )
 
-
-  ortho_plt_temp / 
-    (plt_inset_map_temp + patchwork::plot_spacer()) + 
-      patchwork::plot_layout(ncol = 1, heights = c(1,0.3))
-(ortho_plt_temp / patchwork::plot_spacer()) + patchwork::plot_layout(ncol = 1, heights = c(1,0.1)) 
-
-  xxx = (ortho_plt_temp + patchwork::plot_spacer() + patchwork::plot_layout(ncol = 1, heights = c(1,0.1))) 
-  
-  xxx 
-  
-    ((tab_imp_temp | tab_met_temp)  /
-    (dbh_dist_temp | ht_dist_temp)) & 
-    theme(plot.margin = margin(1,1,1,1,"cm"))
-  +
-    patchwork::plot_layout(widths = c(1.5,1))
-   +
-    
+plt_contour_map_fn <- function(my_suid){
   (
-    (tab_imp_temp | tab_met_temp) /
-    (dbh_dist_temp | ht_dist_temp)
-  ) & theme(plot.margin = margin(1,1,1,1,"cm"))
-  +
-  patchwork::plot_layout(nrow = 1, widths = c(1,1.2))
-ggplot2::ggsave(paste0("C:/Users/georg/Downloads/hey_xxx.jpeg"),width = 11, height = 8.5, units = "in")
-
+    #########################################
+    #########################################
+    # map of unit w/ contour
+    #########################################
+    #########################################
+    # plot
+    ggplot() +
+      geom_tile(
+        data = dtm_rast %>% 
+          terra::crop(
+            harvests %>% dplyr::filter(suid == my_suid) %>% 
+              sf::st_buffer(dist = 20) %>% 
+              sf::st_bbox() %>% 
+              sf::st_as_sfc() %>% 
+              terra::vect()
+          ) %>% 
+          terra::aggregate(fact=2) %>% 
+          `*`(3.28) %>% # transform to feet
+          as.data.frame(xy=T) %>% 
+          dplyr::rename(elev = 3)
+        , mapping = aes(x=x,y=y,fill=elev)
+      ) +
+      geom_sf(data = elev_contour %>% 
+        sf::st_crop(
+          harvests %>% dplyr::filter(suid == my_suid) %>% 
+          sf::st_buffer(dist = 20) %>% 
+          sf::st_bbox()
+        )
+        , alpha = 0
+        , lwd = 0.5
+        , color = "gray30"
+        , show.legend = FALSE
+      ) +
+      geom_sf(data = harvests %>% dplyr::filter(suid == my_suid)
+          , alpha = 0
+          , lwd = 1.5
+          , color = "firebrick"
+          , show.legend = FALSE
+      ) +
+      scale_fill_viridis_c(
+        option = "viridis"
+        , alpha = 0.9
+        , na.value = "transparent"
+        , breaks = scales::extended_breaks(n = 6)
+        , labels = scales::comma
+      ) +
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0)) +
+      labs(
+        subtitle = paste0(
+          as.character(round(contour_int_m * 3.28, 1))
+          , " ft ("
+          , as.character(contour_int_m)
+          , " m) contours"
+        )
+        , fill = "elev. (ft)"
+        , x = ""
+        , y = ""
+      ) +
+      theme_void() +
+      theme(
+        legend.position = "top"
+        , legend.direction = "horizontal"
+        , legend.margin = margin(0,0,-1,0)
+        # , legend.box.margin = margin(-1,0,2,0)
+        , legend.text = element_text(size = 7, angle = 25, hjust = 0.7)
+        , legend.title = element_text(size = 7)
+        , plot.subtitle = element_text(
+            size=9, face="italic", color="gray20", margin = margin(0,0,0,0)
+            , hjust = 0.5
+        )
+      )
+  )
+}
+# plt_contour_map_fn(harvests$suid[1])
 ```
 
+build report
 
+```{r report-fn}
+report_fn = function(my_suid){
+  # generate plots
+  ortho_plt_temp = ortho_plt_fn(my_suid) # ortho_plt_fn(harvests$suid[4])
+  dbh_dist_temp =  dbh_dist_fn(my_suid) # dbh_dist_fn(harvests$suid[4])
+  ht_dist_temp = ht_dist_fn(my_suid) # ht_dist_fn(harvests$suid[4]) 
+  plt_inset_map_temp = plt_inset_map_fn(my_suid) # plt_inset_map_fn(harvests$suid[4])
+  plt_contour_map_temp = plt_contour_map_fn(my_suid) # plt_contour_map_fn(harvests$suid[4])
+  tab_imp_temp = tab_imp_fn(my_suid) # tab_imp_fn(harvests$suid[4])
+  tab_met_temp = tab_met_fn(my_suid) # tab_met_fn(harvests$suid[4]) 
+  # plot layout
+  # area(t,l,b,r)
+  layout_temp = c(
+    # map
+    area(1, 1, 3, 2)
+    # space
+    , area(1, 3, 1, 4)
+    # distributions 
+    , area(2, 3, 2, 4)
+    , area(3, 3, 3, 4)
+    # space
+    , area(4, 3, 4, 4)
+    # map inset
+    , area(4, 1, 5, 1)
+    # contour
+    , area(4, 2, 5, 2)
+    # tables
+    , area(5, 3)
+    , area(5, 4)
+    # space
+    , area(6, 1, 6, 4)
+  )
+  # check the layout
+  # plot(layout_temp)
+  
+  # patchwork 
+  rpt = ortho_plt_temp +
+    patchwork::plot_spacer() +
+    dbh_dist_temp + ht_dist_temp +
+    patchwork::plot_spacer() +
+    plt_inset_map_temp + 
+    plt_contour_map_temp + 
+    tab_imp_temp + tab_met_temp +
+    patchwork::plot_spacer() +
+    patchwork::plot_layout(
+      design = layout_temp
+      , heights = c(0.01,1,1,0.4,1,0.1)
+      , widths = c(0.5,1,1,1)
+    )
+  # export
+  ggplot2::ggsave(
+    filename = paste0(delivery_dir, "/suid_", my_suid, ".pdf")
+    , plot = rpt
+    , device = "pdf"
+    , width = 11, height = 8.5, units = "in"
+  )
+  return(rpt)
+}
+```
+
+```{r print-reports, results='hide', fig.show='asis', fig.height=8}
+# generate and print reports
+harvests$suid %>% 
+  purrr::map(report_fn) %>% 
+  print()
+```
+
+```{r pdf-comb, results='hide'}
+# combine all pdfs together
+# combine with pdftools
+pdftools::pdf_combine(
+  sort(list.files(delivery_dir, pattern = "\\.pdf$", full.names = TRUE))
+  , output = paste0(
+    delivery_dir
+    , "/BHEF_UAS_202306_report_"
+    , gsub("-", "", Sys.Date())
+    , ".pdf"
+  )
+)
+```
 
 ```{r include=FALSE, eval=FALSE}
-ggpubr::ggtexttable(df, rows = NULL, theme = ttheme("light")) %>% 
-  ggpubr::tab_add_title(text = "Silvicultural Metrics (imperial)", face = "bold", padding = unit(0.1, "line"))
-
-## summary table
-silv_metrics %>%
-  sf::st_drop_geometry() %>%
-  dplyr::filter(plotID==silv_metrics_temp$plotID[1]) %>%
-  tidyr::pivot_longer(
-    cols = -c(plotID)
-    , names_to = "measure"
-    , values_to = "value"
-  ) %>%
-  kableExtra::kbl(
-    caption = "Silvicultural metrics in both metric and imperial units"
-    , digits = 2
-  ) %>%
-  kableExtra::kable_styling()
-
-
-
+library(patchwork)
+layout_temp = c(
+    # map
+    area(1, 1, 3, 2)
+    # space
+    , area(1, 3, 1, 4)
+    # distributions 
+    , area(2, 3, 2, 4)
+    , area(3, 3, 3, 4)
+    # space
+    , area(4, 3, 4, 4)
+    # map inset
+    , area(4, 1, 5, 1)
+    # contour
+    , area(4, 2, 5, 2)
+    # tables
+    , area(5, 3)
+    , area(5, 4)
+    # space
+    , area(6, 1, 6, 4)
+  )
+  # check the layout
+  plot(layout_temp)
+  
 ```
 
