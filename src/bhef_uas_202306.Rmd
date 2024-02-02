@@ -69,6 +69,7 @@ library(leafpop) # interactive html maps
   )
 ```
 
+
 # Data Load and Setup
 
 ```{r dta-load, results='hide'}
@@ -209,6 +210,48 @@ proj_crs = sf::st_crs(las_ctg_dta)
     sf::st_transform(proj_crs)
 ```
 
+## Load orthomosaic rasters
+
+```{r ortho-ld, results='hide'}
+# read list of orthos
+ortho_list_temp = list.files("../data/ortho/", pattern = ".*\\.(tif|tiff)$", full.names = T)[] %>% 
+    purrr::map(function(x){terra::rast(x)})
+
+# ortho_list_temp[[1]] %>%
+#   terra::aggregate(20) %>%
+#   terra::plotRGB(r = 1, g = 2, b = 3, stretch = "hist", colNA = "transparent")
+
+####### ensure the resolution of the rasters matches 
+  # terra::res(ortho_list_temp[[1]])
+  
+  ## function
+  change_res_fn = function(r, my_res=1){
+    r2 = r
+    terra::res(r2) = my_res
+    r2 = terra::resample(r, r2)
+    return(r2)
+  }
+  ## apply the function
+  ortho_list_temp = 1:length(ortho_list_temp) %>% 
+    purrr::map(function(x){change_res_fn(ortho_list_temp[[x]], my_res=0.5)})
+  
+  # terra::res(ortho_list_temp[[1]])
+  
+  # ortho_list_temp[[1]] %>%
+  #   terra::aggregate(2) %>%
+  #   terra::plotRGB(r = 1, g = 2, b = 3, stretch = "hist", colNA = "transparent")
+
+######## mosaic the raster list 
+  ortho_rast = terra::mosaic(
+    terra::sprc(ortho_list_temp)
+    , fun = "min" # min only thing that works
+  ) 
+
+  # ortho_rast %>%
+  #   # terra::aggregate(2) %>%
+  #   terra::plotRGB(r = 1, g = 2, b = 3, stretch = "lin", colNA = "transparent")
+```
+
 ```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
 remove(list = ls()[grep("_temp",ls())])
 gc()
@@ -250,7 +293,7 @@ harvests = harvests %>%
 
 High-level summaries of the data.
 
-## Study Location
+## Study Location Map
 ```{r stats-temp, include=FALSE, eval=TRUE}
 ac_temp = las_ctg_dta %>% sf::st_area() %>% as.numeric() %>% `/`(4046.856) %>% scales::comma(accuracy = 0.1)
 ha_temp = las_ctg_dta %>% sf::st_area() %>% as.numeric() %>% `/`(10000) %>% scales::comma(accuracy = 0.1)
@@ -267,7 +310,7 @@ remove(list = ls()[grep("_temp",ls())])
 gc()
 ```
 
-```{r map}
+```{r map, fig.height = 5}
 # map
 mapview::mapview(
   bhef_boundary
@@ -286,13 +329,14 @@ mapview::mapview(
   , col.regions = c("firebrick")
   , alpha.regions = 0.3
   , layer.name = "UAS Flight Boundaries"
+  , label = FALSE
   , legend = T
   , popup = FALSE
 ) +
 mapview::mapview(
   harvests
   , zcol = "treatment_type_grp"
-  , col.regions = viridis::viridis(n=length(unique(harvests$treatment_type_grp)))
+  , col.regions = viridis::turbo(n=length(unique(harvests$treatment_type_grp)))
   , alpha.regions = 0.6
   , layer.name = "Harvests (2021)"
   , legend = T
@@ -309,11 +353,11 @@ mapview::mapview(
 )
 ```
 
-## Digital Terrain Model (DTM)
+## Digital Terrain Model (DTM) Map
 
 Map the SfM-derived digital terrain model (DTM) (sometimes called Digital Elevation Models [DEM]) which is a topographic model of the bare Earth containing the elevation data of the terrain.
 
-```{r dtm}
+```{r dtm, fig.height = 5}
 mapview::mapview(
   bhef_boundary
   , color = "black"
@@ -337,7 +381,7 @@ mapview::mapview(
     )
 ```
 
-## Canopy height model (CHM)
+## Canopy height model (CHM) Map
 
 Map the SfM-derived canopy height model which is a measurement of the height of trees above the ground topography.
 
@@ -348,7 +392,7 @@ chm_rast_temp = chm_rast %>%
         stars::st_as_stars()
 ```
 
-```{r chm}
+```{r chm, fig.height = 5}
 mapview::mapview(
   bhef_boundary
   , color = "black"
@@ -670,9 +714,370 @@ silv_metrics %>%
   )
 ```
 
+## Stand Basal Area Map
+
+```{r ba-map, fig.height = 5}
+mapview::mapview(
+  bhef_boundary
+  , color = "black"
+  , lwd = 3
+  , alpha.regions = 0
+  , layer.name = "BHEF"
+  , label = FALSE
+  , legend = FALSE
+  , popup = FALSE
+) +
+    mapview::mapview(
+      silv_metrics
+      , zcol = "basal_area_ft2_per_ac"
+      , layer.name = "BA (ft2 per ac)" #latex2exp::TeX("Basal Area $ft^{2} \\cdot ac^{-1}$")
+      , col.regions = viridis::cividis(n=nrow(silv_metrics)*1.1)
+      , alpha.regions = 0.7
+      , na.color = "transparent"
+      , popup = F
+    ) 
+```
+
+## Stand QMD Map
+
+Quadratic mean diameter (QMD) is a measure of the diameter of the tree of mean basal area:
+
+$$
+\textrm{quadratic mean diameter (QMD)} = \sqrt{\frac{\sum{d_{i}^{2}}}{n}}
+$$
+
+, where $d_{i}$ is the diameter at breast height of an individual tree, and $n$ is the total number of trees. 
+
+```{r qmd-map, fig.height = 5}
+mapview::mapview(
+  bhef_boundary
+  , color = "black"
+  , lwd = 3
+  , alpha.regions = 0
+  , layer.name = "BHEF"
+  , label = FALSE
+  , legend = FALSE
+  , popup = FALSE
+) +
+    mapview::mapview(
+      silv_metrics
+      , zcol = "qmd_in"
+      , layer.name = "QMD (in)" #latex2exp::TeX("Basal Area $ft^{2} \\cdot ac^{-1}$")
+      , col.regions = viridis::mako(n=nrow(silv_metrics)*1.1, direction = -1)
+      , alpha.regions = 0.7
+      , na.color = "transparent"
+      , popup = F
+    ) 
+```
+
+# Harvested Stand Summaries
+
+Create plots to combine for report
+
+```{r ortho-plt-fn}
+######################################################################################
+# function to plot ortho + chm + points + stand
+######################################################################################
+  ortho_plt_fn = function(stand,ortho,points,chm){
+      # plot ortho
+      ortho %>% 
+        terra::crop(
+          stand %>% 
+            sf::st_buffer(20) %>% 
+            sf::st_bbox() %>% 
+            sf::st_as_sfc() %>% 
+            terra::vect()
+        ) %>% 
+        terra::aggregate(fact = 2, fun = "mean", na.rm = T) %>% 
+        terra::plotRGB(
+          r = 1, g = 2, b = 3, stretch = "lin", colNA = "transparent"
+          , mar = c(4,0,2,0)
+          , main = "Trees (blue) identified within stand boundary (red)"
+          , cex.main = 0.8
+        )
+      # plot chm
+      chm %>% 
+        `*`(3.28) %>% # transform to feet
+        terra::crop(stand %>% terra::vect()) %>% 
+        terra::mask(stand %>% terra::vect()) %>%
+        terra::aggregate(fact = 2, fun = "mean", na.rm = T) %>% 
+        terra::plot(
+          col = viridis::plasma(50), colNA = NA, alpha = 0.6, add = T
+          , plg = list(
+            title = "canopy ht. (ft)"
+            , title.cex = 0.8
+            , title.adj = 0
+          )
+        )
+      # legend(legend = 2,title = "canopy ht. (ft)")
+      
+      # plot stand
+        terra::plot(
+          stand %>% terra::vect()
+          , col = NA, border = "firebrick", lwd = 2.5
+          , add = T
+        )
+      # plot points
+      terra::plot(
+        terra::crop(points %>% terra::vect(), stand %>% terra::vect())
+        , pch = "."
+        , col = "blue"
+        , add = T
+      )
+      
+  }
+# ortho_1 = function(){ortho_plt_fn(
+#     stand = harvests[1,]
+#     , ortho = ortho_rast
+#     , points = treetops_sf_with_dbh
+#     , chm = chm_rast
+#   )}
+# ortho_1()
+```
+
+
+```{r dbh-dist-fn}
+dbh_dist_fn = function(my_suid){
+  harvests_trees %>% 
+    dplyr::filter(suid == my_suid) %>% 
+    sf::st_drop_geometry() %>% 
+    dplyr::select(treeID, dbh_in) %>% 
+    dplyr::distinct() %>% 
+    ggplot(
+      mapping = aes(x = dbh_in)
+    ) +
+      geom_density(alpha = 0.8, fill = "navy", color = NA) + 
+      labs(
+        x = "DBH (in)"
+        , y = "density"
+        , title = "SfM derived tree DBH distribution"
+      ) +
+      scale_x_continuous(breaks = scales::extended_breaks(n=20)) +
+      theme_light() +
+      theme(
+        legend.position = "none"
+      )
+}
+# dbh_dist_fn(harvests$suid[1])
+```
+
+```{r ht-dist-fn}
+ht_dist_fn = function(my_suid){
+  harvests_trees %>% 
+    dplyr::filter(suid == my_suid) %>% 
+    sf::st_drop_geometry() %>% 
+    dplyr::select(treeID, tree_height_ft) %>% 
+    dplyr::distinct() %>% 
+    ggplot(
+      mapping = aes(x = tree_height_ft)
+    ) +
+      geom_density(alpha = 0.8, fill = "steelblue", color = NA) + 
+      labs(
+        x = "Height (ft)"
+        , y = "density"
+        , title = "SfM derived tree height distribution"
+      ) +
+      scale_x_continuous(breaks = scales::extended_breaks(n=10)) +
+      theme_light() +
+      theme(
+        legend.position = "none"
+      )
+}
+# ht_dist_fn(harvests$suid[1])
+```
+
+```{r tbl-fn}
+tab_imp_fn = function(my_suid){
+  silv_metrics %>% 
+    dplyr::filter(suid == my_suid) %>% 
+    sf::st_drop_geometry() %>% 
+    dplyr::select(
+      "suid"
+      , "stand_area_ac"
+      , "n_trees"
+      , "trees_per_ac"
+      , "mean_dbh_in"
+      , "qmd_in"
+      , "mean_tree_height_ft"
+      , "loreys_height_ft"
+      , "basal_area_ft2_per_ac"
+    ) %>% 
+    tidyr::pivot_longer(
+      cols = -c(suid), names_to = "metric", values_to = "val"
+    ) %>% 
+    # order metrics
+    dplyr::mutate(
+      metric = factor(
+        metric
+        , ordered = T
+        , levels = c(
+            "stand_area_ac"
+            , "n_trees"
+            , "trees_per_ac"
+            , "mean_tree_height_ft"
+            , "loreys_height_ft"
+            , "mean_dbh_in"
+            , "qmd_in"
+            , "basal_area_ft2_per_ac"
+          )
+        , labels = c(
+            latex2exp::TeX("Stand Area (ac)", output = "character")
+            , latex2exp::TeX("Number of Trees", output = "character")
+            , latex2exp::TeX("Trees $ac^{-1}$")
+            , latex2exp::TeX("Mean Tree Height (ft)", output = "character")
+            , latex2exp::TeX("Lorey's Mean Height (ft)", output = "character")
+            , latex2exp::TeX("Mean DBH (in)", output = "character")
+            , latex2exp::TeX("QMD (in)", output = "character")
+            , latex2exp::TeX("Basal Area $ft^{2} \\cdot ac^{-1}$")
+          )
+      )
+    ) %>% 
+    dplyr::mutate(val = scales::comma(val,accuracy=0.1)) %>% 
+    dplyr::select(metric, val) %>% 
+    ggpubr::ggtexttable(
+      rows = NULL
+      , cols = rep("", 2)
+      , theme = ggpubr::ttheme(
+        base_style = "blank"
+        , tbody.style = ggpubr::tbody_style(parse = T, fill = "white", linecolor = "gray")
+      )
+    ) %>% 
+    ggpubr::tab_add_title(text = "Silvicultural Metrics (imperial)", face = "bold", padding = unit(0.5, "line"))
+}
+
+# tab_imp_fn(harvests$suid[2])
+
+```
+
+```{r tbl-fn2}
+tab_met_fn = function(my_suid){
+  silv_metrics %>% 
+    dplyr::filter(suid == my_suid) %>% 
+    sf::st_drop_geometry() %>% 
+    dplyr::select(
+      "suid"
+      , "stand_area_ha"
+      , "n_trees"
+      , "trees_per_ha"
+      , "mean_dbh_cm"
+      , "qmd_cm"
+      , "mean_tree_height_m"
+      , "loreys_height_m"
+      , "basal_area_m2_per_ha"
+    ) %>% 
+    tidyr::pivot_longer(
+      cols = -c(suid), names_to = "metric", values_to = "val"
+    ) %>% 
+    # order metrics
+    dplyr::mutate(
+      metric = factor(
+        metric
+        , ordered = T
+        , levels = c(
+            "stand_area_ha"
+            , "n_trees"
+            , "trees_per_ha"
+            , "mean_tree_height_m"
+            , "loreys_height_m"
+            , "mean_dbh_cm"
+            , "qmd_cm"
+            , "basal_area_m2_per_ha"
+          )
+        , labels = c(
+            latex2exp::TeX("Stand Area (ha)", output = "character")
+            , latex2exp::TeX("Number of Trees", output = "character")
+            , latex2exp::TeX("Trees $ha^{-1}$")
+            , latex2exp::TeX("Mean Tree Height (m)", output = "character")
+            , latex2exp::TeX("Lorey's Mean Height (m)", output = "character")
+            , latex2exp::TeX("Mean DBH (cm)", output = "character")
+            , latex2exp::TeX("QMD (cm)", output = "character")
+            , latex2exp::TeX("Basal Area $m^{2} \\cdot ha^{-1}$")
+          )
+      )
+    ) %>% 
+    dplyr::mutate(val = scales::comma(val,accuracy=0.1)) %>% 
+    dplyr::select(metric, val) %>% 
+    ggpubr::ggtexttable(
+      rows = NULL
+      , cols = rep("", 2)
+      , theme = ggpubr::ttheme(
+        base_style = "blank"
+        , tbody.style = ggpubr::tbody_style(parse = T, fill = "white", linecolor = "gray")
+      )
+    ) %>% 
+    ggpubr::tab_add_title(text = "Silvicultural Metrics (metric)", face = "bold", padding = unit(0.5, "line"))
+}
+
+tab_met_fn(harvests$suid[2])
+```
+
+```{r inset-map}
+tab_met_fn = function(my_suid){
+  silv_metrics %>% 
+    dplyr::filter(suid == my_suid) %>% 
+    sf::st_drop_geometry() %>% 
+    dplyr::select(
+      "suid"
+      , "stand_area_ha"
+      , "n_trees"
+      , "trees_per_ha"
+      , "mean_dbh_cm"
+      , "qmd_cm"
+      , "mean_tree_height_m"
+      , "loreys_height_m"
+      , "basal_area_m2_per_ha"
+    ) %>% 
+    tidyr::pivot_longer(
+      cols = -c(suid), names_to = "metric", values_to = "val"
+    ) %>% 
+    # order metrics
+    dplyr::mutate(
+      metric = factor(
+        metric
+        , ordered = T
+        , levels = c(
+            "stand_area_ha"
+            , "n_trees"
+            , "trees_per_ha"
+            , "mean_tree_height_m"
+            , "loreys_height_m"
+            , "mean_dbh_cm"
+            , "qmd_cm"
+            , "basal_area_m2_per_ha"
+          )
+        , labels = c(
+            latex2exp::TeX("Stand Area (ha)", output = "character")
+            , latex2exp::TeX("Number of Trees", output = "character")
+            , latex2exp::TeX("Trees $ha^{-1}$")
+            , latex2exp::TeX("Mean Tree Height (m)", output = "character")
+            , latex2exp::TeX("Lorey's Mean Height (m)", output = "character")
+            , latex2exp::TeX("Mean DBH (cm)", output = "character")
+            , latex2exp::TeX("QMD (cm)", output = "character")
+            , latex2exp::TeX("Basal Area $m^{2} \\cdot ha^{-1}$")
+          )
+      )
+    ) %>% 
+    dplyr::mutate(val = scales::comma(val,accuracy=0.1)) %>% 
+    dplyr::select(metric, val) %>% 
+    ggpubr::ggtexttable(
+      rows = NULL
+      , cols = rep("", 2)
+      , theme = ggpubr::ttheme(
+        base_style = "blank"
+        , tbody.style = ggpubr::tbody_style(parse = T, fill = "white", linecolor = "gray")
+      )
+    ) %>% 
+    ggpubr::tab_add_title(text = "Silvicultural Metrics (metric)", face = "bold", padding = unit(0.5, "line"))
+}
+
+tab_met_fn(harvests$suid[2])
+```
 
 
 ```{r include=FALSE, eval=FALSE}
+ggpubr::ggtexttable(df, rows = NULL, theme = ttheme("light")) %>% 
+  ggpubr::tab_add_title(text = "Silvicultural Metrics (imperial)", face = "bold", padding = unit(0.1, "line"))
+
 ## summary table
 silv_metrics %>%
   sf::st_drop_geometry() %>%
