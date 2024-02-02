@@ -56,11 +56,13 @@ library(latex2exp) # math formulas text
 # spatial analysis
 library(terra) # raster
 library(sf) # simple features
+library(stars) # stars raster
 # visualization
 library(kableExtra)
 library(patchwork) # ! better align plots in grid
 library(mapview) # interactive html maps
 library(leafpop) # interactive html maps
+library(ggnewscale) # add another scale to ggplot
 
 # option to put satellite imagery as base layer of mapview maps
   mapview::mapviewOptions(
@@ -778,6 +780,96 @@ Create plots to combine for report
 ######################################################################################
 # function to plot ortho + chm + points + stand
 ######################################################################################
+ortho_plt_fn = function(my_suid){
+
+# convert to stars
+  ortho_st = ortho_rast %>%  
+    terra::subset(subset = c(1,2,3)) %>%
+    terra::crop(
+      # stand %>% 
+      harvests %>% dplyr::filter(suid==my_suid) %>% 
+        sf::st_buffer(20) %>% 
+        sf::st_bbox() %>% 
+        sf::st_as_sfc() %>% 
+        terra::vect()
+    ) %>% 
+    terra::aggregate(fact = 2, fun = "mean", na.rm = T) %>% 
+    stars::st_as_stars()
+  
+  # convert to rgb
+  ortho_rgb <- stars::st_rgb(
+    ortho_st[,,,1:3]
+    , dimension = 3
+    , use_alpha = FALSE
+    # , stretch = "histogram"
+    , probs = c(0.005, 0.995)
+    , stretch = "percent"
+  )
+  # ggplot
+  plt_rgb <- ggplot() +
+    stars::geom_stars(data = ortho_rgb[]) +
+    scale_fill_identity(na.value = "transparent") + # !!! don't take this out or RGB plot will kill your computer
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0)) +
+    labs(
+      x = ""
+      , y = ""
+    ) +
+    theme_void()
+  
+  # return(plt_rgb)
+  # combine all plot elements
+  plt_combine = plt_rgb +
+    ggnewscale::new_scale_fill() +
+    geom_tile(
+      data = chm_rast %>% 
+        terra::crop(
+          harvests %>% dplyr::filter(suid==my_suid) %>% 
+          terra::vect()
+        ) %>% 
+        terra::mask(
+          harvests %>% dplyr::filter(suid==my_suid) %>% 
+          terra::vect()
+        ) %>% 
+        `*`(3.28) %>% # transform to feet
+        as.data.frame(xy=T) %>% 
+        rename(f=3)
+      , mapping = aes(x=x,y=y,fill=f)
+    ) +
+    scale_fill_viridis_c(option="plasma", alpha = 0.6) +
+    geom_sf(
+      data = harvests %>% dplyr::filter(suid==my_suid)
+      , alpha = 0
+      , lwd = 2
+      , color = "#b22222"
+    ) +
+    geom_sf(
+      data = treetops_sf_with_dbh %>% 
+        sf::st_intersection(harvests %>% dplyr::filter(suid==my_suid))
+      , color = "#330099"
+      , shape = "."
+    ) +
+    labs(
+      fill = "canopy ht. (ft)"
+      # , title = "Trees identified within stand boundary"
+      , title = "<span><span style='color:#330099;'><b><i>Trees</i></b></span> identified within <span style='color:#b22222;'><b><i>stand</i></b></span> boundary</span>"
+    ) +
+    theme(
+      legend.position = "bottom" # c(0.5,1)
+      , legend.direction = "horizontal"
+      , legend.text = element_text(size = 8)
+      , legend.title = element_text(size = 8)
+      , plot.title = ggtext::element_markdown(size = 10)
+    )
+  return(plt_combine)
+}
+# ortho_plt_fn(harvests$suid[2])
+```
+
+```{r, include=FALSE, eval=F}
+######################################################################################
+# function to plot ortho + chm + points + stand
+######################################################################################
   ortho_plt_fn = function(stand,ortho,points,chm){
       # plot ortho
       ortho %>% 
@@ -834,7 +926,6 @@ Create plots to combine for report
 #   )}
 # ortho_1()
 ```
-
 
 ```{r dbh-dist-fn}
 dbh_dist_fn = function(my_suid){
@@ -1008,70 +1099,80 @@ tab_met_fn = function(my_suid){
     ggpubr::tab_add_title(text = "Silvicultural Metrics (metric)", face = "bold", padding = unit(0.5, "line"))
 }
 
-tab_met_fn(harvests$suid[2])
+# tab_met_fn(harvests$suid[2])
 ```
 
 ```{r inset-map}
-tab_met_fn = function(my_suid){
-  silv_metrics %>% 
-    dplyr::filter(suid == my_suid) %>% 
-    sf::st_drop_geometry() %>% 
-    dplyr::select(
-      "suid"
-      , "stand_area_ha"
-      , "n_trees"
-      , "trees_per_ha"
-      , "mean_dbh_cm"
-      , "qmd_cm"
-      , "mean_tree_height_m"
-      , "loreys_height_m"
-      , "basal_area_m2_per_ha"
-    ) %>% 
-    tidyr::pivot_longer(
-      cols = -c(suid), names_to = "metric", values_to = "val"
-    ) %>% 
-    # order metrics
-    dplyr::mutate(
-      metric = factor(
-        metric
-        , ordered = T
-        , levels = c(
-            "stand_area_ha"
-            , "n_trees"
-            , "trees_per_ha"
-            , "mean_tree_height_m"
-            , "loreys_height_m"
-            , "mean_dbh_cm"
-            , "qmd_cm"
-            , "basal_area_m2_per_ha"
-          )
-        , labels = c(
-            latex2exp::TeX("Stand Area (ha)", output = "character")
-            , latex2exp::TeX("Number of Trees", output = "character")
-            , latex2exp::TeX("Trees $ha^{-1}$")
-            , latex2exp::TeX("Mean Tree Height (m)", output = "character")
-            , latex2exp::TeX("Lorey's Mean Height (m)", output = "character")
-            , latex2exp::TeX("Mean DBH (cm)", output = "character")
-            , latex2exp::TeX("QMD (cm)", output = "character")
-            , latex2exp::TeX("Basal Area $m^{2} \\cdot ha^{-1}$")
-          )
+plt_inset_map_fn <- function(my_suid){
+  (
+    ggplot() +
+      geom_sf(data = bhef_boundary, alpha = 0, lwd = 1, color = "black") +
+      geom_sf(
+        data = harvests %>% dplyr::filter(suid == my_suid)
+        , fill = "firebrick"
+        , alpha = 0.3
+        , lwd = 1.5
+        , color = "firebrick"
+      ) +
+      # geom_sf_label(
+      #   data = rx_fire
+      #   , aes(label = unit)
+      #   , label.size = NA
+      #   , alpha = 0
+      #   , size = 2.5
+      # ) +
+      xlab("") +
+      ylab("") +
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0)) +
+      theme_bw() +
+      theme(
+        axis.text = element_text(size = 5.5)
+        , axis.text.x = element_text(angle = 35)
+        , panel.border = element_blank()
       )
-    ) %>% 
-    dplyr::mutate(val = scales::comma(val,accuracy=0.1)) %>% 
-    dplyr::select(metric, val) %>% 
-    ggpubr::ggtexttable(
-      rows = NULL
-      , cols = rep("", 2)
-      , theme = ggpubr::ttheme(
-        base_style = "blank"
-        , tbody.style = ggpubr::tbody_style(parse = T, fill = "white", linecolor = "gray")
-      )
-    ) %>% 
-    ggpubr::tab_add_title(text = "Silvicultural Metrics (metric)", face = "bold", padding = unit(0.5, "line"))
-}
 
-tab_met_fn(harvests$suid[2])
+  )
+}
+# plt_inset_map_fn(harvests$suid[2])
 ```
+
+
+```{r include=FALSE, eval=FALSE}
+ortho_plt_temp = ortho_plt_fn(harvests$suid[1])
+dbh_dist_temp = dbh_dist_fn(harvests$suid[1])
+ht_dist_temp = ht_dist_fn(harvests$suid[1]) 
+plt_inset_map_temp = plt_inset_map_fn(harvests$suid[1])
+tab_imp_temp = tab_imp_fn(harvests$suid[1])
+tab_met_temp = tab_met_fn(harvests$suid[1]) 
+
+
+  ortho_plt_temp / 
+    (plt_inset_map_temp + patchwork::plot_spacer()) + 
+      patchwork::plot_layout(ncol = 1, heights = c(1,0.3))
+(ortho_plt_temp / patchwork::plot_spacer()) + patchwork::plot_layout(ncol = 1, heights = c(1,0.1)) 
+
+  xxx = (ortho_plt_temp + patchwork::plot_spacer() + patchwork::plot_layout(ncol = 1, heights = c(1,0.1))) 
+  
+  xxx 
+  
+    ((tab_imp_temp | tab_met_temp)  /
+    (dbh_dist_temp | ht_dist_temp)) & 
+    theme(plot.margin = margin(1,1,1,1,"cm"))
+  +
+    patchwork::plot_layout(widths = c(1.5,1))
+   +
+    
+  (
+    (tab_imp_temp | tab_met_temp) /
+    (dbh_dist_temp | ht_dist_temp)
+  ) & theme(plot.margin = margin(1,1,1,1,"cm"))
+  +
+  patchwork::plot_layout(nrow = 1, widths = c(1,1.2))
+ggplot2::ggsave(paste0("C:/Users/georg/Downloads/hey_xxx.jpeg"),width = 11, height = 8.5, units = "in")
+
+```
+
 
 
 ```{r include=FALSE, eval=FALSE}
