@@ -19,7 +19,7 @@ knit: (function(inputFile, encoding){
 
 This project summarizes processed point cloud data created using structure from motion (SfM) photogrammetry methods on imagery collected from Unmanned Aircraft System (UAS) flights completed in June 2023. UAS imagery was collected using a DJI Phantom 4 Pro equipped with a 20 megapixel metal oxide semiconductor red-green-blue camera at a fixed 8.8 mm focal length. Flights followed a pre-programmed serpentine flight paths at an altitude of 120 m above ground level, using a nadir camera orientation, with 80% forward and side image overlap.The UAV imagery was processed in Agisoft Metashape using the routine outlined by [Tinkham and Swayze (2021)](https://scholar.google.com/scholar?cluster=11260597505702247290&hl=en&as_sdt=0,6) to produce an SfM point cloud for optimized tree detection. 
 
-The SfM-derived point cloud was processed using the methods outlined by [Swayze and Tinkham (2022)](https://scholar.google.com/scholar?oi=bibs&hl=en&cluster=10655866445299954513). Specifically, [this script](https://github.com/georgewoolsey/point_cloud_tree_detection_ex/blob/da5c8a13e9b2f2914b306201605e907643b3006d/src/point_cloud_processing.R) which is outlined in detail at it's [parent Github repository](https://georgewoolsey.github.io/point_cloud_tree_detection_ex/) was used to process the raw point cloud data. UAS point cloud files (`laz` files) were processed in two batches with the outputs combined using [this script](https://github.com/georgewoolsey/point_cloud_tree_detection_ex/blob/6813f499e127b474dd91b480a993beb3d5225a11/src/point_cloud_processing_run_combine.R) from the same repository.
+The SfM-derived point cloud was processed using the methods outlined by [Swayze and Tinkham (2022)](https://scholar.google.com/scholar?oi=bibs&hl=en&cluster=10655866445299954513). Specifically, [this script](https://github.com/georgewoolsey/point_cloud_tree_detection_ex/blob/da5c8a13e9b2f2914b306201605e907643b3006d/src/point_cloud_processing.R) which is outlined in detail at it's [parent Github repository](https://georgewoolsey.github.io/point_cloud_tree_detection_ex/) was used to process the raw point cloud data. UAS point cloud files (`laz` files) for this project were processed in two batches with the outputs combined using [this script](https://github.com/georgewoolsey/point_cloud_tree_detection_ex/blob/6813f499e127b474dd91b480a993beb3d5225a11/src/point_cloud_processing_run_combine.R) from the same repository.
 
 SfM techniques using UAS data reliably identify most tree locations and heights in open-canopied forests. However, their ability to characterize diameter at breast height (DBH) is limited to estimates of a fraction of trees within the area. SfM-derived DBH was estimated at the tree level following the methods outlined by [Tinkham et al. (2022)](https://scholar.google.com/scholar?cluster=14807895789640069059&hl=en&as_sdt=0,6).
 
@@ -65,6 +65,8 @@ library(leafpop) # interactive html maps
 library(ggnewscale) # add another scale to ggplot
 library(ggtext) # customize plot text colors
 library(pdftools) # combine pdf files
+# modelling
+library(brms) # bayesian modelling using STAN engine
 
 # option to put satellite imagery as base layer of mapview maps
   mapview::mapviewOptions(
@@ -72,7 +74,6 @@ library(pdftools) # combine pdf files
     , basemaps = c("Esri.WorldImagery","OpenStreetMap")
   )
 ```
-
 
 # Data Load and Setup
 
@@ -99,51 +100,7 @@ las_ctg_dta = sf::st_read(paste0(input_dir, "/raw_las_ctg_info.gpkg"))
     dplyr::rename(
       reg_est_lower_dbh_cm = reg_est_dbh_cm_lower
       , reg_est_upper_dbh_cm = reg_est_dbh_cm_upper
-    ) %>% 
-    # convert to imperial units
-      dplyr::mutate(
-        dplyr::across(
-          .cols = tidyselect::ends_with("_cm")
-          , ~ .x * 0.394
-          , .names = "{.col}_in"
-        )
-        , dplyr::across(
-          .cols = tidyselect::ends_with("_m")
-          , ~ .x * 3.28
-          , .names = "{.col}_ft"
-        )
-        , dplyr::across(
-          .cols = tidyselect::ends_with("_m2_per_ha")
-          , ~ .x * 4.359
-          , .names = "{.col}_ftac"
-        )
-        , dplyr::across(
-          .cols = tidyselect::ends_with("_per_ha") & !tidyselect::ends_with("_m2_per_ha")
-          , ~ .x * 0.405
-          , .names = "{.col}_ac"
-        )
-        , dplyr::across(
-          .cols = tidyselect::ends_with("_area_ha")
-          , ~ .x * 2.471
-          , .names = "{.col}_ac"
-        )
-        , dplyr::across(
-          .cols = tidyselect::ends_with("_m2")
-          , ~ .x * 10.764
-          , .names = "{.col}_ft2"
-        )
-      ) %>%
-      dplyr::rename_with(
-        .fn = function(x){dplyr::case_when(
-          stringr::str_ends(x,"_cm_in") ~ stringr::str_replace(x,"_cm_in","_in")
-          , stringr::str_ends(x,"_m_ft") ~ stringr::str_replace(x,"_m_ft","_ft")
-          , stringr::str_ends(x,"_m2_per_ha_ftac") ~ stringr::str_replace(x,"_m2_per_ha_ftac","_ft2_per_ac")
-          , stringr::str_ends(x,"_per_ha_ac") ~ stringr::str_replace(x,"_per_ha_ac","_per_ac")
-          , stringr::str_ends(x,"_area_ha_ac") ~ stringr::str_replace(x,"_area_ha_ac","_area_ac")
-          , stringr::str_ends(x,"_m2_ft2") ~ stringr::str_replace(x,"_m2_ft2","_ft2")
-          , TRUE ~ x
-        )}
-      )
+    )
 
 # tree top points
 treetops_sf_with_dbh = sf::st_read(paste0(input_dir, "/final_detected_tree_tops.gpkg")) %>% 
@@ -151,51 +108,16 @@ treetops_sf_with_dbh = sf::st_read(paste0(input_dir, "/final_detected_tree_tops.
   dplyr::rename(
     reg_est_lower_dbh_cm = reg_est_dbh_cm_lower
     , reg_est_upper_dbh_cm = reg_est_dbh_cm_upper
-  ) %>% 
-  # convert to imperial units
-    dplyr::mutate(
-      dplyr::across(
-        .cols = tidyselect::ends_with("_cm")
-        , ~ .x * 0.394
-        , .names = "{.col}_in"
-      )
-      , dplyr::across(
-        .cols = tidyselect::ends_with("_m")
-        , ~ .x * 3.28
-        , .names = "{.col}_ft"
-      )
-      , dplyr::across(
-        .cols = tidyselect::ends_with("_m2_per_ha")
-        , ~ .x * 4.359
-        , .names = "{.col}_ftac"
-      )
-      , dplyr::across(
-        .cols = tidyselect::ends_with("_per_ha") & !tidyselect::ends_with("_m2_per_ha")
-        , ~ .x * 0.405
-        , .names = "{.col}_ac"
-      )
-      , dplyr::across(
-        .cols = tidyselect::ends_with("_area_ha")
-        , ~ .x * 2.471
-        , .names = "{.col}_ac"
-      )
-      , dplyr::across(
-        .cols = tidyselect::ends_with("_m2")
-        , ~ .x * 10.764
-        , .names = "{.col}_ft2"
-      )
-    ) %>%
-    dplyr::rename_with(
-      .fn = function(x){dplyr::case_when(
-        stringr::str_ends(x,"_cm_in") ~ stringr::str_replace(x,"_cm_in","_in")
-        , stringr::str_ends(x,"_m_ft") ~ stringr::str_replace(x,"_m_ft","_ft")
-        , stringr::str_ends(x,"_m2_per_ha_ftac") ~ stringr::str_replace(x,"_m2_per_ha_ftac","_ft2_per_ac")
-        , stringr::str_ends(x,"_per_ha_ac") ~ stringr::str_replace(x,"_per_ha_ac","_per_ac")
-        , stringr::str_ends(x,"_area_ha_ac") ~ stringr::str_replace(x,"_area_ha_ac","_area_ac")
-        , stringr::str_ends(x,"_m2_ft2") ~ stringr::str_replace(x,"_m2_ft2","_ft2")
-        , TRUE ~ x
-      )}
-    )
+  )
+
+# height range for use in estimation
+height_range = dplyr::tibble(
+  tree_height_m = seq(
+    from = 0
+    , to = round(max(treetops_sf_with_dbh$tree_height_m)*1.05,0)
+    , by = 0.1 # by 0.1 m increments
+  )
+)
 
 # set crs
 proj_crs = sf::st_crs(las_ctg_dta)
@@ -261,7 +183,870 @@ remove(list = ls()[grep("_temp",ls())])
 gc()
 ```
 
-## Combine harvest units with tree locations
+# Local DBH to Height Model
+
+## Random Forest Model
+
+The UAS point cloud [processing script](https://github.com/georgewoolsey/point_cloud_tree_detection_ex/blob/da5c8a13e9b2f2914b306201605e907643b3006d/src/point_cloud_processing.R) used a random forest model to estimate tree DBH based on the sample of DBH values extracted from the point cloud (outlined in detail [here](https://georgewoolsey.github.io/point_cloud_tree_detection_ex/#Model_to_estimate_missing_DBHs). This random forest model included tree height (m), crown area (m^2^), minimum crown height (m), and local tree competition metrics to estimate missing DBH values. Using methods outlined by [Tinkham et al. (2022)](https://scholar.google.com/scholar?cluster=14807895789640069059&hl=en&as_sdt=0,6), local competition metrics included the distance to the nearest neighbor, trees ha^−1^ within a 5 m radius, and the relative tree height within a 5 m radius. A 5 m radius was selected as it represents a distance slightly less than the point at which two mature ponderosa pine trees in the region would begin to have interlocking crowns, representing a proxy for direct competition. The relative tree height within a 5 m radius was estimated using:
+
+$$
+\textrm{Relative Height} = \frac{\textrm{Height}}{\textrm{Height}_\textrm{max}} \times 100
+$$
+
+, where $\textrm{Height}$ is the height of the subject tree and $\textrm{Height}_\textrm{max}$ is the height of the tallest tree within a 5 m radius of the subject tree.
+
+### Training vs Non-Training DBH
+
+```{r plt-rf}
+### plot
+plt_rf = treetops_sf_with_dbh %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::filter(is_training_data==T) %>% 
+  dplyr::bind_rows(
+    treetops_sf_with_dbh %>% 
+    sf::st_drop_geometry() %>% 
+    dplyr::filter(is_training_data==F) %>% 
+    dplyr::slice_sample(prop = 0.15)
+  ) %>% 
+  ggplot(
+    mapping = aes(
+      x=tree_height_m, y = dbh_cm
+      , color = is_training_data
+      , fill = is_training_data
+      , group = is_training_data
+    )
+  ) +
+  geom_point(
+    alpha = 0.6
+    , size = 0.7
+    , color = "transparent"
+    , shape = 21
+    , show.legend = F
+  ) + 
+  geom_smooth(
+    method = "loess"
+    , se = F
+    , span = 1
+    , lwd = 1.5
+    , show.legend = T
+  ) +
+  scale_color_manual(values = c("gray","firebrick")) +
+  scale_fill_manual(values = c("gray","firebrick")) +
+  scale_y_continuous(limits = c(0,max(treetops_sf_with_dbh$dbh_cm)*1.02)) +
+  scale_x_continuous(limits = c(0,max(treetops_sf_with_dbh$tree_height_m)*1.02)) +
+  labs(
+    y = "DBH (cm)"
+    , x = "Tree Ht. (m)"
+    , title = "Random Forest Model"
+    , subtitle = "SfM-derived tree height and DBH relationship"
+    , color = "Training Data"
+    , fill = "Training Data"
+  ) +
+  theme_light() +
+  theme(
+    legend.position = "bottom"
+    , legend.direction = "horizontal"
+  ) +
+  guides(
+    color = guide_legend(override.aes = list(shape = 15, lwd = 6, size = 6, alpha = 1))
+  )
+# plot
+plt_rf
+```
+
+## Linear Model
+
+[Tinkham et al. (2022)](https://scholar.google.com/scholar?cluster=14807895789640069059&hl=en&as_sdt=0,6) found the simple linear form resulted in the best estimates for both tree and stand level summarizations:
+
+\begin{align*}
+DBH_{i}  &\sim {\sf Gamma} \bigl(g(\beta_0, \beta_1, Height_{i}), shape \bigr) \\
+g(\beta_0, \beta_1, Height_{i}) &= {\exp \bigl(\beta_0 + \beta_1 \cdot Height_{i}\bigr)} \\
+\beta_{0}  &\sim {\sf Normal} (0,10) \\ 
+\beta_{1}  &\sim {\sf Normal} (0,10) \\ 
+shape  &\sim {\sf Gamma} (0.01,0.01)
+\end{align*}
+
+, where $i$ is the individual tree estimate from UAS SfM data. The $\sf Gamma$ response distribution represents $DBH_{i}$ as strictly non-negative.
+
+```{r mod-lin, results='hide'}
+# population model with no random effects (i.e. no group-level variation)
+  # Gamma distribution for strictly positive response variable dbh
+  mod_lin = brms::brm(
+    formula = dbh_cm ~ 1 + tree_height_m
+    , data = treetops_sf_with_dbh %>% 
+        sf::st_drop_geometry() %>% 
+        dplyr::filter(is_training_data==T)
+    , family = brms::brmsfamily("Gamma", link = "identity")
+    , prior = c(prior(gamma(0.01, 0.01), class = shape))
+    , iter = 2000
+  )
+  # plot(mod_lin)
+  # summary(mod_lin)
+
+  # compute and save the WAIC information for the next three models
+  mod_lin = brms::add_criterion(mod_lin, c("loo", "waic"))
+  
+  # predict values over range
+  pred_mod_lin = predict(
+      mod_lin
+      , newdata = height_range
+      , probs = c(.05, .95)
+    ) %>%
+    dplyr::as_tibble() %>%
+    dplyr::rename(
+      lower_b = 3, upper_b = 4
+    ) %>% 
+    dplyr::rename_with(tolower) %>% 
+    dplyr::select(-c(est.error)) %>% 
+    dplyr::bind_cols(height_range) %>% 
+    dplyr::mutate(tree_height_m_tnth = round(tree_height_m,1) %>% as.character())
+  
+  # attach predicted values to original data
+  treetops_sf_with_dbh = treetops_sf_with_dbh %>% 
+    dplyr::mutate(tree_height_m_tnth = round(tree_height_m,1) %>% as.character()) %>% 
+    dplyr::left_join(
+       pred_mod_lin %>% 
+        dplyr::select(tree_height_m_tnth, estimate)
+      , by = dplyr::join_by(tree_height_m_tnth)
+    ) %>% 
+    dplyr::mutate(
+      mod_lin_est_dbh_cm = ifelse(is_training_data == T, dbh_cm, estimate)
+    ) %>% 
+    dplyr::select(-c(estimate, tree_height_m_tnth))
+  
+  gc()
+```
+
+### Model Parameter Estimates
+
+Simple linear form:
+
+$$
+DBH_i = \beta_0 + \beta_1 \cdot Height_i
+$$
+
+, where $i$ is the individual tree estimate from UAS SfM data
+
+```{r mod-lin-params, results='asis'}
+# parameter estimates
+mod_lin_sum_temp = brms::posterior_summary(mod_lin) %>%
+  as.data.frame() %>% 
+  tibble::rownames_to_column(var = "parameter") %>% 
+  dplyr::filter(stringr::str_starts(parameter, "b_")) %>% # | parameter == "shape") %>% 
+  dplyr::rename_with(tolower)
+# table
+mod_lin_sum_temp %>% 
+    kableExtra::kbl(digits = 4) %>% 
+    kableExtra::kable_styling()
+```
+
+### SfM-derived Height to DBH Allometry
+
+```{r mod-lin-pred}
+# plot predictions with data
+ggplot(
+    data = pred_mod_lin, mapping = aes(x = tree_height_m)
+  ) +
+  geom_point(
+    data = treetops_sf_with_dbh %>% 
+      sf::st_drop_geometry() %>% 
+      dplyr::filter(is_training_data==T)
+    , mapping = aes(y = dbh_cm)
+    , color = "firebrick"
+  ) +
+  geom_ribbon(
+    mapping = aes(ymin = lower_b, ymax = upper_b)
+    , fill = "gray88"
+    , alpha = 0.5
+  ) +
+  geom_line(
+    aes(y = estimate)
+    , color = "gray33"
+    , lwd = 1
+  ) +
+  labs(
+    y = "DBH (cm)"
+    , x = "Tree Ht. (m)"
+    , title = "Local height to DBH allometry from SfM-extracted DBH samples"
+    , subtitle = latex2exp::TeX(paste0(
+      "$DBH = "
+      , mod_lin_sum_temp %>% dplyr::filter(parameter=="b_Intercept") %>% dplyr::pull(estimate) %>% round(3)
+      , " + "
+      , mod_lin_sum_temp %>% dplyr::filter(parameter=="b_tree_height_m") %>% dplyr::pull(estimate) %>% round(3)
+      , "\\cdot Height"
+    ))
+  ) +
+  theme_light() +
+  theme(legend.position = "none")
+```
+
+### Training vs Non-Training DBH
+
+```{r plt-lin}
+### plot
+plt_lin = treetops_sf_with_dbh %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::filter(is_training_data==T) %>% 
+  dplyr::bind_rows(
+    treetops_sf_with_dbh %>% 
+    sf::st_drop_geometry() %>% 
+    dplyr::filter(is_training_data==F) %>% 
+    dplyr::slice_sample(prop = 0.15)
+  ) %>% 
+  ggplot(
+    mapping = aes(
+      x=tree_height_m, y = mod_lin_est_dbh_cm
+      , color = is_training_data
+      , fill = is_training_data
+      , group = is_training_data
+    )
+  ) +
+  geom_smooth(
+    method = "loess"
+    , se = F
+    , span = 1
+    , lwd = 1.5
+    , show.legend = T
+  ) +
+  geom_point(
+    alpha = 0.6
+    , size = 0.7
+    , color = "transparent"
+    , shape = 21
+    , show.legend = F
+  ) + 
+  annotate(
+    "text", x = 0, y = max(treetops_sf_with_dbh$dbh_cm)
+    , label = latex2exp::TeX(paste0(
+      "$DBH = "
+      , mod_lin_sum_temp %>% dplyr::filter(parameter=="b_Intercept") %>% dplyr::pull(estimate) %>% round(3)
+      , " + "
+      , mod_lin_sum_temp %>% dplyr::filter(parameter=="b_tree_height_m") %>% dplyr::pull(estimate) %>% round(3)
+      , "\\cdot Height"
+    ))
+    , parse = T
+    , hjust = 0
+  ) +
+  scale_color_manual(values = c("gray","firebrick")) +
+  scale_fill_manual(values = c("gray","firebrick")) +
+  scale_y_continuous(limits = c(0,max(treetops_sf_with_dbh$dbh_cm)*1.02)) +
+  scale_x_continuous(limits = c(0,max(treetops_sf_with_dbh$tree_height_m)*1.02)) +
+  labs(
+    y = "DBH (cm)"
+    , x = "Tree Ht. (m)"
+    , title = "Linear Model"
+    , subtitle = "SfM-derived tree height and DBH relationship"
+    , color = "Training Data"
+    , fill = "Training Data"
+  ) +
+  theme_light() +
+  theme(
+    legend.position = "bottom"
+    , legend.direction = "horizontal"
+  ) +
+  guides(
+    color = guide_legend(override.aes = list(shape = 15, lwd = 6, size = 6, alpha = 1))
+  )
+# plot
+plt_lin
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(list = ls()[grep("_temp",ls())])
+gc()
+```
+
+## Quadratic Model
+
+A quadratic linear model with the inclusion of $Height_{i}^{2}$ in the model allows us to account for a nonlinear (e.g. parabolic) relationship between DBH and tree height.
+
+\begin{align*}
+DBH_{i}  &\sim {\sf Gamma} \bigl(g(\beta_0, \beta_1, \beta_2, Height_{i}), shape \bigr) \\
+g(\beta_0, \beta_1, \beta_2, Height_{i}) &= {\exp \bigl(\beta_0 + \beta_1 \cdot Height_{i} + \beta_2 \cdot Height_{i}^{2}\bigr)} \\
+\beta_{0}  &\sim {\sf Normal} (0,10) \\ 
+\beta_{1}  &\sim {\sf Normal} (0,10) \\ 
+\beta_{2}  &\sim {\sf Normal} (0,10) \\ 
+shape  &\sim {\sf Gamma} (0.01,0.01)
+\end{align*}
+
+, where $i$ is the individual tree estimate from UAS SfM data. The $\sf Gamma$ response distribution represents $DBH_{i}$ as strictly non-negative.
+
+```{r mod-quad, results='hide'}
+# population model with no random effects (i.e. no group-level variation)
+  # Gamma distribution for strictly positive response variable dbh
+  mod_quad = brms::brm(
+    formula = dbh_cm ~ 1 + tree_height_m + I(tree_height_m^2)
+    , data = treetops_sf_with_dbh %>% 
+        sf::st_drop_geometry() %>% 
+        dplyr::filter(is_training_data==T)
+    , family = brms::brmsfamily("Gamma", link = "log")
+    , prior = c(prior(gamma(0.01, 0.01), class = shape))
+    , iter = 3000
+  )
+  # plot(mod_quad)
+  # summary(mod_quad)
+
+  # compute and save the WAIC information for the next three models
+  mod_quad = brms::add_criterion(mod_quad, c("loo", "waic"))
+  
+  # predict values over range
+  pred_mod_quad = predict(
+      mod_quad
+      , newdata = height_range
+      , probs = c(.05, .95)
+    ) %>%
+    dplyr::as_tibble() %>%
+    dplyr::rename(
+      lower_b = 3, upper_b = 4
+    ) %>% 
+    dplyr::rename_with(tolower) %>% 
+    dplyr::select(-c(est.error)) %>% 
+    dplyr::bind_cols(height_range) %>% 
+    dplyr::mutate(tree_height_m_tnth = round(tree_height_m,1) %>% as.character())
+  
+  # attach predicted values to original data
+  treetops_sf_with_dbh = treetops_sf_with_dbh %>% 
+    dplyr::mutate(tree_height_m_tnth = round(tree_height_m,1) %>% as.character()) %>% 
+    dplyr::left_join(
+       pred_mod_quad %>% 
+        dplyr::select(tree_height_m_tnth, estimate)
+      , by = dplyr::join_by(tree_height_m_tnth)
+    ) %>% 
+    dplyr::mutate(
+      mod_quad_est_dbh_cm = ifelse(is_training_data == T, dbh_cm, estimate)
+    ) %>% 
+    dplyr::select(-c(estimate, tree_height_m_tnth))
+  
+  gc()
+```
+
+### Model Parameter Estimates
+
+Quadratic linear model form:
+
+$$
+DBH_{i} = \beta_0 + \beta_1 \cdot Height_{i} + \beta_2 \cdot Height_{i}^{2}
+$$
+
+, where $i$ is the individual tree estimate from UAS SfM data
+
+```{r mod-quad-params, results='asis'}
+# parameter estimates
+mod_quad_sum_temp = brms::posterior_summary(mod_quad) %>% 
+  as.data.frame() %>% 
+  tibble::rownames_to_column(var = "parameter") %>% 
+  dplyr::filter(stringr::str_starts(parameter, "b_")) %>% # | parameter == "shape") %>% 
+  dplyr::rename_with(tolower) %>% 
+  dplyr::mutate(
+    dplyr::across(.cols = tidyselect::where(is.numeric), .fns = exp)
+  )
+# table
+mod_quad_sum_temp %>% 
+    kableExtra::kbl(digits = 4) %>% 
+    kableExtra::kable_styling()
+```
+
+### SfM-derived Height to DBH Allometry
+
+```{r mod-quad-pred}
+# predict and put estimates in a data frame
+  predict(
+      mod_quad
+      , newdata = height_range
+      , probs = c(.05, .95)
+    ) %>%
+    dplyr::as_tibble() %>%
+    dplyr::rename(
+      lower_b = 3, upper_b = 4
+    ) %>% 
+    dplyr::rename_with(tolower) %>% 
+    dplyr::select(-c(est.error)) %>% 
+    dplyr::bind_cols(height_range) %>% 
+# plot predictions with data
+ggplot(
+    mapping = aes(x = tree_height_m)
+  ) +
+  geom_point(
+    data = treetops_sf_with_dbh %>% 
+      sf::st_drop_geometry() %>% 
+      dplyr::filter(is_training_data==T)
+    , mapping = aes(y = dbh_cm)
+    , color = "firebrick"
+  ) +
+  geom_ribbon(
+    mapping = aes(ymin = lower_b, ymax = upper_b)
+    , fill = "gray88"
+    , alpha = 0.5
+  ) +
+  geom_line(
+    aes(y = estimate)
+    , color = "gray33"
+    , lwd = 1
+  ) +
+  labs(
+    y = "DBH (cm)"
+    , x = "Tree Ht. (m)"
+    , title = "Local height to DBH allometry from SfM-extracted DBH samples"
+    , subtitle = latex2exp::TeX(paste0(
+      "$DBH = "
+      , mod_quad_sum_temp %>% dplyr::filter(parameter=="b_Intercept") %>% dplyr::pull(estimate) %>% round(3)
+      , " + "
+      , mod_quad_sum_temp %>% dplyr::filter(parameter=="b_tree_height_m") %>% dplyr::pull(estimate) %>% round(3)
+      , "\\cdot Height"
+      , " + "
+      , mod_quad_sum_temp %>% dplyr::filter(parameter=="b_Itree_height_mE2") %>% dplyr::pull(estimate) %>% round(3)
+      , "\\cdot Height^2$"
+    ))
+  ) +
+  theme_light() +
+  theme(legend.position = "none")
+```
+
+### Training vs Non-Training DBH
+
+```{r plt-quad}
+### plot
+plt_quad = treetops_sf_with_dbh %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::filter(is_training_data==T) %>% 
+  dplyr::bind_rows(
+    treetops_sf_with_dbh %>% 
+    sf::st_drop_geometry() %>% 
+    dplyr::filter(is_training_data==F) %>% 
+    dplyr::slice_sample(prop = 0.05)
+  ) %>% 
+  ggplot(
+    mapping = aes(
+      x=tree_height_m, y = mod_quad_est_dbh_cm
+      , color = is_training_data
+      , fill = is_training_data
+      , group = is_training_data
+    )
+  ) +
+  geom_smooth(
+    method = "loess"
+    , se = F
+    , span = 1
+    , lwd = 1.5
+    , show.legend = T
+  ) +
+  geom_point(
+    alpha = 0.6
+    , size = 0.7
+    , color = "transparent"
+    , shape = 21
+    , show.legend = F
+  ) + 
+  annotate(
+    "text", x = 0, y = max(treetops_sf_with_dbh$dbh_cm)
+    , label = latex2exp::TeX(paste0(
+      "$DBH = "
+      , mod_quad_sum_temp %>% dplyr::filter(parameter=="b_Intercept") %>% dplyr::pull(estimate) %>% round(3)
+      , " + "
+      , mod_quad_sum_temp %>% dplyr::filter(parameter=="b_tree_height_m") %>% dplyr::pull(estimate) %>% round(3)
+      , "\\cdot Height"
+      , " + "
+      , mod_quad_sum_temp %>% dplyr::filter(parameter=="b_Itree_height_mE2") %>% dplyr::pull(estimate) %>% round(3)
+      , "\\cdot Height^2$"
+    ))
+    , parse = T
+    , hjust = 0
+  ) +
+  scale_color_manual(values = c("gray","firebrick")) +
+  scale_fill_manual(values = c("gray","firebrick")) +
+  scale_y_continuous(limits = c(0,max(treetops_sf_with_dbh$dbh_cm)*1.02)) +
+  scale_x_continuous(limits = c(0,max(treetops_sf_with_dbh$tree_height_m)*1.02)) +
+  labs(
+    y = "DBH (cm)"
+    , x = "Tree Ht. (m)"
+    , title = "Quadratic Model"
+    , subtitle = "SfM-derived tree height and DBH relationship"
+    , color = "Training Data"
+    , fill = "Training Data"
+  ) +
+  theme_light() +
+  theme(
+    legend.position = "bottom"
+    , legend.direction = "horizontal"
+  ) +
+  guides(
+    color = guide_legend(override.aes = list(shape = 15, lwd = 6, size = 6, alpha = 1))
+  )
+# plot
+plt_quad
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(list = ls()[grep("_temp",ls())])
+gc()
+```
+
+## Nonlinear Model
+
+A power-law function model allows us to account for a nonlinear relationship between DBH and tree height:
+
+\begin{align*}
+DBH_{i}  &\sim {\sf Gamma} \bigl(g(\alpha, \kappa, Height_{i}), shape \bigr) \\
+g(\alpha, \kappa, Height_{i}) &= {\exp \bigl(\alpha \cdot Height_{i}^{\kappa}\bigr)} \\
+\alpha  &\sim {\sf Normal} (0,10) \\ 
+\kappa  &\sim {\sf Normal} (0,10) \\ 
+shape  &\sim {\sf Gamma} (0.01,0.01)
+\end{align*}
+
+, where $i$ is the individual tree estimate from UAS SfM data. The $\sf Gamma$ response distribution represents $DBH_{i}$ as strictly non-negative.
+
+```{r mod-pwr, results='hide'}
+# population model with no random effects (i.e. no group-level variation)
+  # Gamma distribution for strictly positive response variable dbh
+  mod_pwr = brms::brm(
+    formula = brms::bf(
+      formula = dbh_cm ~ a * (tree_height_m^k)
+      , a + k ~ 1
+      , nl = TRUE # !! specify non-linear
+    )
+    , data = treetops_sf_with_dbh %>% 
+        sf::st_drop_geometry() %>% 
+        dplyr::filter(is_training_data==T)
+    , family = brms::brmsfamily("Gamma", link = "log")
+    , prior = c(prior(gamma(0.01, 0.01), class = shape))
+    , iter = 3000
+  )
+  # plot(mod_pwr)
+  # summary(mod_pwr)
+
+  # compute and save the WAIC information for the next three models
+  mod_pwr = brms::add_criterion(mod_pwr, c("loo", "waic"))
+  
+  # predict values over range
+  pred_mod_pwr = predict(
+      mod_pwr
+      , newdata = height_range
+      , probs = c(.05, .95)
+    ) %>%
+    dplyr::as_tibble() %>%
+    dplyr::rename(
+      lower_b = 3, upper_b = 4
+    ) %>% 
+    dplyr::rename_with(tolower) %>% 
+    dplyr::select(-c(est.error)) %>% 
+    dplyr::bind_cols(height_range) %>% 
+    dplyr::mutate(tree_height_m_tnth = round(tree_height_m,1) %>% as.character())
+  
+  # attach predicted values to original data
+  treetops_sf_with_dbh = treetops_sf_with_dbh %>% 
+    dplyr::mutate(tree_height_m_tnth = round(tree_height_m,1) %>% as.character()) %>% 
+    dplyr::left_join(
+       pred_mod_pwr %>% 
+        dplyr::select(tree_height_m_tnth, estimate)
+      , by = dplyr::join_by(tree_height_m_tnth)
+    ) %>% 
+    dplyr::mutate(
+      mod_pwr_est_dbh_cm = ifelse(is_training_data == T, dbh_cm, estimate)
+    ) %>% 
+    dplyr::select(-c(estimate, tree_height_m_tnth))
+  
+  gc()
+```
+
+### Model Parameter Estimates
+
+Power-law function model form:
+
+$$
+DBH_{i} = \alpha \cdot Height_{i}^{\kappa}
+$$
+
+, where $i$ is the individual tree estimate from UAS SfM data
+
+```{r mod-pwr-params, results='asis'}
+# parameter estimates
+mod_pwr_sum_temp = brms::posterior_summary(mod_pwr) %>%
+  as.data.frame() %>% 
+  tibble::rownames_to_column(var = "parameter") %>% 
+  dplyr::filter(stringr::str_starts(parameter, "b_")) %>% # | parameter == "shape") %>% 
+  dplyr::rename_with(tolower) %>% 
+  dplyr::mutate(
+    parameter = stringr::str_remove_all(tolower(parameter), "_intercept")
+    , dplyr::across(.cols = tidyselect::where(is.numeric), .fns = exp)
+  )
+# table
+mod_pwr_sum_temp %>% 
+    kableExtra::kbl(digits = 4) %>% 
+    kableExtra::kable_styling()
+```
+
+### SfM-derived Height to DBH Allometry
+
+```{r mod-pwr-pred}
+# predict and put estimates in a data frame
+  predict(
+      mod_pwr
+      , newdata = height_range
+      , probs = c(.05, .95)
+    ) %>%
+    dplyr::as_tibble() %>%
+    dplyr::rename(
+      lower_b = 3, upper_b = 4
+    ) %>% 
+    dplyr::rename_with(tolower) %>% 
+    dplyr::select(-c(est.error)) %>% 
+    dplyr::bind_cols(height_range) %>% 
+# plot predictions with data
+ggplot(
+    mapping = aes(x = tree_height_m)
+  ) +
+  geom_point(
+    data = treetops_sf_with_dbh %>% 
+      sf::st_drop_geometry() %>% 
+      dplyr::filter(is_training_data==T)
+    , mapping = aes(y = dbh_cm)
+    , color = "firebrick"
+  ) +
+  geom_ribbon(
+    mapping = aes(ymin = lower_b, ymax = upper_b)
+    , fill = "gray88"
+    , alpha = 0.5
+  ) +
+  geom_line(
+    aes(y = estimate)
+    , color = "gray33"
+    , lwd = 1
+  ) +
+  labs(
+    y = "DBH (cm)"
+    , x = "Tree Ht. (m)"
+    , title = "Local height to DBH allometry from SfM-extracted DBH samples"
+    , subtitle = latex2exp::TeX(paste0(
+      "$DBH = "
+      , mod_pwr_sum_temp %>% dplyr::filter(parameter=="b_a") %>% dplyr::pull(estimate) %>% round(3)
+      , "\\cdot Height^{"
+      , mod_pwr_sum_temp %>% dplyr::filter(parameter=="b_k") %>% dplyr::pull(estimate) %>% round(3)
+      , "}$"
+    ))
+  ) +
+  theme_light() +
+  theme(legend.position = "none")
+```
+
+### Training vs Non-Training DBH
+
+```{r plt-pwr}
+### plot
+plt_pwr = treetops_sf_with_dbh %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::filter(is_training_data==T) %>% 
+  dplyr::bind_rows(
+    treetops_sf_with_dbh %>% 
+    sf::st_drop_geometry() %>% 
+    dplyr::filter(is_training_data==F) %>% 
+    dplyr::slice_sample(prop = 0.05)
+  ) %>% 
+  ggplot(
+    mapping = aes(
+      x=tree_height_m, y = mod_pwr_est_dbh_cm
+      , color = is_training_data
+      , fill = is_training_data
+      , group = is_training_data
+    )
+  ) +
+  geom_smooth(
+    method = "loess"
+    , se = F
+    , span = 1
+    , lwd = 1.5
+    , show.legend = T
+  ) +
+  geom_point(
+    alpha = 0.6
+    , size = 0.7
+    , color = "transparent"
+    , shape = 21
+    , show.legend = F
+  ) + 
+  annotate(
+    "text", x = 0, y = max(treetops_sf_with_dbh$dbh_cm)
+    , label = latex2exp::TeX(paste0(
+      "$DBH = "
+      , mod_pwr_sum_temp %>% dplyr::filter(parameter=="b_a") %>% dplyr::pull(estimate) %>% round(3)
+      , "\\cdot Height^{"
+      , mod_pwr_sum_temp %>% dplyr::filter(parameter=="b_k") %>% dplyr::pull(estimate) %>% round(3)
+      , "}$"
+    ))
+    , parse = T
+    , hjust = 0
+  ) +
+  scale_color_manual(values = c("gray","firebrick")) +
+  scale_fill_manual(values = c("gray","firebrick")) +
+  scale_y_continuous(limits = c(0,max(treetops_sf_with_dbh$dbh_cm)*1.02)) +
+  scale_x_continuous(limits = c(0,max(treetops_sf_with_dbh$tree_height_m)*1.02)) +
+  labs(
+    y = "DBH (cm)"
+    , x = "Tree Ht. (m)"
+    , title = "Nonlinear Model"
+    , subtitle = "SfM-derived tree height and DBH relationship"
+    , color = "Training Data"
+    , fill = "Training Data"
+  ) +
+  theme_light() +
+  theme(
+    legend.position = "bottom"
+    , legend.direction = "horizontal"
+  ) +
+  guides(
+    color = guide_legend(override.aes = list(shape = 15, lwd = 6, size = 6, alpha = 1))
+  )
+# plot
+plt_pwr
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(list = ls()[grep("_temp",ls())])
+gc()
+```
+
+## Model Comparison
+
+The pointwise log-likelihood can be used, among others, to calculate the leave-one-out cross-validation (LOO; [Vehtari, Gelman, and Gabry 2015](https://scholar.google.com/scholar?cluster=13592897121719449855&oi=gsb&hl=en&as_sdt=0,6)) allowing for comparison of different models applied to the same data (lower LOOs indicate better model fit).
+
+```{r mod-comp, results='asis'}
+brms::loo_compare(mod_lin, mod_quad, mod_pwr, criterion = "loo") %>% 
+  kableExtra::kbl(digits = 3) %>% 
+  kableExtra::kable_styling()
+# # can also check model weights
+# brms::model_weights(mod_lin, mod_quad, mod_pwr, weights = "loo") %>% 
+#   round(3)
+```
+
+Based on these results, the linear model $DBH_i = \beta_0 + \beta_1 \cdot Height_i$ has the best fit among models tested. DBH estimates based on this model for trees where DBH could not be extracted from the UAS SfM data will be used in the following analysis and stand-level summaries
+
+## Update DBH to best model
+ 
+```{r dbh-update}
+# update treetops
+treetops_sf_with_dbh = treetops_sf_with_dbh %>%
+  dplyr::mutate(
+    mod_rf_est_dbh_cm = dbh_cm
+    , dbh_cm = mod_lin_est_dbh_cm
+    , dbh_m = dbh_cm/100
+    , radius_m = dbh_m/2
+    , basal_area_m2 = pi * (radius_m)^2
+  ) %>% 
+  # convert to imperial units
+    dplyr::mutate(
+      dplyr::across(
+        .cols = tidyselect::ends_with("_cm")
+        , ~ .x * 0.394
+        , .names = "{.col}_in"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_m")
+        , ~ .x * 3.28
+        , .names = "{.col}_ft"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_m2_per_ha")
+        , ~ .x * 4.359
+        , .names = "{.col}_ftac"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_per_ha") & !tidyselect::ends_with("_m2_per_ha")
+        , ~ .x * 0.405
+        , .names = "{.col}_ac"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_area_ha")
+        , ~ .x * 2.471
+        , .names = "{.col}_ac"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_m2")
+        , ~ .x * 10.764
+        , .names = "{.col}_ft2"
+      )
+    ) %>%
+    dplyr::rename_with(
+      .fn = function(x){dplyr::case_when(
+        stringr::str_ends(x,"_cm_in") ~ stringr::str_replace(x,"_cm_in","_in")
+        , stringr::str_ends(x,"_m_ft") ~ stringr::str_replace(x,"_m_ft","_ft")
+        , stringr::str_ends(x,"_m2_per_ha_ftac") ~ stringr::str_replace(x,"_m2_per_ha_ftac","_ft2_per_ac")
+        , stringr::str_ends(x,"_per_ha_ac") ~ stringr::str_replace(x,"_per_ha_ac","_per_ac")
+        , stringr::str_ends(x,"_area_ha_ac") ~ stringr::str_replace(x,"_area_ha_ac","_area_ac")
+        , stringr::str_ends(x,"_m2_ft2") ~ stringr::str_replace(x,"_m2_ft2","_ft2")
+        , TRUE ~ x
+      )}
+    )
+
+##########
+# update crowns
+crowns_sf_with_dbh = crowns_sf_with_dbh %>% 
+  dplyr::select(-c(
+    dbh_cm
+    , dbh_m
+    , radius_m
+    , basal_area_m2
+  )) %>% 
+  dplyr::inner_join(
+    treetops_sf_with_dbh %>% 
+      sf::st_drop_geometry() %>% 
+      dplyr::select(
+        treeID
+        , dbh_cm
+        , dbh_m
+        , radius_m
+        , basal_area_m2
+        , (tidyselect::starts_with("mod_") & tidyselect::ends_with("_cm"))
+      )
+    , by = dplyr::join_by(treeID)
+  ) %>% 
+  # convert to imperial units
+    dplyr::mutate(
+      dplyr::across(
+        .cols = tidyselect::ends_with("_cm")
+        , ~ .x * 0.394
+        , .names = "{.col}_in"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_m")
+        , ~ .x * 3.28
+        , .names = "{.col}_ft"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_m2_per_ha")
+        , ~ .x * 4.359
+        , .names = "{.col}_ftac"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_per_ha") & !tidyselect::ends_with("_m2_per_ha")
+        , ~ .x * 0.405
+        , .names = "{.col}_ac"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_area_ha")
+        , ~ .x * 2.471
+        , .names = "{.col}_ac"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_m2")
+        , ~ .x * 10.764
+        , .names = "{.col}_ft2"
+      )
+    ) %>%
+    dplyr::rename_with(
+      .fn = function(x){dplyr::case_when(
+        stringr::str_ends(x,"_cm_in") ~ stringr::str_replace(x,"_cm_in","_in")
+        , stringr::str_ends(x,"_m_ft") ~ stringr::str_replace(x,"_m_ft","_ft")
+        , stringr::str_ends(x,"_m2_per_ha_ftac") ~ stringr::str_replace(x,"_m2_per_ha_ftac","_ft2_per_ac")
+        , stringr::str_ends(x,"_per_ha_ac") ~ stringr::str_replace(x,"_per_ha_ac","_per_ac")
+        , stringr::str_ends(x,"_area_ha_ac") ~ stringr::str_replace(x,"_area_ha_ac","_area_ac")
+        , stringr::str_ends(x,"_m2_ft2") ~ stringr::str_replace(x,"_m2_ft2","_ft2")
+        , TRUE ~ x
+      )}
+    )
+    
+```
+
+
+# Combine harvest units with tree locations
 
 Spatially combine harvest units with tree locations. One tree can be located in multiple harvest units if the harvest units spatially overlap; I'll allow it. Trees are matched to a harvest unit based on the location of the tree top which may or may not align with the location of the tree bole at DBH.
 
@@ -487,7 +1272,7 @@ harvests_trees %>%
 ### plot
 harvests_trees %>% 
   sf::st_drop_geometry() %>% 
-  dplyr::slice_sample(prop = 0.5) %>% 
+  dplyr::slice_sample(prop = 0.2) %>% 
   dplyr::select(treeID, tree_height_ft, dbh_in) %>% 
   dplyr::distinct() %>% 
   ggplot(
@@ -495,7 +1280,7 @@ harvests_trees %>%
   ) +
   geom_point(
     alpha = 0.6
-    , size = 0.5
+    , size = 0.6
     , color = "gray"
   ) + 
   geom_smooth(
@@ -880,7 +1665,7 @@ ortho_plt_fn = function(my_suid){
 ######################################################################################
 # function to plot ortho + chm + points + stand
 ######################################################################################
-  ortho_plt_fn = function(stand,ortho,points,chm){
+  xxxxxortho_plt_fn = function(stand,ortho,points,chm){
       # plot ortho
       ortho %>% 
         terra::crop(
@@ -1352,6 +2137,17 @@ pdftools::pdf_combine(
 ```
 
 ```{r include=FALSE, eval=FALSE}
+# Field Validation Data
+
+Here are both the overstory and regen data from the Voodoo stands. 
+Each tree has UTM coordinates and then each regen subplot has UTM coordinates. 
+Also attached is my script for matching UAS and stem-mapped trees. 
+I have only used the script when comparing complete stem-maps with UAS and not with plots, likely to be something we will need to think through to make it work.
+
+```
+
+
+```{r include=FALSE, eval=FALSE}
 library(patchwork)
 layout_temp = c(
     # map
@@ -1377,4 +2173,3 @@ layout_temp = c(
   plot(layout_temp)
   
 ```
-
