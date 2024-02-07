@@ -278,10 +278,12 @@ shape  &\sim {\sf Gamma} (0.01,0.01)
         dplyr::filter(is_training_data==T)
     , family = brms::brmsfamily("Gamma", link = "identity")
     , prior = c(prior(gamma(0.01, 0.01), class = shape))
-    , iter = 2000
+    , iter = 3000
+    , file = "../data/mod_lin"
   )
   # plot(mod_lin)
   # summary(mod_lin)
+  # plot(brms::conditional_effects(mod_lin), points = T)
 
   # compute and save the WAIC information for the next three models
   mod_lin = brms::add_criterion(mod_lin, c("loo", "waic"))
@@ -482,9 +484,11 @@ shape  &\sim {\sf Gamma} (0.01,0.01)
     , family = brms::brmsfamily("Gamma", link = "log")
     , prior = c(prior(gamma(0.01, 0.01), class = shape))
     , iter = 3000
+    , file = "../data/mod_quad"
   )
   # plot(mod_quad)
   # summary(mod_quad)
+  # plot(brms::conditional_effects(mod_quad), points = T)
 
   # compute and save the WAIC information for the next three models
   mod_quad = brms::add_criterion(mod_quad, c("loo", "waic"))
@@ -710,9 +714,11 @@ shape  &\sim {\sf Gamma} (0.01,0.01)
     , family = brms::brmsfamily("Gamma", link = "log")
     , prior = c(prior(gamma(0.01, 0.01), class = shape))
     , iter = 3000
+    , file = "../data/mod_pwr"
   )
   # plot(mod_pwr)
   # summary(mod_pwr)
+  # plot(brms::conditional_effects(mod_pwr), points = T)
 
   # compute and save the WAIC information for the next three models
   mod_pwr = brms::add_criterion(mod_pwr, c("loo", "waic"))
@@ -917,7 +923,7 @@ brms::loo_compare(mod_lin, mod_quad, mod_pwr, criterion = "loo") %>%
 #   round(3)
 ```
 
-Based on these results, the linear model $DBH_i = \beta_0 + \beta_1 \cdot Height_i$ has the best fit among models tested. DBH estimates based on this model for trees where DBH could not be extracted from the UAS SfM data will be used in the following analysis and stand-level summaries
+Based on these results, the quadratic model $DBH_i = \beta_0 + \beta_1 \cdot Height_i + \beta_2 \cdot Height_{i}^{2}$ has the best fit among models tested. DBH estimates based on this model for trees where DBH could not be extracted from the UAS SfM data will be used in the following analysis and stand-level summaries
 
 ## Update DBH to best model
  
@@ -926,7 +932,7 @@ Based on these results, the linear model $DBH_i = \beta_0 + \beta_1 \cdot Height
 treetops_sf_with_dbh = treetops_sf_with_dbh %>%
   dplyr::mutate(
     mod_rf_est_dbh_cm = dbh_cm
-    , dbh_cm = mod_lin_est_dbh_cm
+    , dbh_cm = mod_quad_est_dbh_cm
     , dbh_m = dbh_cm/100
     , radius_m = dbh_m/2
     , basal_area_m2 = pi * (radius_m)^2
