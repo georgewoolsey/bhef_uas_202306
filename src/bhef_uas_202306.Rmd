@@ -2478,7 +2478,7 @@ mapview::mapview(
 
 The UAS detected and stem-mapped tree pairs identified in this filtering process (detailed above) were considered true positive ($TP$) detections.
 
-```{r fld-dta-tp}
+```{r fld-dta-tp, results='hide'}
 ## BUFFER THE UAS TREES AND SPATIALLY MATCH FIELD TREES BASED ON THAT BUFFER   
 ## get FIELD trees within radius OF UAS TREES
   potential_tree_pairs_temp = treetops_sf_with_dbh %>% 
