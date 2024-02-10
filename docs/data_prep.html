@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en-US" xml:lang="en-US">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Section 3 Data Preparation | Black Hills Experimental Forest UAS Mission Data Summary</title>
+  <meta name="description" content="Using the bookdown package to write a book of data exploration. The output format for this example is bookdown::gitbook." />
+  <meta name="generator" content="bookdown 0.34 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Section 3 Data Preparation | Black Hills Experimental Forest UAS Mission Data Summary" />
+  <meta property="og:type" content="book" />
+  
+  <meta property="og:description" content="Using the bookdown package to write a book of data exploration. The output format for this example is bookdown::gitbook." />
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Section 3 Data Preparation | Black Hills Experimental Forest UAS Mission Data Summary" />
+  
+  <meta name="twitter:description" content="Using the bookdown package to write a book of data exploration. The output format for this example is bookdown::gitbook." />
+  
+
+<meta name="author" content="George Woolsey" />
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="objective.html"/>
+<link rel="next" href="local_mod.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+<script src="libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
+<script src="libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+<link href="libs/leaflet-1.3.1/leaflet.css" rel="stylesheet" />
+<script src="libs/leaflet-1.3.1/leaflet.js"></script>
+<link href="libs/leafletfix-1.0.0/leafletfix.css" rel="stylesheet" />
+<script src="libs/proj4-2.6.2/proj4.min.js"></script>
+<script src="libs/Proj4Leaflet-1.0.1/proj4leaflet.js"></script>
+<link href="libs/rstudio_leaflet-1.3.1/rstudio_leaflet.css" rel="stylesheet" />
+<script src="libs/leaflet-binding-2.1.2/leaflet.js"></script>
+<script src="libs/leaflet-providers-1.9.0/leaflet-providers_1.9.0.js"></script>
+<script src="libs/leaflet-providers-plugin-2.1.2/leaflet-providers-plugin.js"></script>
+<script src="libs/clipboard-0.0.1/setClipboardText.js"></script>
+<link href="libs/mapviewCSS-0.0.1/mapview-popup.css" rel="stylesheet" />
+<link href="libs/mapviewCSS-0.0.1/mapview.css" rel="stylesheet" />
+<script src="libs/elev. (ft)_9e4802-1/data_stars_elevft108d5f.txt"></script>
+<script src="libs/joda-0.0.1/joda.js"></script>
+<script src="libs/joda-0.0.1/addImageQuery-bindings.js"></script>
+<script src="libs/canopy ht. (ft)_4cae21-1/data_stars_canopyhtftfd376c.txt"></script>
+<script type="text/javascript">
+
+// toggle visibility of R source blocks in R Markdown output
+function toggle_R() {
+  var x = document.getElementsByClassName('r');
+  if (x.length == 0) return;
+  function toggle_vis(o) {
+    var d = o.style.display;
+    o.style.display = (d == 'block' || d == '') ? 'none':'block';
+  }
+
+  for (i = 0; i < x.length; i++) {
+    var y = x[i];
+    if (y.tagName.toLowerCase() === 'pre') toggle_vis(y);
+  }
+
+    var elem = document.getElementById("myButton1");
+    if (elem.value === "Hide Code") elem.value = "Show Code";
+    else elem.value = "Hide Code";
+}
+
+document.write('<input onclick="toggle_R();" type="button" value="Hide Code" id="myButton1" style="position: absolute; top: 10%; right: 2%; z-index: 200"></input>')
+
+</script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li class="chapter" data-level="1" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i><b>1</b> Introduction</a></li>
+<li class="chapter" data-level="2" data-path="objective.html"><a href="objective.html"><i class="fa fa-check"></i><b>2</b> Objective</a></li>
+<li class="chapter" data-level="3" data-path="data_prep.html"><a href="data_prep.html"><i class="fa fa-check"></i><b>3</b> Data Preparation</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="data_prep.html"><a href="data_prep.html#data-load"><i class="fa fa-check"></i><b>3.1</b> Data Load</a></li>
+<li class="chapter" data-level="3.2" data-path="data_prep.html"><a href="data_prep.html#load-orthomosaic-rasters"><i class="fa fa-check"></i><b>3.2</b> Load orthomosaic rasters</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="local_mod.html"><a href="local_mod.html"><i class="fa fa-check"></i><b>4</b> Local DBH to Height Model</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="local_mod.html"><a href="local_mod.html#random-forest-model"><i class="fa fa-check"></i><b>4.1</b> Random Forest Model</a>
+<ul>
+<li class="chapter" data-level="4.1.1" data-path="local_mod.html"><a href="local_mod.html#training-vs-non-training-dbh"><i class="fa fa-check"></i><b>4.1.1</b> Training vs Non-Training DBH</a></li>
+</ul></li>
+<li class="chapter" data-level="4.2" data-path="local_mod.html"><a href="local_mod.html#linear-model"><i class="fa fa-check"></i><b>4.2</b> Linear Model</a>
+<ul>
+<li class="chapter" data-level="4.2.1" data-path="local_mod.html"><a href="local_mod.html#model-parameter-estimates"><i class="fa fa-check"></i><b>4.2.1</b> Model Parameter Estimates</a></li>
+<li class="chapter" data-level="4.2.2" data-path="local_mod.html"><a href="local_mod.html#sfm-derived-height-to-dbh-allometry"><i class="fa fa-check"></i><b>4.2.2</b> SfM-derived Height to DBH Allometry</a></li>
+<li class="chapter" data-level="4.2.3" data-path="local_mod.html"><a href="local_mod.html#training-vs-non-training-dbh-1"><i class="fa fa-check"></i><b>4.2.3</b> Training vs Non-Training DBH</a></li>
+</ul></li>
+<li class="chapter" data-level="4.3" data-path="local_mod.html"><a href="local_mod.html#quadratic-model"><i class="fa fa-check"></i><b>4.3</b> Quadratic Model</a>
+<ul>
+<li class="chapter" data-level="4.3.1" data-path="local_mod.html"><a href="local_mod.html#model-parameter-estimates-1"><i class="fa fa-check"></i><b>4.3.1</b> Model Parameter Estimates</a></li>
+<li class="chapter" data-level="4.3.2" data-path="local_mod.html"><a href="local_mod.html#sfm-derived-height-to-dbh-allometry-1"><i class="fa fa-check"></i><b>4.3.2</b> SfM-derived Height to DBH Allometry</a></li>
+<li class="chapter" data-level="4.3.3" data-path="local_mod.html"><a href="local_mod.html#training-vs-non-training-dbh-2"><i class="fa fa-check"></i><b>4.3.3</b> Training vs Non-Training DBH</a></li>
+</ul></li>
+<li class="chapter" data-level="4.4" data-path="local_mod.html"><a href="local_mod.html#no-intercept-quadratic-model"><i class="fa fa-check"></i><b>4.4</b> No Intercept Quadratic Model</a>
+<ul>
+<li class="chapter" data-level="4.4.1" data-path="local_mod.html"><a href="local_mod.html#model-parameter-estimates-2"><i class="fa fa-check"></i><b>4.4.1</b> Model Parameter Estimates</a></li>
+<li class="chapter" data-level="4.4.2" data-path="local_mod.html"><a href="local_mod.html#sfm-derived-height-to-dbh-allometry-2"><i class="fa fa-check"></i><b>4.4.2</b> SfM-derived Height to DBH Allometry</a></li>
+<li class="chapter" data-level="4.4.3" data-path="local_mod.html"><a href="local_mod.html#training-vs-non-training-dbh-3"><i class="fa fa-check"></i><b>4.4.3</b> Training vs Non-Training DBH</a></li>
+</ul></li>
+<li class="chapter" data-level="4.5" data-path="local_mod.html"><a href="local_mod.html#nonlinear-power-model"><i class="fa fa-check"></i><b>4.5</b> Nonlinear Power Model</a>
+<ul>
+<li class="chapter" data-level="4.5.1" data-path="local_mod.html"><a href="local_mod.html#model-parameter-estimates-3"><i class="fa fa-check"></i><b>4.5.1</b> Model Parameter Estimates</a></li>
+<li class="chapter" data-level="4.5.2" data-path="local_mod.html"><a href="local_mod.html#sfm-derived-height-to-dbh-allometry-3"><i class="fa fa-check"></i><b>4.5.2</b> SfM-derived Height to DBH Allometry</a></li>
+<li class="chapter" data-level="4.5.3" data-path="local_mod.html"><a href="local_mod.html#training-vs-non-training-dbh-4"><i class="fa fa-check"></i><b>4.5.3</b> Training vs Non-Training DBH</a></li>
+</ul></li>
+<li class="chapter" data-level="4.6" data-path="local_mod.html"><a href="local_mod.html#nonlinear-weibull-model"><i class="fa fa-check"></i><b>4.6</b> Nonlinear Weibull Model</a>
+<ul>
+<li class="chapter" data-level="4.6.1" data-path="local_mod.html"><a href="local_mod.html#model-parameter-estimates-4"><i class="fa fa-check"></i><b>4.6.1</b> Model Parameter Estimates</a></li>
+<li class="chapter" data-level="4.6.2" data-path="local_mod.html"><a href="local_mod.html#sfm-derived-height-to-dbh-allometry-4"><i class="fa fa-check"></i><b>4.6.2</b> SfM-derived Height to DBH Allometry</a></li>
+<li class="chapter" data-level="4.6.3" data-path="local_mod.html"><a href="local_mod.html#training-vs-non-training-dbh-5"><i class="fa fa-check"></i><b>4.6.3</b> Training vs Non-Training DBH</a></li>
+</ul></li>
+<li class="chapter" data-level="4.7" data-path="local_mod.html"><a href="local_mod.html#model-comparison"><i class="fa fa-check"></i><b>4.7</b> Model Comparison</a></li>
+<li class="chapter" data-level="4.8" data-path="local_mod.html"><a href="local_mod.html#update-dbh-to-best-model"><i class="fa fa-check"></i><b>4.8</b> Update DBH to best model</a></li>
+<li class="chapter" data-level="4.9" data-path="local_mod.html"><a href="local_mod.html#combine-harvest-units-with-tree-locations"><i class="fa fa-check"></i><b>4.9</b> Combine harvest units with tree locations</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="exploratory-analysis.html"><a href="exploratory-analysis.html"><i class="fa fa-check"></i><b>5</b> Exploratory Analysis</a>
+<ul>
+<li class="chapter" data-level="5.1" data-path="exploratory-analysis.html"><a href="exploratory-analysis.html#study-location-map"><i class="fa fa-check"></i><b>5.1</b> Study Location Map</a></li>
+<li class="chapter" data-level="5.2" data-path="exploratory-analysis.html"><a href="exploratory-analysis.html#digital-terrain-model-dtm-map"><i class="fa fa-check"></i><b>5.2</b> Digital Terrain Model (DTM) Map</a></li>
+<li class="chapter" data-level="5.3" data-path="exploratory-analysis.html"><a href="exploratory-analysis.html#canopy-height-model-chm-map"><i class="fa fa-check"></i><b>5.3</b> Canopy height model (CHM) Map</a></li>
+<li class="chapter" data-level="5.4" data-path="exploratory-analysis.html"><a href="exploratory-analysis.html#dbh-distribution"><i class="fa fa-check"></i><b>5.4</b> DBH Distribution</a></li>
+<li class="chapter" data-level="5.5" data-path="exploratory-analysis.html"><a href="exploratory-analysis.html#height-distribution"><i class="fa fa-check"></i><b>5.5</b> Height Distribution</a></li>
+<li class="chapter" data-level="5.6" data-path="exploratory-analysis.html"><a href="exploratory-analysis.html#relationship-between-height-and-dbh"><i class="fa fa-check"></i><b>5.6</b> Relationship between height and DBH</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="silvicultural-metrics.html"><a href="silvicultural-metrics.html"><i class="fa fa-check"></i><b>6</b> Silvicultural Metrics</a>
+<ul>
+<li class="chapter" data-level="6.1" data-path="silvicultural-metrics.html"><a href="silvicultural-metrics.html#distribution-of-silvicultural-metrics"><i class="fa fa-check"></i><b>6.1</b> Distribution of silvicultural metrics</a></li>
+<li class="chapter" data-level="6.2" data-path="silvicultural-metrics.html"><a href="silvicultural-metrics.html#stand-basal-area-map"><i class="fa fa-check"></i><b>6.2</b> Stand Basal Area Map</a></li>
+<li class="chapter" data-level="6.3" data-path="silvicultural-metrics.html"><a href="silvicultural-metrics.html#stand-qmd-map"><i class="fa fa-check"></i><b>6.3</b> Stand QMD Map</a></li>
+<li class="chapter" data-level="6.4" data-path="silvicultural-metrics.html"><a href="silvicultural-metrics.html#define-functions-for-stand-summary"><i class="fa fa-check"></i><b>6.4</b> Define Functions for Stand Summary</a></li>
+<li class="chapter" data-level="6.5" data-path="silvicultural-metrics.html"><a href="silvicultural-metrics.html#harvest-unit-summary-reports"><i class="fa fa-check"></i><b>6.5</b> Harvest Unit Summary Reports</a></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="field-validation-data.html"><a href="field-validation-data.html"><i class="fa fa-check"></i><b>7</b> Field Validation Data</a>
+<ul>
+<li class="chapter" data-level="7.1" data-path="field-validation-data.html"><a href="field-validation-data.html#load-field-data"><i class="fa fa-check"></i><b>7.1</b> Load Field Data</a></li>
+<li class="chapter" data-level="7.2" data-path="field-validation-data.html"><a href="field-validation-data.html#build-uas-field-validation-data"><i class="fa fa-check"></i><b>7.2</b> Build UAS-Field Validation Data</a>
+<ul>
+<li class="chapter" data-level="7.2.1" data-path="field-validation-data.html"><a href="field-validation-data.html#true-positive-identification"><i class="fa fa-check"></i><b>7.2.1</b> True Positive Identification</a></li>
+<li class="chapter" data-level="7.2.2" data-path="field-validation-data.html"><a href="field-validation-data.html#combine-with-commission-and-omission"><i class="fa fa-check"></i><b>7.2.2</b> Combine with Commission and Omission</a></li>
+</ul></li>
+<li class="chapter" data-level="7.3" data-path="field-validation-data.html"><a href="field-validation-data.html#summary-of-validation-data"><i class="fa fa-check"></i><b>7.3</b> Summary of Validation Data</a>
+<ul>
+<li class="chapter" data-level="7.3.1" data-path="field-validation-data.html"><a href="field-validation-data.html#true-positive-commission-ommission"><i class="fa fa-check"></i><b>7.3.1</b> True Positive, Commission, Ommission</a></li>
+<li class="chapter" data-level="7.3.2" data-path="field-validation-data.html"><a href="field-validation-data.html#f-score"><i class="fa fa-check"></i><b>7.3.2</b> F-score</a></li>
+<li class="chapter" data-level="7.3.3" data-path="field-validation-data.html"><a href="field-validation-data.html#detected-overstory-tp-height-difference"><i class="fa fa-check"></i><b>7.3.3</b> Detected Overstory (<span class="math inline">\(TP\)</span>) Height Difference</a></li>
+<li class="chapter" data-level="7.3.4" data-path="field-validation-data.html"><a href="field-validation-data.html#detected-overstory-tp-dbh-difference"><i class="fa fa-check"></i><b>7.3.4</b> Detected Overstory (<span class="math inline">\(TP\)</span>) DBH Difference</a></li>
+<li class="chapter" data-level="7.3.5" data-path="field-validation-data.html"><a href="field-validation-data.html#detected-overstory-tp-reliability"><i class="fa fa-check"></i><b>7.3.5</b> Detected Overstory (<span class="math inline">\(TP\)</span>) Reliability</a></li>
+<li class="chapter" data-level="7.3.6" data-path="field-validation-data.html"><a href="field-validation-data.html#detected-overstory-tp-distribution-comparison"><i class="fa fa-check"></i><b>7.3.6</b> Detected Overstory (<span class="math inline">\(TP\)</span>) Distribution Comparison</a></li>
+</ul></li>
+</ul></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Black Hills Experimental Forest UAS Mission Data Summary</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="data_prep" class="section level1 hasAnchor" number="3">
+<h1><span class="header-section-number">Section 3</span> Data Preparation<a href="data_prep.html#data_prep" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="data-load" class="section level2 hasAnchor" number="3.1">
+<h2><span class="header-section-number">3.1</span> Data Load<a href="data_prep.html#data-load" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Data loaded includes outputs from the UAS point cloud <a href="https://github.com/georgewoolsey/point_cloud_tree_detection_ex/blob/da5c8a13e9b2f2914b306201605e907643b3006d/src/point_cloud_processing.R">processing script</a>: <code>raw_las_ctg_info.gpkg</code>, <code>final_detected_crowns.gpkg</code>, <code>final_detected_tree_tops.gpkg</code>. Also, loaded are experimental forest boundaries and timber harvest boundaries from the USFS FACTS <a href="https://data.fs.usda.gov/geodata/edw/datasets.php?xmlKeyword">database</a>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="data_prep.html#cb1-1" tabindex="-1"></a><span class="co"># where is the processed data from point_cloud_processing_run_combine.R ?</span></span>
+<span id="cb1-2"><a href="data_prep.html#cb1-2" tabindex="-1"></a>input_dir <span class="ot">=</span> <span class="st">&quot;../data/point_cloud_processing_BHEF_202306_combined&quot;</span></span>
+<span id="cb1-3"><a href="data_prep.html#cb1-3" tabindex="-1"></a><span class="co"># set output directory</span></span>
+<span id="cb1-4"><a href="data_prep.html#cb1-4" tabindex="-1"></a>delivery_dir <span class="ot">=</span> <span class="st">&quot;../data/delivery&quot;</span></span>
+<span id="cb1-5"><a href="data_prep.html#cb1-5" tabindex="-1"></a><span class="fu">dir.create</span>(delivery_dir, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-6"><a href="data_prep.html#cb1-6" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="data_prep.html#cb1-7" tabindex="-1"></a><span class="do">### read data from point_cloud_processing</span></span>
+<span id="cb1-8"><a href="data_prep.html#cb1-8" tabindex="-1"></a><span class="co">#rasters</span></span>
+<span id="cb1-9"><a href="data_prep.html#cb1-9" tabindex="-1"></a>dtm_rast <span class="ot">=</span> terra<span class="sc">::</span><span class="fu">rast</span>(<span class="fu">paste0</span>(input_dir, <span class="st">&quot;/dtm_1m.tif&quot;</span>))</span>
+<span id="cb1-10"><a href="data_prep.html#cb1-10" tabindex="-1"></a>chm_rast <span class="ot">=</span> terra<span class="sc">::</span><span class="fu">rast</span>(<span class="fu">paste0</span>(input_dir, <span class="st">&quot;/chm_0.25m.tif&quot;</span>))</span>
+<span id="cb1-11"><a href="data_prep.html#cb1-11" tabindex="-1"></a><span class="co"># crowns = terra::rast(paste0(input_dir, &quot;/top_down_detected_tree_crowns.tif&quot;))</span></span>
+<span id="cb1-12"><a href="data_prep.html#cb1-12" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="data_prep.html#cb1-13" tabindex="-1"></a><span class="co"># las extent</span></span>
+<span id="cb1-14"><a href="data_prep.html#cb1-14" tabindex="-1"></a>las_ctg_dta <span class="ot">=</span> sf<span class="sc">::</span><span class="fu">st_read</span>(<span class="fu">paste0</span>(input_dir, <span class="st">&quot;/raw_las_ctg_info.gpkg&quot;</span>))</span>
+<span id="cb1-15"><a href="data_prep.html#cb1-15" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="data_prep.html#cb1-16" tabindex="-1"></a><span class="co"># vectors</span></span>
+<span id="cb1-17"><a href="data_prep.html#cb1-17" tabindex="-1"></a><span class="co"># crown polygons</span></span>
+<span id="cb1-18"><a href="data_prep.html#cb1-18" tabindex="-1"></a>  crowns_sf_with_dbh <span class="ot">=</span> sf<span class="sc">::</span><span class="fu">st_read</span>(<span class="fu">paste0</span>(input_dir, <span class="st">&quot;/final_detected_crowns.gpkg&quot;</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb1-19"><a href="data_prep.html#cb1-19" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(basal_area_ft2)) <span class="sc">%&gt;%</span> </span>
+<span id="cb1-20"><a href="data_prep.html#cb1-20" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">rename</span>(</span>
+<span id="cb1-21"><a href="data_prep.html#cb1-21" tabindex="-1"></a>      <span class="at">reg_est_lower_dbh_cm =</span> reg_est_dbh_cm_lower</span>
+<span id="cb1-22"><a href="data_prep.html#cb1-22" tabindex="-1"></a>      , <span class="at">reg_est_upper_dbh_cm =</span> reg_est_dbh_cm_upper</span>
+<span id="cb1-23"><a href="data_prep.html#cb1-23" tabindex="-1"></a>    )</span>
+<span id="cb1-24"><a href="data_prep.html#cb1-24" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="data_prep.html#cb1-25" tabindex="-1"></a><span class="co"># tree top points</span></span>
+<span id="cb1-26"><a href="data_prep.html#cb1-26" tabindex="-1"></a>treetops_sf_with_dbh <span class="ot">=</span> sf<span class="sc">::</span><span class="fu">st_read</span>(<span class="fu">paste0</span>(input_dir, <span class="st">&quot;/final_detected_tree_tops.gpkg&quot;</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb1-27"><a href="data_prep.html#cb1-27" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(basal_area_ft2)) <span class="sc">%&gt;%</span> </span>
+<span id="cb1-28"><a href="data_prep.html#cb1-28" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">rename</span>(</span>
+<span id="cb1-29"><a href="data_prep.html#cb1-29" tabindex="-1"></a>    <span class="at">reg_est_lower_dbh_cm =</span> reg_est_dbh_cm_lower</span>
+<span id="cb1-30"><a href="data_prep.html#cb1-30" tabindex="-1"></a>    , <span class="at">reg_est_upper_dbh_cm =</span> reg_est_dbh_cm_upper</span>
+<span id="cb1-31"><a href="data_prep.html#cb1-31" tabindex="-1"></a>  )</span>
+<span id="cb1-32"><a href="data_prep.html#cb1-32" tabindex="-1"></a></span>
+<span id="cb1-33"><a href="data_prep.html#cb1-33" tabindex="-1"></a><span class="co"># height range for use in estimation</span></span>
+<span id="cb1-34"><a href="data_prep.html#cb1-34" tabindex="-1"></a>height_range <span class="ot">=</span> dplyr<span class="sc">::</span><span class="fu">tibble</span>(</span>
+<span id="cb1-35"><a href="data_prep.html#cb1-35" tabindex="-1"></a>  <span class="at">tree_height_m =</span> <span class="fu">seq</span>(</span>
+<span id="cb1-36"><a href="data_prep.html#cb1-36" tabindex="-1"></a>    <span class="at">from =</span> <span class="dv">0</span></span>
+<span id="cb1-37"><a href="data_prep.html#cb1-37" tabindex="-1"></a>    , <span class="at">to =</span> <span class="fu">round</span>(<span class="fu">max</span>(treetops_sf_with_dbh<span class="sc">$</span>tree_height_m)<span class="sc">*</span><span class="fl">1.05</span>,<span class="dv">0</span>)</span>
+<span id="cb1-38"><a href="data_prep.html#cb1-38" tabindex="-1"></a>    , <span class="at">by =</span> <span class="fl">0.1</span> <span class="co"># by 0.1 m increments</span></span>
+<span id="cb1-39"><a href="data_prep.html#cb1-39" tabindex="-1"></a>  )</span>
+<span id="cb1-40"><a href="data_prep.html#cb1-40" tabindex="-1"></a>)</span>
+<span id="cb1-41"><a href="data_prep.html#cb1-41" tabindex="-1"></a></span>
+<span id="cb1-42"><a href="data_prep.html#cb1-42" tabindex="-1"></a><span class="co"># set crs</span></span>
+<span id="cb1-43"><a href="data_prep.html#cb1-43" tabindex="-1"></a>proj_crs <span class="ot">=</span> sf<span class="sc">::</span><span class="fu">st_crs</span>(las_ctg_dta)</span>
+<span id="cb1-44"><a href="data_prep.html#cb1-44" tabindex="-1"></a></span>
+<span id="cb1-45"><a href="data_prep.html#cb1-45" tabindex="-1"></a><span class="co"># read data from FACTS</span></span>
+<span id="cb1-46"><a href="data_prep.html#cb1-46" tabindex="-1"></a><span class="co"># harvests</span></span>
+<span id="cb1-47"><a href="data_prep.html#cb1-47" tabindex="-1"></a>  harvests <span class="ot">=</span> sf<span class="sc">::</span><span class="fu">st_read</span>(<span class="st">&quot;../data/bhef_harvests.gpkg&quot;</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb1-48"><a href="data_prep.html#cb1-48" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">filter</span>(</span>
+<span id="cb1-49"><a href="data_prep.html#cb1-49" tabindex="-1"></a>      year_id <span class="sc">==</span> <span class="dv">2021</span></span>
+<span id="cb1-50"><a href="data_prep.html#cb1-50" tabindex="-1"></a>      <span class="co"># year_id &gt;= year(Sys.time()) - 15 </span></span>
+<span id="cb1-51"><a href="data_prep.html#cb1-51" tabindex="-1"></a>      <span class="sc">&amp;</span> <span class="sc">!</span>(treatment_type_grp <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;Improvement/Liberation Cut&quot;</span>, <span class="st">&quot;Other&quot;</span>, <span class="st">&quot;Sanitation Cut&quot;</span>))</span>
+<span id="cb1-52"><a href="data_prep.html#cb1-52" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
+<span id="cb1-53"><a href="data_prep.html#cb1-53" tabindex="-1"></a>    sf<span class="sc">::</span><span class="fu">st_transform</span>(proj_crs)</span>
+<span id="cb1-54"><a href="data_prep.html#cb1-54" tabindex="-1"></a><span class="co"># bhef bounds</span></span>
+<span id="cb1-55"><a href="data_prep.html#cb1-55" tabindex="-1"></a>  bhef_boundary <span class="ot">=</span> sf<span class="sc">::</span><span class="fu">st_read</span>(<span class="st">&quot;../data/bhef_boundary.gpkg&quot;</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb1-56"><a href="data_prep.html#cb1-56" tabindex="-1"></a>    sf<span class="sc">::</span><span class="fu">st_transform</span>(proj_crs)</span></code></pre></div>
+<p>Define a function to convert columns in data frame from metric to imperial</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="data_prep.html#cb2-1" tabindex="-1"></a>calc_imperial_units_fn <span class="ot">&lt;-</span> <span class="cf">function</span>(df) {</span>
+<span id="cb2-2"><a href="data_prep.html#cb2-2" tabindex="-1"></a>  df <span class="sc">%&gt;%</span> </span>
+<span id="cb2-3"><a href="data_prep.html#cb2-3" tabindex="-1"></a>  <span class="co"># convert to imperial units</span></span>
+<span id="cb2-4"><a href="data_prep.html#cb2-4" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb2-5"><a href="data_prep.html#cb2-5" tabindex="-1"></a>      dplyr<span class="sc">::</span><span class="fu">across</span>(</span>
+<span id="cb2-6"><a href="data_prep.html#cb2-6" tabindex="-1"></a>        <span class="at">.cols =</span> tidyselect<span class="sc">::</span><span class="fu">ends_with</span>(<span class="st">&quot;_cm&quot;</span>)</span>
+<span id="cb2-7"><a href="data_prep.html#cb2-7" tabindex="-1"></a>        , <span class="sc">~</span> .x <span class="sc">*</span> <span class="fl">0.394</span></span>
+<span id="cb2-8"><a href="data_prep.html#cb2-8" tabindex="-1"></a>        , <span class="at">.names =</span> <span class="st">&quot;{.col}_in&quot;</span></span>
+<span id="cb2-9"><a href="data_prep.html#cb2-9" tabindex="-1"></a>      )</span>
+<span id="cb2-10"><a href="data_prep.html#cb2-10" tabindex="-1"></a>      , dplyr<span class="sc">::</span><span class="fu">across</span>(</span>
+<span id="cb2-11"><a href="data_prep.html#cb2-11" tabindex="-1"></a>        <span class="at">.cols =</span> tidyselect<span class="sc">::</span><span class="fu">ends_with</span>(<span class="st">&quot;_m&quot;</span>)</span>
+<span id="cb2-12"><a href="data_prep.html#cb2-12" tabindex="-1"></a>        , <span class="sc">~</span> .x <span class="sc">*</span> <span class="fl">3.28</span></span>
+<span id="cb2-13"><a href="data_prep.html#cb2-13" tabindex="-1"></a>        , <span class="at">.names =</span> <span class="st">&quot;{.col}_ft&quot;</span></span>
+<span id="cb2-14"><a href="data_prep.html#cb2-14" tabindex="-1"></a>      )</span>
+<span id="cb2-15"><a href="data_prep.html#cb2-15" tabindex="-1"></a>      , dplyr<span class="sc">::</span><span class="fu">across</span>(</span>
+<span id="cb2-16"><a href="data_prep.html#cb2-16" tabindex="-1"></a>        <span class="at">.cols =</span> tidyselect<span class="sc">::</span><span class="fu">ends_with</span>(<span class="st">&quot;_m2_per_ha&quot;</span>)</span>
+<span id="cb2-17"><a href="data_prep.html#cb2-17" tabindex="-1"></a>        , <span class="sc">~</span> .x <span class="sc">*</span> <span class="fl">4.359</span></span>
+<span id="cb2-18"><a href="data_prep.html#cb2-18" tabindex="-1"></a>        , <span class="at">.names =</span> <span class="st">&quot;{.col}_ftac&quot;</span></span>
+<span id="cb2-19"><a href="data_prep.html#cb2-19" tabindex="-1"></a>      )</span>
+<span id="cb2-20"><a href="data_prep.html#cb2-20" tabindex="-1"></a>      , dplyr<span class="sc">::</span><span class="fu">across</span>(</span>
+<span id="cb2-21"><a href="data_prep.html#cb2-21" tabindex="-1"></a>        <span class="at">.cols =</span> tidyselect<span class="sc">::</span><span class="fu">ends_with</span>(<span class="st">&quot;_per_ha&quot;</span>) <span class="sc">&amp;</span> <span class="sc">!</span>tidyselect<span class="sc">::</span><span class="fu">ends_with</span>(<span class="st">&quot;_m2_per_ha&quot;</span>)</span>
+<span id="cb2-22"><a href="data_prep.html#cb2-22" tabindex="-1"></a>        , <span class="sc">~</span> .x <span class="sc">*</span> <span class="fl">0.405</span></span>
+<span id="cb2-23"><a href="data_prep.html#cb2-23" tabindex="-1"></a>        , <span class="at">.names =</span> <span class="st">&quot;{.col}_ac&quot;</span></span>
+<span id="cb2-24"><a href="data_prep.html#cb2-24" tabindex="-1"></a>      )</span>
+<span id="cb2-25"><a href="data_prep.html#cb2-25" tabindex="-1"></a>      , dplyr<span class="sc">::</span><span class="fu">across</span>(</span>
+<span id="cb2-26"><a href="data_prep.html#cb2-26" tabindex="-1"></a>        <span class="at">.cols =</span> tidyselect<span class="sc">::</span><span class="fu">ends_with</span>(<span class="st">&quot;_area_ha&quot;</span>)</span>
+<span id="cb2-27"><a href="data_prep.html#cb2-27" tabindex="-1"></a>        , <span class="sc">~</span> .x <span class="sc">*</span> <span class="fl">2.471</span></span>
+<span id="cb2-28"><a href="data_prep.html#cb2-28" tabindex="-1"></a>        , <span class="at">.names =</span> <span class="st">&quot;{.col}_ac&quot;</span></span>
+<span id="cb2-29"><a href="data_prep.html#cb2-29" tabindex="-1"></a>      )</span>
+<span id="cb2-30"><a href="data_prep.html#cb2-30" tabindex="-1"></a>      , dplyr<span class="sc">::</span><span class="fu">across</span>(</span>
+<span id="cb2-31"><a href="data_prep.html#cb2-31" tabindex="-1"></a>        <span class="at">.cols =</span> tidyselect<span class="sc">::</span><span class="fu">ends_with</span>(<span class="st">&quot;_m2&quot;</span>)</span>
+<span id="cb2-32"><a href="data_prep.html#cb2-32" tabindex="-1"></a>        , <span class="sc">~</span> .x <span class="sc">*</span> <span class="fl">10.764</span></span>
+<span id="cb2-33"><a href="data_prep.html#cb2-33" tabindex="-1"></a>        , <span class="at">.names =</span> <span class="st">&quot;{.col}_ft2&quot;</span></span>
+<span id="cb2-34"><a href="data_prep.html#cb2-34" tabindex="-1"></a>      )</span>
+<span id="cb2-35"><a href="data_prep.html#cb2-35" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span></span>
+<span id="cb2-36"><a href="data_prep.html#cb2-36" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">rename_with</span>(</span>
+<span id="cb2-37"><a href="data_prep.html#cb2-37" tabindex="-1"></a>      <span class="at">.fn =</span> <span class="cf">function</span>(x){dplyr<span class="sc">::</span><span class="fu">case_when</span>(</span>
+<span id="cb2-38"><a href="data_prep.html#cb2-38" tabindex="-1"></a>        stringr<span class="sc">::</span><span class="fu">str_ends</span>(x,<span class="st">&quot;_cm_in&quot;</span>) <span class="sc">~</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(x,<span class="st">&quot;_cm_in&quot;</span>,<span class="st">&quot;_in&quot;</span>)</span>
+<span id="cb2-39"><a href="data_prep.html#cb2-39" tabindex="-1"></a>        , stringr<span class="sc">::</span><span class="fu">str_ends</span>(x,<span class="st">&quot;_m_ft&quot;</span>) <span class="sc">~</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(x,<span class="st">&quot;_m_ft&quot;</span>,<span class="st">&quot;_ft&quot;</span>)</span>
+<span id="cb2-40"><a href="data_prep.html#cb2-40" tabindex="-1"></a>        , stringr<span class="sc">::</span><span class="fu">str_ends</span>(x,<span class="st">&quot;_m2_per_ha_ftac&quot;</span>) <span class="sc">~</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(x,<span class="st">&quot;_m2_per_ha_ftac&quot;</span>,<span class="st">&quot;_ft2_per_ac&quot;</span>)</span>
+<span id="cb2-41"><a href="data_prep.html#cb2-41" tabindex="-1"></a>        , stringr<span class="sc">::</span><span class="fu">str_ends</span>(x,<span class="st">&quot;_per_ha_ac&quot;</span>) <span class="sc">~</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(x,<span class="st">&quot;_per_ha_ac&quot;</span>,<span class="st">&quot;_per_ac&quot;</span>)</span>
+<span id="cb2-42"><a href="data_prep.html#cb2-42" tabindex="-1"></a>        , stringr<span class="sc">::</span><span class="fu">str_ends</span>(x,<span class="st">&quot;_area_ha_ac&quot;</span>) <span class="sc">~</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(x,<span class="st">&quot;_area_ha_ac&quot;</span>,<span class="st">&quot;_area_ac&quot;</span>)</span>
+<span id="cb2-43"><a href="data_prep.html#cb2-43" tabindex="-1"></a>        , stringr<span class="sc">::</span><span class="fu">str_ends</span>(x,<span class="st">&quot;_m2_ft2&quot;</span>) <span class="sc">~</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(x,<span class="st">&quot;_m2_ft2&quot;</span>,<span class="st">&quot;_ft2&quot;</span>)</span>
+<span id="cb2-44"><a href="data_prep.html#cb2-44" tabindex="-1"></a>        , <span class="cn">TRUE</span> <span class="sc">~</span> x</span>
+<span id="cb2-45"><a href="data_prep.html#cb2-45" tabindex="-1"></a>      )}</span>
+<span id="cb2-46"><a href="data_prep.html#cb2-46" tabindex="-1"></a>    )</span>
+<span id="cb2-47"><a href="data_prep.html#cb2-47" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+<div id="load-orthomosaic-rasters" class="section level2 hasAnchor" number="3.2">
+<h2><span class="header-section-number">3.2</span> Load orthomosaic rasters<a href="data_prep.html#load-orthomosaic-rasters" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Orthomosaic <code>tif</code> files from the UAS flight imagery that were created in <a href="https://www.agisoft.com/">Agisoft Metashape</a> are loaded and stitched together via <code>terra::mosaic</code>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="data_prep.html#cb3-1" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="fu">paste0</span>(delivery_dir,<span class="st">&quot;/BHEF_202306_Full_RBG.tif&quot;</span>))){</span>
+<span id="cb3-2"><a href="data_prep.html#cb3-2" tabindex="-1"></a>  <span class="co"># read list of orthos</span></span>
+<span id="cb3-3"><a href="data_prep.html#cb3-3" tabindex="-1"></a>  ortho_list_temp <span class="ot">=</span> <span class="fu">list.files</span>(<span class="st">&quot;../data/ortho/&quot;</span>, <span class="at">pattern =</span> <span class="st">&quot;.*</span><span class="sc">\\</span><span class="st">.(tif|tiff)$&quot;</span>, <span class="at">full.names =</span> T)[] <span class="sc">%&gt;%</span> </span>
+<span id="cb3-4"><a href="data_prep.html#cb3-4" tabindex="-1"></a>      purrr<span class="sc">::</span><span class="fu">map</span>(<span class="cf">function</span>(x){terra<span class="sc">::</span><span class="fu">rast</span>(x)})</span>
+<span id="cb3-5"><a href="data_prep.html#cb3-5" tabindex="-1"></a>  </span>
+<span id="cb3-6"><a href="data_prep.html#cb3-6" tabindex="-1"></a>  <span class="co"># ortho_list_temp[[1]] %&gt;%</span></span>
+<span id="cb3-7"><a href="data_prep.html#cb3-7" tabindex="-1"></a>  <span class="co">#   terra::aggregate(20) %&gt;%</span></span>
+<span id="cb3-8"><a href="data_prep.html#cb3-8" tabindex="-1"></a>  <span class="co">#   terra::plotRGB(r = 1, g = 2, b = 3, stretch = &quot;hist&quot;, colNA = &quot;transparent&quot;)</span></span>
+<span id="cb3-9"><a href="data_prep.html#cb3-9" tabindex="-1"></a>  </span>
+<span id="cb3-10"><a href="data_prep.html#cb3-10" tabindex="-1"></a>  <span class="do">####### ensure the resolution of the rasters matches </span></span>
+<span id="cb3-11"><a href="data_prep.html#cb3-11" tabindex="-1"></a>    <span class="co"># terra::res(ortho_list_temp[[1]])</span></span>
+<span id="cb3-12"><a href="data_prep.html#cb3-12" tabindex="-1"></a>    </span>
+<span id="cb3-13"><a href="data_prep.html#cb3-13" tabindex="-1"></a>    <span class="do">## function</span></span>
+<span id="cb3-14"><a href="data_prep.html#cb3-14" tabindex="-1"></a>    change_res_fn <span class="ot">=</span> <span class="cf">function</span>(r, <span class="at">my_res=</span><span class="dv">1</span>){</span>
+<span id="cb3-15"><a href="data_prep.html#cb3-15" tabindex="-1"></a>      r2 <span class="ot">=</span> r</span>
+<span id="cb3-16"><a href="data_prep.html#cb3-16" tabindex="-1"></a>      terra<span class="sc">::</span><span class="fu">res</span>(r2) <span class="ot">=</span> my_res</span>
+<span id="cb3-17"><a href="data_prep.html#cb3-17" tabindex="-1"></a>      r2 <span class="ot">=</span> terra<span class="sc">::</span><span class="fu">resample</span>(r, r2)</span>
+<span id="cb3-18"><a href="data_prep.html#cb3-18" tabindex="-1"></a>      <span class="fu">return</span>(r2)</span>
+<span id="cb3-19"><a href="data_prep.html#cb3-19" tabindex="-1"></a>    }</span>
+<span id="cb3-20"><a href="data_prep.html#cb3-20" tabindex="-1"></a>    <span class="do">## apply the function</span></span>
+<span id="cb3-21"><a href="data_prep.html#cb3-21" tabindex="-1"></a>    ortho_list_temp <span class="ot">=</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(ortho_list_temp) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-22"><a href="data_prep.html#cb3-22" tabindex="-1"></a>      purrr<span class="sc">::</span><span class="fu">map</span>(<span class="cf">function</span>(x){<span class="fu">change_res_fn</span>(ortho_list_temp[[x]], <span class="at">my_res=</span><span class="fl">0.5</span>)})</span>
+<span id="cb3-23"><a href="data_prep.html#cb3-23" tabindex="-1"></a>    </span>
+<span id="cb3-24"><a href="data_prep.html#cb3-24" tabindex="-1"></a>    <span class="co"># terra::res(ortho_list_temp[[1]])</span></span>
+<span id="cb3-25"><a href="data_prep.html#cb3-25" tabindex="-1"></a>    </span>
+<span id="cb3-26"><a href="data_prep.html#cb3-26" tabindex="-1"></a>    <span class="co"># ortho_list_temp[[1]] %&gt;%</span></span>
+<span id="cb3-27"><a href="data_prep.html#cb3-27" tabindex="-1"></a>    <span class="co">#   terra::aggregate(2) %&gt;%</span></span>
+<span id="cb3-28"><a href="data_prep.html#cb3-28" tabindex="-1"></a>    <span class="co">#   terra::plotRGB(r = 1, g = 2, b = 3, stretch = &quot;hist&quot;, colNA = &quot;transparent&quot;)</span></span>
+<span id="cb3-29"><a href="data_prep.html#cb3-29" tabindex="-1"></a>  </span>
+<span id="cb3-30"><a href="data_prep.html#cb3-30" tabindex="-1"></a>  <span class="do">######## mosaic the raster list </span></span>
+<span id="cb3-31"><a href="data_prep.html#cb3-31" tabindex="-1"></a>    ortho_rast <span class="ot">=</span> terra<span class="sc">::</span><span class="fu">mosaic</span>(</span>
+<span id="cb3-32"><a href="data_prep.html#cb3-32" tabindex="-1"></a>      terra<span class="sc">::</span><span class="fu">sprc</span>(ortho_list_temp)</span>
+<span id="cb3-33"><a href="data_prep.html#cb3-33" tabindex="-1"></a>      , <span class="at">fun =</span> <span class="st">&quot;min&quot;</span> <span class="co"># min only thing that works</span></span>
+<span id="cb3-34"><a href="data_prep.html#cb3-34" tabindex="-1"></a>    ) </span>
+<span id="cb3-35"><a href="data_prep.html#cb3-35" tabindex="-1"></a>    </span>
+<span id="cb3-36"><a href="data_prep.html#cb3-36" tabindex="-1"></a>    <span class="do">## write the mosaic</span></span>
+<span id="cb3-37"><a href="data_prep.html#cb3-37" tabindex="-1"></a>    terra<span class="sc">::</span><span class="fu">writeRaster</span>(ortho_rast, <span class="at">filename =</span> <span class="fu">paste0</span>(delivery_dir,<span class="st">&quot;/BHEF_202306_Full_RBG.tif&quot;</span>), <span class="at">overwrite =</span> T)</span>
+<span id="cb3-38"><a href="data_prep.html#cb3-38" tabindex="-1"></a>  </span>
+<span id="cb3-39"><a href="data_prep.html#cb3-39" tabindex="-1"></a>}<span class="cf">else</span>{</span>
+<span id="cb3-40"><a href="data_prep.html#cb3-40" tabindex="-1"></a>  ortho_rast <span class="ot">=</span> terra<span class="sc">::</span><span class="fu">rast</span>(<span class="fu">paste0</span>(delivery_dir,<span class="st">&quot;/BHEF_202306_Full_RBG.tif&quot;</span>))</span>
+<span id="cb3-41"><a href="data_prep.html#cb3-41" tabindex="-1"></a>}</span>
+<span id="cb3-42"><a href="data_prep.html#cb3-42" tabindex="-1"></a>  <span class="co"># ortho_rast %&gt;%</span></span>
+<span id="cb3-43"><a href="data_prep.html#cb3-43" tabindex="-1"></a>  <span class="co">#   terra::aggregate(4) %&gt;%</span></span>
+<span id="cb3-44"><a href="data_prep.html#cb3-44" tabindex="-1"></a>  <span class="co">#   terra::plotRGB(r = 1, g = 2, b = 3, stretch = &quot;lin&quot;, colNA = &quot;transparent&quot;)</span></span></code></pre></div>
+
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="objective.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="local_mod.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": true,
+"twitter": true,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"whatsapp": false,
+"all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": null,
+"search": {
+"engine": "fuse",
+"options": null
+},
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

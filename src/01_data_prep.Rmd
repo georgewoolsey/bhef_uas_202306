@@ -1,0 +1,216 @@
+# Data Preparation{#data_prep}
+
+```{r pkg-ld, include=F, warning=F, message=F}
+# knit options
+knitr::opts_chunk$set(
+  echo = TRUE
+  , warning = FALSE
+  , message = FALSE
+  # , results = 'hide'
+  , fig.width = 10
+  , fig.height = 7
+)
+# library
+library(tidyverse) # the tidyverse
+library(viridis) # viridis colors
+library(scales) # work with number and plot scales
+library(latex2exp) # math formulas text
+# spatial analysis
+library(terra) # raster
+library(sf) # simple features
+library(stars) # stars raster
+# visualization
+library(kableExtra)
+library(patchwork) # ! better align plots in grid
+library(mapview) # interactive html maps
+library(leafpop) # interactive html maps
+library(ggnewscale) # add another scale to ggplot
+library(ggtext) # customize plot text colors
+library(ggpubr) # alternative plot fn's (table)
+library(pdftools) # combine pdf files
+# modelling
+library(brms) # bayesian modelling using STAN engine
+library(Metrics) # mape, mae, rmse, etc
+
+# option to put satellite imagery as base layer of mapview maps
+  mapview::mapviewOptions(
+    homebutton = FALSE
+    , basemaps = c("Esri.WorldImagery","OpenStreetMap")
+  )
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(list = ls())
+gc()
+```
+
+## Data Load
+
+Data loaded includes outputs from the UAS point cloud [processing script](https://github.com/georgewoolsey/point_cloud_tree_detection_ex/blob/da5c8a13e9b2f2914b306201605e907643b3006d/src/point_cloud_processing.R): `raw_las_ctg_info.gpkg`, `final_detected_crowns.gpkg`, `final_detected_tree_tops.gpkg`. Also, loaded are experimental forest boundaries and timber harvest boundaries from the USFS FACTS [database](https://data.fs.usda.gov/geodata/edw/datasets.php?xmlKeyword).
+
+```{r dta-load, results = 'hide'}
+# where is the processed data from point_cloud_processing_run_combine.R ?
+input_dir = "../data/point_cloud_processing_BHEF_202306_combined"
+# set output directory
+delivery_dir = "../data/delivery"
+dir.create(delivery_dir, showWarnings = FALSE)
+
+### read data from point_cloud_processing
+#rasters
+dtm_rast = terra::rast(paste0(input_dir, "/dtm_1m.tif"))
+chm_rast = terra::rast(paste0(input_dir, "/chm_0.25m.tif"))
+# crowns = terra::rast(paste0(input_dir, "/top_down_detected_tree_crowns.tif"))
+
+# las extent
+las_ctg_dta = sf::st_read(paste0(input_dir, "/raw_las_ctg_info.gpkg"))
+
+# vectors
+# crown polygons
+  crowns_sf_with_dbh = sf::st_read(paste0(input_dir, "/final_detected_crowns.gpkg")) %>% 
+    dplyr::select(-c(basal_area_ft2)) %>% 
+    dplyr::rename(
+      reg_est_lower_dbh_cm = reg_est_dbh_cm_lower
+      , reg_est_upper_dbh_cm = reg_est_dbh_cm_upper
+    )
+
+# tree top points
+treetops_sf_with_dbh = sf::st_read(paste0(input_dir, "/final_detected_tree_tops.gpkg")) %>% 
+  dplyr::select(-c(basal_area_ft2)) %>% 
+  dplyr::rename(
+    reg_est_lower_dbh_cm = reg_est_dbh_cm_lower
+    , reg_est_upper_dbh_cm = reg_est_dbh_cm_upper
+  )
+
+# height range for use in estimation
+height_range = dplyr::tibble(
+  tree_height_m = seq(
+    from = 0
+    , to = round(max(treetops_sf_with_dbh$tree_height_m)*1.05,0)
+    , by = 0.1 # by 0.1 m increments
+  )
+)
+
+# set crs
+proj_crs = sf::st_crs(las_ctg_dta)
+
+# read data from FACTS
+# harvests
+  harvests = sf::st_read("../data/bhef_harvests.gpkg") %>% 
+    dplyr::filter(
+      year_id == 2021
+      # year_id >= year(Sys.time()) - 15 
+      & !(treatment_type_grp %in% c("Improvement/Liberation Cut", "Other", "Sanitation Cut"))
+    ) %>% 
+    sf::st_transform(proj_crs)
+# bhef bounds
+  bhef_boundary = sf::st_read("../data/bhef_boundary.gpkg") %>% 
+    sf::st_transform(proj_crs)
+```
+
+Define a function to convert columns in data frame from metric to imperial
+
+```{r imp-conv-fn}
+calc_imperial_units_fn <- function(df) {
+  df %>% 
+  # convert to imperial units
+    dplyr::mutate(
+      dplyr::across(
+        .cols = tidyselect::ends_with("_cm")
+        , ~ .x * 0.394
+        , .names = "{.col}_in"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_m")
+        , ~ .x * 3.28
+        , .names = "{.col}_ft"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_m2_per_ha")
+        , ~ .x * 4.359
+        , .names = "{.col}_ftac"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_per_ha") & !tidyselect::ends_with("_m2_per_ha")
+        , ~ .x * 0.405
+        , .names = "{.col}_ac"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_area_ha")
+        , ~ .x * 2.471
+        , .names = "{.col}_ac"
+      )
+      , dplyr::across(
+        .cols = tidyselect::ends_with("_m2")
+        , ~ .x * 10.764
+        , .names = "{.col}_ft2"
+      )
+    ) %>%
+    dplyr::rename_with(
+      .fn = function(x){dplyr::case_when(
+        stringr::str_ends(x,"_cm_in") ~ stringr::str_replace(x,"_cm_in","_in")
+        , stringr::str_ends(x,"_m_ft") ~ stringr::str_replace(x,"_m_ft","_ft")
+        , stringr::str_ends(x,"_m2_per_ha_ftac") ~ stringr::str_replace(x,"_m2_per_ha_ftac","_ft2_per_ac")
+        , stringr::str_ends(x,"_per_ha_ac") ~ stringr::str_replace(x,"_per_ha_ac","_per_ac")
+        , stringr::str_ends(x,"_area_ha_ac") ~ stringr::str_replace(x,"_area_ha_ac","_area_ac")
+        , stringr::str_ends(x,"_m2_ft2") ~ stringr::str_replace(x,"_m2_ft2","_ft2")
+        , TRUE ~ x
+      )}
+    )
+}
+```
+
+## Load orthomosaic rasters
+
+Orthomosaic `tif` files from the UAS flight imagery that were created in [Agisoft Metashape](https://www.agisoft.com/) are loaded and stitched together via `terra::mosaic`.
+
+```{r ortho-ld, results = 'hide'}
+if(!file.exists(paste0(delivery_dir,"/BHEF_202306_Full_RBG.tif"))){
+  # read list of orthos
+  ortho_list_temp = list.files("../data/ortho/", pattern = ".*\\.(tif|tiff)$", full.names = T)[] %>% 
+      purrr::map(function(x){terra::rast(x)})
+  
+  # ortho_list_temp[[1]] %>%
+  #   terra::aggregate(20) %>%
+  #   terra::plotRGB(r = 1, g = 2, b = 3, stretch = "hist", colNA = "transparent")
+  
+  ####### ensure the resolution of the rasters matches 
+    # terra::res(ortho_list_temp[[1]])
+    
+    ## function
+    change_res_fn = function(r, my_res=1){
+      r2 = r
+      terra::res(r2) = my_res
+      r2 = terra::resample(r, r2)
+      return(r2)
+    }
+    ## apply the function
+    ortho_list_temp = 1:length(ortho_list_temp) %>% 
+      purrr::map(function(x){change_res_fn(ortho_list_temp[[x]], my_res=0.5)})
+    
+    # terra::res(ortho_list_temp[[1]])
+    
+    # ortho_list_temp[[1]] %>%
+    #   terra::aggregate(2) %>%
+    #   terra::plotRGB(r = 1, g = 2, b = 3, stretch = "hist", colNA = "transparent")
+  
+  ######## mosaic the raster list 
+    ortho_rast = terra::mosaic(
+      terra::sprc(ortho_list_temp)
+      , fun = "min" # min only thing that works
+    ) 
+    
+    ## write the mosaic
+    terra::writeRaster(ortho_rast, filename = paste0(delivery_dir,"/BHEF_202306_Full_RBG.tif"), overwrite = T)
+  
+}else{
+  ortho_rast = terra::rast(paste0(delivery_dir,"/BHEF_202306_Full_RBG.tif"))
+}
+  # ortho_rast %>%
+  #   terra::aggregate(4) %>%
+  #   terra::plotRGB(r = 1, g = 2, b = 3, stretch = "lin", colNA = "transparent")
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(list = ls()[grep("_temp",ls())])
+gc()
+```
