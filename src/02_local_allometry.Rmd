@@ -1268,6 +1268,11 @@ harvests = harvests %>%
 
 ```
 
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(list = ls()[grep("_temp",ls())])
+gc()
+```
+
 ```{r, include = F, eval = F}
 ggplot(data = dplyr::tibble(
         tree_height_m = seq(

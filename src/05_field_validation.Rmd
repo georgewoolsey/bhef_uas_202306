@@ -1,4 +1,4 @@
-# Field Validation Data
+# Overstory Field Validation Data
 
 [Tinkham and Swayze (2021; p.6)](https://scholar.google.com/scholar?oi=bibs&hl=en&cluster=11260597505702247290) describe a methodology for matching UAS *detected* trees with stem mapped trees identified via traditional field *survey* methods. Note, *detected* trees in the excerpt below references UAS detected trees while *survey* trees references field-based stem mapped trees:
 
@@ -12,7 +12,7 @@ $$
 
 The process to match UAS detected trees to field stem mapped trees implemented here is slightly different than the process described above. To match the data parametrization from the UAS point cloud processing workflow, only stem-mapped trees above `r min(chm_rast %>% terra::values(), na.rm = T) %>% round(1)` m were considered for analysis. Each UAS detected tree was matched with stem-mapped tree locations that were within a 3 m radius and 10% height of the UAS detected tree. The matched UAS and stem-mapped tree pairs were jointly compared (rather than iteratively) to select the pair that minimized the height difference for both the stem-mapped tree and the UAS detected tree to ensure that only one UAS detected tree was selected for each stem-mapped tree. If more than one UAS detected tree had the same height difference to a stem-mapped tree, the UAS detected tree spatially nearest to the stem-mapped tree was selected as the match. These UAS detected trees with a paired stem-mapped tree after this filtering process were considered true positive ($TP$) detections.
 
-To determine UAS detected tree commissions (i.e. UAS detected trees within the overstory plot for which there was no stem-mapped tree pair; $Co$) this analysis used the 2023-06 BHEF overstory field survey plot center and plot radius ~~expanded for the mean distance error across all UAS and stem-mapped tree pairs (i.e. $TP$ detections)~~. UAS detected trees within this ~~adjusted~~ radius that did not have a matched stem-mapped tree pair were considered commissions ($Co$). The 2023-06 BHEF field surveys used $\frac{1}{10}$ acre (404.686 m^2^) plots with a 37.24 ft (11.35 m) radius for overstory sampling and $\frac{1}{400}$ acre (10.117 m^2^) plots with a 5.89 ft (1.795 m) radius for regeneration sampling. All unmatched stem-mapped survey trees were classified as omissions ($Om$).
+To determine UAS detected tree commissions (i.e. UAS detected trees within the overstory plot for which there was no stem-mapped tree pair; $Co$) this analysis used the 2023-06 BHEF overstory field survey plot center and plot radius with a minimum DBH of 5 in (12.69 cm) as only trees above this size were sampled as part of the overstory survey. UAS detected trees within this radius with an [estimated DBH](#local_mod) over 5 in (12.69 cm) that did not have a matched stem-mapped tree pair were considered commissions ($Co$). The 2023-06 BHEF field surveys used $\frac{1}{10}$ acre (404.686 m^2^) plots with a 37.24 ft (11.35 m) radius for overstory sampling and $\frac{1}{400}$ acre (10.117 m^2^) plots with a 5.89 ft (1.795 m) radius for regeneration sampling. All unmatched stem-mapped survey trees were classified as omissions ($Om$).
 
 ## Load Field Data
 
@@ -22,8 +22,12 @@ Load the overstory data, set parameters for processing, and map
 ##################################################################################################
 ## USER DEFINED PARAMETERS
 ##################################################################################################
-### True tree file to only include trees above a specific height
+### Only include trees above a specific height 
+  # e.g., set to match the minimum height used in point cloud processing
 min_tree_height_m = min(chm_rast %>% terra::values(), na.rm = T)
+### Only include trees above a specific DBH
+  # e.g., set to match the minimum tree DBH for field sampling of overstory trees
+min_tree_dbh_cm = 12.689 # 3 in = 7.62 cm
 ### Find all nearest neighbors within maximum distance and then filter them based on 
 ### distance and height error 
 max_dist_m = 3
@@ -57,7 +61,10 @@ field_overstory = readr::read_csv(
       , stringr::str_pad(tree_id, width = 4, side = "left", pad = "0")
     )
   ) %>% 
-  dplyr::filter(field_tree_height_m >= min_tree_height_m) %>% 
+  dplyr::filter(
+    field_tree_height_m >= min_tree_height_m
+    & field_dbh_cm >= min_tree_dbh_cm
+  ) %>% 
   dplyr::rename(
     field_dbh_in = tree_diameter_inches
     , field_tree_height_ft = tree_height_feet
@@ -119,7 +126,10 @@ The UAS detected and stem-mapped tree pairs identified in this filtering process
     # spatial join with all FIELD tree points
     sf::st_join(
       field_overstory %>% 
-        dplyr::filter(field_tree_height_m >= min_tree_height_m) %>%
+        dplyr::filter(
+          field_tree_height_m >= min_tree_height_m
+          & field_dbh_cm >= min_tree_dbh_cm
+        ) %>% 
         dplyr::select(
           field_plottree_id, field_tree_height_m
           , tree_utm_x, tree_utm_y
@@ -237,8 +247,12 @@ The UAS detected and stem-mapped tree pairs identified in this filtering process
   }
   remove(potential_tree_pairs_temp)
   gc()
-  
-  #check data
+```
+
+True positive detections
+
+```{r fld-dta-tp-data}
+#check data
   true_positive_trees %>%
     dplyr::summarise(
       n_rows = n()
@@ -252,7 +266,7 @@ The UAS detected and stem-mapped tree pairs identified in this filtering process
 
 ### Combine with Commission and Omission
 
-To determine UAS detected tree commissions (i.e. UAS detected trees within the overstory plot for which there was no stem-mapped tree pair; $Co$) this analysis used the 2023-06 BHEF overstory field survey plot center and plot radius of 11.35 m ~~expanded for the mean distance error (`r mean(true_positive_trees$field_uas_distance_m, na.rm = T) %>% round(2)` m) across all UAS and stem-mapped tree pairs (i.e. $TP$ detections)~~. 
+To determine UAS detected tree commissions (i.e. UAS detected trees within the overstory plot for which there was no stem-mapped tree pair; $Co$) this analysis used the 2023-06 BHEF overstory field survey plot center and plot radius of 11.35 m. UAS detected trees within this radius with an [estimated DBH](#local_mod) over 5 in (12.69 cm) that did not have a matched stem-mapped tree pair were considered commissions ($Co$).
 
 Omissions ($Om$) are stem-mapped trees without a UAS detected tree match.
 
@@ -286,7 +300,11 @@ field_uas_comparison = dplyr::bind_rows(
       # join with uas tree points
       sf::st_join(
         treetops_sf_with_dbh %>% 
-          dplyr::filter(!treeID %in% true_positive_trees$uas_tree_id) %>% 
+          dplyr::filter(
+            !treeID %in% true_positive_trees$uas_tree_id
+            & dbh_cm >= min_tree_dbh_cm
+            & tree_height_m >= min_tree_height_m
+          ) %>% 
           dplyr::select(treeID) %>% 
           dplyr::rename(uas_tree_id=treeID)
         , join = st_intersects
@@ -394,14 +412,15 @@ Summary of tree true positive ($TP$), commission ($Co$), and omission ($Om$) det
 
 ```{r fld-dta-sum-grp}
 field_uas_comparison_plot %>% 
-ggplot() +
+ggplot(
+  mapping = aes(x = pct, y = reorder(plot_lab, tp_pct), fill=field_uas_group, group=field_uas_group)
+) +
   geom_col(
-    mapping = aes(x = pct, y = reorder(plot_lab, tp_pct), fill=field_uas_group)
-    ,width = 0.7, alpha=0.8
+    width = 0.7, alpha=0.8
   ) +
   geom_text(
-    mapping = aes(x = pct, y = reorder(plot_lab, tp_pct), group=field_uas_group
-        ,label = scales::percent(ifelse(pct>=0.12,pct,NA), accuracy = 1)
+    mapping = aes(
+        label = scales::percent(ifelse(pct>=0.12,pct,NA), accuracy = 1)
         , fontface = "bold"
       )
     , position = position_stack(vjust = 0.5)
@@ -487,9 +506,94 @@ ggplot(
     
 ```
 
+### Height vs. DBH of $Tp$, $Co$, $Om$
+
+```{r fld-dta-sum-htdbh}
+field_uas_comparison %>% 
+  dplyr::mutate(
+    dbh_temp = dplyr::coalesce(field_dbh_in, uas_dbh_in)
+    , ht_temp = dplyr::coalesce(field_tree_height_ft, uas_tree_height_ft)
+  ) %>% 
+  ggplot(
+    mapping = aes(x = ht_temp, y = dbh_temp, color = field_uas_group)
+  ) +
+    geom_point(
+      mapping = aes(shape = field_uas_group)
+      , alpha=0.8
+      , size=2
+    ) +
+    scale_color_viridis_d(option = "cividis") +
+    scale_x_continuous(breaks = scales::extended_breaks(n=8)) +
+    scale_y_continuous(breaks = scales::extended_breaks(n=8)) +
+    labs(
+      color = "detection"
+      , shape = "detection"
+      , y = "DBH (in)"
+      , x = "Tree Ht. (ft)"
+      , title = "UAS and Stem-Mapped Tree Validation Summary"
+      , subtitle = "height and DBH relationship"
+    ) +
+    theme_light() +
+    theme(
+      legend.position = "top"
+      , legend.direction  = "horizontal"
+      , legend.title = element_blank()
+    ) +
+    guides(
+      color = guide_legend(reverse = T, override.aes = list(alpha = 0.9, size = 5))
+      , shape = guide_legend(reverse = T, override.aes = list(alpha = 0.9, size = 5))
+    )  
+```
+
+### Height and DBH Distribution $Tp$, $Co$, $Om$
+
+```{r fld-dta-sum-htdbh-dist}
+field_uas_comparison %>% 
+  dplyr::mutate(
+    dbh = dplyr::coalesce(field_dbh_in, uas_dbh_in)
+    , height = dplyr::coalesce(field_tree_height_ft, uas_tree_height_ft)
+  ) %>% 
+  dplyr::select(dbh, height, field_uas_group) %>% 
+  tidyr::pivot_longer(cols = -c(field_uas_group), names_to = "metric", values_to = "value") %>% 
+  dplyr::group_by(field_uas_group,metric) %>% 
+  dplyr::mutate(
+    metric = dplyr::case_when(
+      metric == "dbh" ~ "DBH (in)"
+      , metric == "height" ~ "Height (ft)"
+    )
+    , n_rows = dplyr::n()
+    , plot_lab = paste0(
+      field_uas_group
+      ," (n=", scales::comma(n_rows,accuracy=1),")"
+    )
+  ) %>% 
+  ggplot(mapping = aes(x = value, y = plot_lab, fill = field_uas_group)) +
+    geom_violin(outlier.shape = NA) +
+    geom_boxplot(width = 0.1, outlier.shape = NA) +
+    facet_grid(cols = vars(metric), scales = "free_x") +
+    scale_fill_viridis_d(option = "cividis") +
+    scale_x_continuous(breaks = scales::extended_breaks(n=8)) +
+    labs(
+      fill = ""
+      , y = ""
+      , x = ""
+      , title = "UAS and Stem-Mapped Tree Validation Summary"
+      , subtitle = "height and DBH distribution comparison"
+    ) +
+    theme_light() +
+    theme(
+      legend.position = "none"
+      , axis.title.x = element_text(size=10, face = "bold")
+      , axis.title.y = element_blank()
+      , axis.text.y = element_text(color = "black",size=10, face = "bold", hjust = 0)
+      , strip.text = element_text(color = "black", size = 12)
+      , strip.background = element_rect(fill = "gray88")
+    )
+```
+
 ### Detected Overstory ($TP$) Height Difference
 
-Detected overstory tree ($TP$) height reliability
+Detected overstory tree ($TP$) height reliability. Where overstory trees considered in this analysis had a tree height >= `r scales::comma(min_tree_height_m*3.28, accuracy = 0.1)` ft and a tree DBH >= `r scales::comma(min_tree_dbh_cm*0.394, accuracy = 0.1)` in.
 
 ```{r fld-dta-sum-ht}
 field_uas_comparison %>%
@@ -521,7 +625,7 @@ field_uas_comparison %>%
       fill = ""
       , y = ""
       , x = "Percent Difference in Height"
-      , title = "Detected Overstory (>2m) Height Difference"
+      , title = "Detected Overstory Height Difference"
       , subtitle = "by overstory plot"
       , caption = "-values = UAS<field | +values = UAS>field"
     ) +
@@ -536,7 +640,7 @@ field_uas_comparison %>%
 
 ### Detected Overstory ($TP$) DBH Difference
 
-Detected overstory tree ($TP$) DBH reliability
+Detected overstory tree ($TP$) DBH reliability. Where overstory trees considered in this analysis had a tree height >= `r scales::comma(min_tree_height_m*3.28, accuracy = 0.1)` ft and a tree DBH >= `r scales::comma(min_tree_dbh_cm*0.394, accuracy = 0.1)` in.
 
 ```{r fld-dta-sum-dbh}
 field_uas_comparison %>%
@@ -568,7 +672,7 @@ field_uas_comparison %>%
       fill = ""
       , y = ""
       , x = "Percent Difference in DBH"
-      , title = "Detected Overstory (>2m) DBH Difference"
+      , title = "Detected Overstory DBH Difference"
       , subtitle = "by overstory plot"
       , caption = "-values = UAS<field | +values = UAS>field"
     ) +
@@ -583,6 +687,8 @@ field_uas_comparison %>%
 ```
 
 ### Detected Overstory ($TP$) Reliability
+
+Overstory trees considered in this analysis had a tree height >= `r scales::comma(min_tree_height_m*3.28, accuracy = 0.1)` ft and a tree DBH >= `r scales::comma(min_tree_dbh_cm*0.394, accuracy = 0.1)` in.
 
 ```{r fld-dta-sum-rmse, results='asis'}
 dbh_f_temp = field_uas_comparison %>% dplyr::filter(field_uas_group=="true positive") %>% dplyr::pull(field_dbh_in)
@@ -628,7 +734,7 @@ data.frame(
     , n = field_uas_comparison %>% dplyr::filter(field_uas_group=="true positive") %>% nrow()
   ) %>% 
     kableExtra::kbl(
-      caption = "Detected overstory (>2m) tree height and DBH prediction performance"
+      caption = "Detected overstory tree height and DBH prediction performance"
       , col.names = c(
         " "
         , "Mean Abs. Error"
@@ -689,7 +795,14 @@ field_uas_comparison %>%
       fill = ""
       , y = ""
       , x = ""
-      , title = "Detected Overstory (>2m) Distribution Comparison"
+      , title = "Detected Overstory Distribution Comparison"
+      , subtitle = paste0(
+        "tree height >= "
+        , scales::comma(min_tree_height_m*3.28, accuracy = 0.1)
+        , " ft and tree DBH >= "
+        , scales::comma(min_tree_dbh_cm*0.394, accuracy = 0.1)
+        , " in"
+      )
     ) +
     theme_light() +
     theme(
@@ -701,4 +814,9 @@ field_uas_comparison %>%
       , strip.background = element_rect(fill = "gray88")
     )
 
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(list = ls()[grep("_temp",ls())])
+gc()
 ```

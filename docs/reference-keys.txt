@@ -1,3 +1,4 @@
+tab:fld-dta-tp-data
 tab:fld-dta-sum-rmse
 introduction
 objective
@@ -43,7 +44,7 @@ stand-basal-area-map
 stand-qmd-map
 define-functions-for-stand-summary
 harvest-unit-summary-reports
-field-validation-data
+overstory-field-validation-data
 load-field-data
 build-uas-field-validation-data
 true-positive-identification
@@ -51,6 +52,8 @@ combine-with-commission-and-omission
 summary-of-validation-data
 true-positive-commission-ommission
 f-score
+height-vs.-dbh-of-tp-co-om
+height-and-dbh-distribution-tp-co-om
 detected-overstory-tp-height-difference
 detected-overstory-tp-dbh-difference
 detected-overstory-tp-reliability

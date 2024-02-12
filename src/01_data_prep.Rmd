@@ -7,7 +7,7 @@ knitr::opts_chunk$set(
   , warning = FALSE
   , message = FALSE
   # , results = 'hide'
-  , fig.width = 10
+  , fig.width = 10.5
   , fig.height = 7
 )
 # library
