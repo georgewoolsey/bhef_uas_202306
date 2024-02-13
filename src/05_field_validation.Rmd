@@ -321,9 +321,14 @@ field_uas_comparison = dplyr::bind_rows(
 ) %>% 
   # attach uas data
   dplyr::left_join(
-    treetops_sf_with_dbh %>% 
+    treetops_sf_with_dbh %>%
+      sf::st_set_geometry("geometry") %>% 
+      dplyr::mutate(
+        uas_tree_utm_x = sf::st_coordinates(geometry)[,1] #lon
+        , uas_tree_utm_y = sf::st_coordinates(geometry)[,2] #lat
+      ) %>% 
       sf::st_drop_geometry() %>% 
-      dplyr::select(treeID, tree_height_m, dbh_cm) %>% 
+      dplyr::select(treeID, tree_height_m, dbh_cm, uas_tree_utm_x, uas_tree_utm_y) %>% 
       dplyr::rename(
         uas_tree_id = treeID
         , uas_tree_height_m = tree_height_m
@@ -335,7 +340,14 @@ field_uas_comparison = dplyr::bind_rows(
   dplyr::left_join(
     field_overstory %>% 
       sf::st_drop_geometry() %>% 
-      dplyr::select(field_plottree_id, field_tree_height_m, field_dbh_cm, plot_id)
+      dplyr::select(
+        field_plottree_id, field_tree_height_m, field_dbh_cm, plot_id
+        , tree_utm_x, tree_utm_y
+      ) %>% 
+      dplyr::rename(
+        field_tree_utm_x = tree_utm_x
+        , field_tree_utm_y = tree_utm_y
+      )
     , by = dplyr::join_by(field_plottree_id)
   ) %>% 
   # update data
@@ -574,7 +586,7 @@ field_uas_comparison %>%
   ) %>% 
   ggplot(mapping = aes(x = value, y = plot_lab, fill = field_uas_group)) +
     geom_violin(outlier.shape = NA) +
-    geom_boxplot(width = 0.1, outlier.shape = NA) +
+    geom_boxplot(width = 0.1, outlier.shape = NA, color = "gray66") +
     facet_grid(cols = vars(metric), scales = "free_x") +
     scale_fill_viridis_d(option = "cividis") +
     scale_x_continuous(breaks = scales::extended_breaks(n=8)) +
