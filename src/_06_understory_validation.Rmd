@@ -14,8 +14,7 @@ Load the regeneration data, set parameters for processing, and map
 
 ```{r regen-dta-ld, results='hide'}
 # load Field Validation Data
-# field_regen = 
-  readr::read_csv(
+field_regen = readr::read_csv(
     file = "../data/field_data/Voodoo_regen_data.csv"
   ) %>% 
   dplyr::rename_with(~ .x %>%
@@ -25,60 +24,65 @@ Load the regeneration data, set parameters for processing, and map
       stringr::str_remove("[_]$") %>% 
       tolower()
   ) %>% 
-  glimpse()
   dplyr::filter(
-    !is.na(tree_diameter_inches)
-    & !is.na(tree_height_feet)
-    & !is.na(tree_utm_x)
-    & !is.na(tree_utm_y)
+    !is.na(plot_id)
+    & !is.na(utm_x)
+    & !is.na(utm_y)
+    & !is.na(regen_size_class)
+    & regen_size_class != ""
+    & !is.na(number_of_trees_in_size_class)
+    & !is.na(average_tree_height_feet)
+    & number_of_trees_in_size_class > 0
+    & average_tree_height_feet > 0
   ) %>% 
   dplyr::mutate(
-    field_dbh_cm = tree_diameter_inches/0.394
-    , field_tree_height_m = tree_height_feet/3.281
-    , field_plottree_id = paste0(
+    regen_size_class = regen_size_class %>% stringr::str_squish() %>% tolower()
+  ) %>% 
+  # remove duplicates
+  dplyr::group_by(plot_id, regen_size_class, select_the_regen_plot_center_north_or_south) %>% 
+  dplyr::filter(dplyr::row_number()==1) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(
+    plot_dir_id = paste0(
       stringr::str_pad(plot_id, width = 4, side = "left", pad = "0")
       , "-"
-      , stringr::str_pad(tree_id, width = 4, side = "left", pad = "0")
+      , tolower(select_the_regen_plot_center_north_or_south)
     )
   ) %>% 
-  dplyr::filter(
-    field_tree_height_m >= min_tree_height_m
-    & field_dbh_cm >= min_tree_dbh_cm
-  ) %>% 
-  dplyr::rename(
-    field_dbh_in = tree_diameter_inches
-    , field_tree_height_ft = tree_height_feet
-  ) %>% 
+  dplyr::relocate(plot_dir_id) %>% 
   sf::st_as_sf(
-    coords = c("tree_utm_x", "tree_utm_y")
+    coords = c("utm_x", "utm_y")
     , crs = sf::st_crs(treetops_sf_with_dbh)
     , remove=F
   ) %>% 
-  # keep only tree points that are within the uas flight boundary
+  # keep only points that are within the uas flight boundary
   sf::st_intersection(las_ctg_dta)
 
-  # field_overstory %>% 
-  #   sf::st_drop_geometry() %>% 
-  #   dplyr::summarize(n = dplyr::n(), unique_tree = dplyr::n_distinct(field_plottree_id))
+  # field_regen %>%
+  #   sf::st_drop_geometry() %>%
+  #   dplyr::summarize(
+  #     n = dplyr::n()
+  #     , unique_plot = dplyr::n_distinct(plot_dir_id)
+  #     , unique_stuff = dplyr::n_distinct(plot_id, regen_size_class, select_the_regen_plot_center_north_or_south)
+  #   )
+  
   
 ```
 
 ```{r regen-dta-str}
-field_overstory %>% 
+field_regen %>% 
   dplyr::glimpse()
 ```
 
-Overstory field data map
+Regeneration field data map
 
 ```{r regen-dta-map, results='asis', fig.height = 5}
-field_overstory %>% 
+field_regen %>% 
   sf::st_drop_geometry() %>% 
-  dplyr::distinct(plot_id, utm_x, utm_y) %>% 
+  dplyr::distinct(plot_dir_id, utm_x, utm_y) %>% 
   sf::st_as_sf(coords = c("utm_x", "utm_y"), crs = sf::st_crs(treetops_sf_with_dbh)) %>% 
-  sf::st_buffer(11.35) %>% 
   dplyr::mutate(x=1) %>% 
-mapview::mapview(col.regions = "blue", layer.name = "plot", alpha.regions = 0.6) +
-mapview::mapview(field_overstory, col.regions = "orange", cex = 2, layer.name = "trees") +
+mapview::mapview(col.regions = "tan", layer.name = "regen plot", alpha.regions = 0.6) +
 mapview::mapview(
   harvests
   , color = "black"
