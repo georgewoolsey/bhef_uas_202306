@@ -855,7 +855,7 @@ field_uas_comparison = field_uas_comparison %>%
 
 View omissions and commissions on satellite imagery
 
-```{r mapview-om-co}
+```{r mapview-om-co, fig.height = 5}
 field_overstory %>% 
   sf::st_drop_geometry() %>% 
   dplyr::distinct(plot_id, utm_x, utm_y) %>% 
