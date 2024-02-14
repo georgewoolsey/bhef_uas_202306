@@ -58,3 +58,5 @@ detected-overstory-tp-height-difference
 detected-overstory-tp-dbh-difference
 detected-overstory-tp-reliability
 detected-overstory-tp-distribution-comparison
+commission-and-omission-locations
+othomosaic-commission-and-omission-locations

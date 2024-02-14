@@ -66,10 +66,10 @@
 <script src="libs/clipboard-0.0.1/setClipboardText.js"></script>
 <link href="libs/mapviewCSS-0.0.1/mapview-popup.css" rel="stylesheet" />
 <link href="libs/mapviewCSS-0.0.1/mapview.css" rel="stylesheet" />
-<script src="libs/elev. (ft)_e3568a-1/data_stars_elevft3085bf.txt"></script>
+<script src="libs/elev. (ft)_d21fa7-1/data_stars_elevft57d3b2.txt"></script>
 <script src="libs/joda-0.0.1/joda.js"></script>
 <script src="libs/joda-0.0.1/addImageQuery-bindings.js"></script>
-<script src="libs/canopy ht. (ft)_150fa9-1/data_stars_canopyhtft510fdb.txt"></script>
+<script src="libs/canopy ht. (ft)_b25381-1/data_stars_canopyhtft384612.txt"></script>
 <script type="text/javascript">
 
 // toggle visibility of R source blocks in R Markdown output
@@ -261,6 +261,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="7.3.7" data-path="overstory-field-validation-data.html"><a href="overstory-field-validation-data.html#detected-overstory-tp-reliability"><i class="fa fa-check"></i><b>7.3.7</b> Detected Overstory (<span class="math inline">\(TP\)</span>) Reliability</a></li>
 <li class="chapter" data-level="7.3.8" data-path="overstory-field-validation-data.html"><a href="overstory-field-validation-data.html#detected-overstory-tp-distribution-comparison"><i class="fa fa-check"></i><b>7.3.8</b> Detected Overstory (<span class="math inline">\(TP\)</span>) Distribution Comparison</a></li>
 </ul></li>
+<li class="chapter" data-level="7.4" data-path="overstory-field-validation-data.html"><a href="overstory-field-validation-data.html#commission-and-omission-locations"><i class="fa fa-check"></i><b>7.4</b> Commission and Omission Locations</a>
+<ul>
+<li class="chapter" data-level="7.4.1" data-path="overstory-field-validation-data.html"><a href="overstory-field-validation-data.html#othomosaic-commission-and-omission-locations"><i class="fa fa-check"></i><b>7.4.1</b> Othomosaic Commission and Omission Locations</a></li>
+</ul></li>
 </ul></li>
 </ul>
 
@@ -413,7 +417,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb3-19"><a href="data_prep.html#cb3-19" tabindex="-1"></a>    }</span>
 <span id="cb3-20"><a href="data_prep.html#cb3-20" tabindex="-1"></a>    <span class="do">## apply the function</span></span>
 <span id="cb3-21"><a href="data_prep.html#cb3-21" tabindex="-1"></a>    ortho_list_temp <span class="ot">=</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(ortho_list_temp) <span class="sc">%&gt;%</span> </span>
-<span id="cb3-22"><a href="data_prep.html#cb3-22" tabindex="-1"></a>      purrr<span class="sc">::</span><span class="fu">map</span>(<span class="cf">function</span>(x){<span class="fu">change_res_fn</span>(ortho_list_temp[[x]], <span class="at">my_res=</span><span class="fl">0.5</span>)})</span>
+<span id="cb3-22"><a href="data_prep.html#cb3-22" tabindex="-1"></a>      purrr<span class="sc">::</span><span class="fu">map</span>(<span class="cf">function</span>(x){<span class="fu">change_res_fn</span>(ortho_list_temp[[x]], <span class="at">my_res=</span><span class="fl">0.25</span>)})</span>
 <span id="cb3-23"><a href="data_prep.html#cb3-23" tabindex="-1"></a>    </span>
 <span id="cb3-24"><a href="data_prep.html#cb3-24" tabindex="-1"></a>    <span class="co"># terra::res(ortho_list_temp[[1]])</span></span>
 <span id="cb3-25"><a href="data_prep.html#cb3-25" tabindex="-1"></a>    </span>
