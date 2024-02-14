@@ -279,7 +279,7 @@ ortho_plt_fn = function(my_suid){
         sf::st_as_sfc() %>% 
         terra::vect()
     ) %>% 
-    terra::aggregate(fact = 2, fun = "mean", na.rm = T) %>% 
+    terra::aggregate(fact = 4, fun = "mean", na.rm = T) %>% 
     stars::st_as_stars()
   
   # convert to rgb
@@ -367,7 +367,7 @@ ortho_plt_fn = function(my_suid){
             sf::st_as_sfc() %>% 
             terra::vect()
         ) %>% 
-        terra::aggregate(fact = 2, fun = "mean", na.rm = T) %>% 
+        terra::aggregate(fact = 4, fun = "mean", na.rm = T) %>% 
         terra::plotRGB(
           r = 1, g = 2, b = 3, stretch = "lin", colNA = "transparent"
           , mar = c(4,0,2,0)

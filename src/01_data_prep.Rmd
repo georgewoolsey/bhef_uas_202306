@@ -185,7 +185,7 @@ if(!file.exists(paste0(delivery_dir,"/BHEF_202306_Full_RBG.tif"))){
     }
     ## apply the function
     ortho_list_temp = 1:length(ortho_list_temp) %>% 
-      purrr::map(function(x){change_res_fn(ortho_list_temp[[x]], my_res=0.5)})
+      purrr::map(function(x){change_res_fn(ortho_list_temp[[x]], my_res=0.25)})
     
     # terra::res(ortho_list_temp[[1]])
     

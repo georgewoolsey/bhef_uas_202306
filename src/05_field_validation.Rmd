@@ -837,3 +837,204 @@ field_uas_comparison %>%
 remove(list = ls()[grep("_temp",ls())])
 gc()
 ```
+
+## Commission and Omission Locations
+
+```{r om-co-dta}
+field_uas_comparison = field_uas_comparison %>% 
+  dplyr::mutate(
+    x = ifelse(!is.na(uas_tree_utm_x), uas_tree_utm_x, field_tree_utm_x)
+    , y = ifelse(!is.na(uas_tree_utm_x), uas_tree_utm_y, field_tree_utm_y)
+  ) %>% 
+  sf::st_as_sf(
+    coords = c("x", "y")
+    , crs = sf::st_crs(treetops_sf_with_dbh)
+    , remove=T
+  )
+```
+
+View omissions and commissions on satellite imagery
+
+```{r mapview-om-co}
+field_overstory %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::distinct(plot_id, utm_x, utm_y) %>% 
+  sf::st_as_sf(coords = c("utm_x", "utm_y"), crs = sf::st_crs(treetops_sf_with_dbh)) %>% 
+  sf::st_buffer(11.35) %>% 
+  dplyr::mutate(x=1) %>% 
+mapview::mapview(
+  col.regions = "blue", layer.name = "plot", alpha.regions = 0.6
+  , popup = F
+) +
+mapview::mapview(
+  field_uas_comparison %>% dplyr::filter(field_uas_group %in% c("commission", "omission"))
+  , zcol = "field_uas_group"
+  , col.regions = viridis::cividis(n=3)[1:2]
+  , cex = 2
+  , alpha.regions = 0.8
+  , layer.name = "validation"
+) +
+mapview::mapview(
+  harvests
+  , color = "black"
+  , lwd = 3
+  , alpha.regions = 0
+  , label = FALSE
+  , legend = FALSE
+  , popup = FALSE
+)
+
+```
+
+### Othomosaic Commission and Omission Locations
+
+Define function to plot orthomosaic + CHM + tree points + plot
+
+```{r plt-fn-plts}
+######################################################################################
+# function to plot ortho + chm + points + stand
+######################################################################################
+ortho_plt_fn = function(my_plotid){
+  # plot vector
+    plot_temp = field_overstory %>% 
+      sf::st_drop_geometry() %>% 
+      dplyr::filter(plot_id == my_plotid) %>% 
+      dplyr::group_by(plot_id) %>% 
+      dplyr::summarise(
+       utm_x = dplyr::first(utm_x, na_rm = T), utm_y = dplyr::first(utm_y, na_rm = T) 
+      ) %>% 
+      dplyr::mutate(
+        plot_lab = stringr::str_pad(plot_id, width = 4, side = "left", pad = "0")
+      ) %>% 
+      sf::st_as_sf(coords = c("utm_x", "utm_y"), crs = sf::st_crs(treetops_sf_with_dbh)) %>% 
+      sf::st_buffer(11.35)
+# convert to stars
+  ortho_st = ortho_rast %>%  
+    terra::subset(subset = c(1,2,3)) %>%
+    terra::crop(
+      # stand %>% 
+      plot_temp %>%
+        sf::st_buffer(5) %>% 
+        sf::st_bbox() %>% 
+        sf::st_as_sfc() %>% 
+        terra::vect()
+    ) %>% 
+    # terra::aggregate(fact = 2, fun = "mean", na.rm = T) %>% 
+    stars::st_as_stars()
+  
+  # convert to rgb
+  ortho_rgb <- stars::st_rgb(
+    ortho_st[,,,1:3]
+    , dimension = 3
+    , use_alpha = FALSE
+    # , stretch = "histogram"
+    , probs = c(0.005, 0.995)
+    , stretch = "percent"
+  )
+  # ggplot
+  plt_rgb <- ggplot() +
+    stars::geom_stars(data = ortho_rgb[]) +
+    scale_fill_identity(na.value = "transparent") + # !!! don't take this out or RGB plot will kill your computer
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0)) +
+    labs(
+      x = ""
+      , y = ""
+    ) +
+    theme_void()
+  
+  # return(plt_rgb)
+  ## combine all plot elements
+  plt_combine =
+    plt_rgb +
+    ggnewscale::new_scale_fill() +
+    geom_tile(
+      data = chm_rast %>% 
+        terra::crop(
+          plot_temp %>% 
+          terra::vect()
+        ) %>% 
+        terra::mask(
+          plot_temp %>% 
+          terra::vect()
+        ) %>% 
+        `*`(3.28) %>% # transform to feet
+        as.data.frame(xy=T) %>% 
+        rename(f=3)
+      , mapping = aes(x=x,y=y,fill=f)
+    ) +
+    scale_fill_viridis_c(
+      option="plasma", alpha = 0.6, name = "canopy ht. (ft)"
+      , limits = c(
+        min(terra::values(chm_rast), na.rm = T)*3.28
+        , max(terra::values(chm_rast), na.rm = T)*3.28
+      )
+    ) +
+    geom_sf(
+      data = plot_temp
+      , alpha = 0
+      , lwd = 1.2
+      , color = "blue"
+    ) +
+    ggnewscale::new_scale_fill() +
+    geom_sf(
+      data = field_uas_comparison %>% 
+        dplyr::filter(plot_id == my_plotid)
+      , mapping = aes(fill = field_uas_group)
+      , color = "black"
+      , shape = 21
+      , size = 2
+    ) +
+    # scale_fill_manual(values = viridis::cividis(n=3)[1:2], name = "trees") +
+    scale_fill_viridis_d(option = "cividis", name = "trees", drop = F) +
+    labs(
+      title = paste0(
+        "Plot ID: "
+        , field_uas_comparison %>% 
+          dplyr::filter(plot_id == my_plotid) %>% 
+          dplyr::pull(plot_lab) %>% 
+          unique()
+      )
+    ) +
+    theme(
+      legend.position = "top"
+      , legend.direction = "horizontal"
+      , legend.margin = margin(0,0,-1,0)
+      , legend.text = element_text(size = 8)
+      , legend.title = element_text(size = 8, face = "bold")
+      , plot.title = ggtext::element_markdown(size = 10, hjust = 0.5)
+    ) + 
+    guides(
+      fill = guide_legend(override.aes = list(size = c(5,NULL)))
+    )  
+  return(plt_combine)
+}
+# ortho_plt_fn(2)
+```
+
+Plot orthomosaic + CHM + tree points + plot for all plots with at least one omisson or commission
+
+```{r plt-fn-plts-doit}
+# map over plots with omissions and commisssions
+field_uas_plts = field_uas_comparison %>% 
+  dplyr::filter(field_uas_group %in% c("commission", "omission")) %>% 
+  dplyr::pull(plot_id) %>% 
+  unique() %>% 
+  sort() %>% 
+  purrr::map(ortho_plt_fn)
+```
+
+Combine plots
+
+```{r plt-fn-plts-comb, fig.height=19}
+patchwork::wrap_plots(
+    field_uas_plts[]
+    , ncol = 4
+  ) +
+  patchwork::plot_layout(guides="collect") &
+  theme(
+    legend.position = "bottom"
+    , legend.direction = "horizontal"
+  )
+```
+
