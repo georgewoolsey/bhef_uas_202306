@@ -1,0 +1,397 @@
+# Regeneration Field Validation Data
+
+The 2023-06 BHEF field surveys used $\frac{1}{400}$ acre (10.117 m^2^) plots with a 5.89 ft (1.795 m) radius for regeneration sampling.
+
+## Load Field Data
+
+Load the regeneration data, set parameters for processing, and map
+
+```{r regen-dta-ld, results='hide'}
+# load Field Validation Data
+field_regen = readr::read_csv(
+    file = "../data/field_data/Voodoo_regen_data.csv"
+  ) %>% 
+  dplyr::rename_with(~ .x %>%
+      # replace all non alphanumeric with _
+      stringr::str_replace_all("[^[:alnum:] ]+", "_") %>%
+      # remove any _ at the end of the string
+      stringr::str_remove("[_]$") %>% 
+      tolower()
+  ) %>% 
+  dplyr::filter(
+    !is.na(plot_id)
+    & !is.na(utm_x)
+    & !is.na(utm_y)
+    & !is.na(regen_size_class)
+    & regen_size_class != ""
+  ) %>% 
+  dplyr::mutate(
+    plot_dir_id = paste0(
+      stringr::str_pad(plot_id, width = 4, side = "left", pad = "0")
+      , "-"
+      , tolower(select_the_regen_plot_center_north_or_south)
+    )
+    , regen_size_class = regen_size_class %>% stringr::str_squish() %>% tolower()
+    , regen_size_class_diam = dplyr::case_when(
+      stringr::str_detect(regen_size_class, "inch") ~
+        regen_size_class %>% 
+          stringr::word(1, sep = "inch") %>% 
+          stringr::str_squish()
+      , T ~ as.character(NA)
+    )
+  ) %>% 
+  dplyr::relocate(plot_dir_id) %>% 
+  # remove duplicates
+  dplyr::group_by(plot_dir_id, regen_size_class) %>% 
+  dplyr::filter(dplyr::row_number()==1) %>% 
+  dplyr::ungroup() %>% 
+  # separate diameter size class inches 
+  tidyr::separate_wider_delim(
+    cols = regen_size_class_diam
+    , delim = "-"
+    , names = c(
+        "diam_inch_class_lower"
+        , "diam_inch_class_upper"
+      )
+    , too_few = "align_start"
+    , cols_remove = F
+  ) %>% 
+  sf::st_as_sf(
+    coords = c("utm_x", "utm_y")
+    , crs = sf::st_crs(treetops_sf_with_dbh)
+    , remove=F
+  ) %>% 
+  # keep only points that are within the uas flight boundary
+  sf::st_intersection(las_ctg_dta)
+```
+
+```{r regen-dta-str}
+# data structure
+field_regen %>% 
+  dplyr::glimpse()
+
+# count by regen class
+field_regen %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::count(regen_size_class, regen_size_class_diam) %>% 
+  kableExtra::kbl() %>% 
+    kableExtra::kable_styling()
+```
+
+### Regeneration Field Data Plot Map
+
+```{r regen-dta-map, results='asis', fig.height = 5}
+field_regen %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::distinct(plot_dir_id, utm_x, utm_y) %>% 
+  sf::st_as_sf(coords = c("utm_x", "utm_y"), crs = sf::st_crs(treetops_sf_with_dbh)) %>% 
+  dplyr::mutate(x=1) %>% 
+mapview::mapview(col.regions = "tan", layer.name = "regen plot", alpha.regions = 0.6) +
+mapview::mapview(
+  harvests
+  , color = "black"
+  , lwd = 3
+  , alpha.regions = 0
+  , label = FALSE
+  , legend = FALSE
+  , popup = FALSE
+)
+```
+
+## Create Data to Compare to UAS
+
+The process used below identifies all plots sampled to create a *full* dataset containing all possible diameter size classes sampled in the field including for plots on which there were `0` trees in a particular size class.
+
+```{r clean-field, results='hide'}
+# row unique by plot_dir_id, regen_size_class_diam
+field_regen_plt_diam =
+  dplyr::cross_join(
+    # plot ids
+    field_regen %>% dplyr::distinct(plot_dir_id, geometry)
+    # possible diameter size classes ...
+      # ...excludes regen_size_class %in% c("no trees", "<4.5 ft tall")
+      # ...includes stringr::str_detect(regen_size_class, "inch")
+    , field_regen %>% 
+      dplyr::filter(!is.na(regen_size_class_diam)) %>% 
+      dplyr::distinct(regen_size_class_diam, diam_inch_class_upper, diam_inch_class_lower)
+  ) %>%
+  # join with original data
+  dplyr::left_join(
+    field_regen %>%
+      sf::st_drop_geometry() %>% 
+      dplyr::select(
+        plot_dir_id, regen_size_class_diam
+        , number_of_trees_in_size_class, average_tree_height_feet
+      )
+    , by = dplyr::join_by(plot_dir_id, regen_size_class_diam)
+  ) %>% 
+  # fill with valid zero data
+  dplyr::mutate(
+    number_of_trees_in_size_class = dplyr::coalesce(number_of_trees_in_size_class, 0)
+    , plot_area_ac = 1/400
+    , plot_area_ha = plot_area_ac/2.471
+  )
+
+#################################################################################
+#################################################################################
+# Join tree tops with forest stands
+# row unique by suid, plot_dir_id, regen_size_class_diam
+#################################################################################
+#################################################################################
+harvests_regen_plt = harvests %>%
+  dplyr::mutate(
+    stand_area_m2 = sf::st_area(.) %>% as.numeric()
+    , stand_area_ha = stand_area_m2/10000
+  ) %>% 
+  sf::st_intersection(las_ctg_dta) %>% 
+  dplyr::mutate(
+    intrsct_stand_area_m2 = sf::st_area(.) %>% as.numeric()
+  ) %>% 
+  dplyr::filter(round(intrsct_stand_area_m2, 0) == round(stand_area_m2, 0)) %>% 
+  dplyr::select(
+    suid, forest_commonname, admin_region_code, activity_name
+    , treatment_type, treatment_type_grp, date_compl, year_id
+    , stand_area_m2, stand_area_ha
+  ) %>% 
+  sf::st_intersection(field_regen_plt_diam)
+```
+
+This data contains a row for every plot surveyed and every diameter size class in the regeneration sampling protocol, including plots with `0` observations for a size class.
+
+```{r clean-field-tab}
+field_regen_plt_diam %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::arrange(plot_dir_id,diam_inch_class_lower) %>% 
+  dplyr::select(plot_dir_id, regen_size_class_diam, number_of_trees_in_size_class) %>% 
+  dplyr::slice_head(n=10) %>% 
+  kableExtra::kbl(digits = 1) %>% 
+  kableExtra::kable_styling()
+```
+
+Summary statistics by regeneration size class
+
+```{r clean-field-tab2}
+field_regen_plt_diam %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::group_by(regen_size_class_diam) %>% 
+  dplyr::summarise(
+    number_of_plots = dplyr::n()
+    , min_num_trees = min(number_of_trees_in_size_class, na.rm = T)
+    , max_num_trees = max(number_of_trees_in_size_class, na.rm = T)
+    , mean_num_trees = mean(number_of_trees_in_size_class, na.rm = T)
+    , median_num_trees = median(number_of_trees_in_size_class, na.rm = T)
+  ) %>% 
+  kableExtra::kbl(digits = 1) %>% 
+  kableExtra::kable_styling()
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(list = ls()[grep("_temp",ls())])
+gc()
+```
+
+### Field Regeneration TPA by Size Class
+
+The 2023-06 BHEF field surveys used $\frac{1}{400}$ acre (10.117 m^2^) plots with a 5.89 ft (1.795 m) radius for regeneration sampling. Aggregated across all plots sampled what was the estimated regeneration trees per acre by size class?
+
+```{r regen-tpa-sz}
+# total
+tpa_temp = field_regen_plt_diam %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::group_by(plot_dir_id) %>% 
+  dplyr::mutate(plot_area_ac = ifelse(dplyr::row_number()==1,plot_area_ac,0)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::summarise(
+    tpa = sum(number_of_trees_in_size_class)/sum(plot_area_ac)
+  ) %>%
+  dplyr::pull(tpa)
+# plot
+field_regen_plt_diam %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::group_by(regen_size_class_diam) %>% 
+  dplyr::summarise(
+    number_of_plots = dplyr::n()
+    , sum_num_trees = sum(number_of_trees_in_size_class)
+    , sampled_area_ac = sum(plot_area_ac)
+    , sampled_area_ha = sum(plot_area_ha)
+  ) %>%
+  dplyr::mutate(
+    trees_per_ac = sum_num_trees/sampled_area_ac
+    , trees_per_ha = sum_num_trees/sampled_area_ha
+    , regen_size_class_diam = regen_size_class_diam %>% factor() %>% forcats::fct_rev()
+  ) %>% 
+  # dplyr::ungroup() %>% dplyr::summarise(trees_per_ac = sum(trees_per_ac))
+  # dplyr::select(regen_size_class_diam, number_of_plots, sum_num_trees, trees_per_ac, trees_per_ha) %>% 
+  # kableExtra::kbl(digits = 1) %>% 
+  # kableExtra::kable_styling()
+  ggplot(
+    mapping = aes(x = trees_per_ac, y = regen_size_class_diam, fill=trees_per_ac, label = scales::comma(trees_per_ac, accuracy = 0.1))
+  ) +
+    geom_col(
+      width = 0.7, alpha=0.8
+    ) +
+    geom_text(
+      color = "black", size = 3.5
+      , hjust = -0.1
+    ) +
+    scale_fill_viridis_c(option = "mako", direction = -1) +
+    scale_x_continuous(expand = expansion(mult = c(0, .12))) +
+    labs(
+      fill = ""
+      , y = "Regeneration Diameter Size Class (inches)"
+      , x = "Trees per Acre"
+      , title = "Trees per Acre by Regeneration Diameter Size Class (inches)"
+      , subtitle = paste0(
+        "Total TPA: "
+        , scales::comma(tpa_temp, accuracy = 1)
+      )
+    ) +
+    theme_light() +
+    theme(
+      legend.position = "none"
+      , axis.title.x = element_text(size=10, face = "bold")
+      , axis.text.x = element_blank()
+      , axis.text.y = element_text(color = "black",size=12, face = "bold")
+      , axis.ticks.x = element_blank()
+    )
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(list = ls()[grep("_temp",ls())])
+gc()
+```
+
+### Stand Regeneration TPA by Size
+
+By harvest stand what was the estimated regeneration trees per acre?
+
+```{r stand-regen-class}
+harvests_regen_plt %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::group_by(suid,regen_size_class_diam) %>% 
+  dplyr::summarise(
+    number_of_plots = dplyr::n()
+    , sum_num_trees = sum(number_of_trees_in_size_class)
+    , sampled_area_ac = sum(plot_area_ac)
+  ) %>% 
+  dplyr::group_by(suid) %>% 
+  dplyr::mutate(
+    trees_per_ac = sum_num_trees/sampled_area_ac
+    , stand_trees_per_ac = sum(sum_num_trees)/max(sampled_area_ac)
+    , regen_size_class_diam = regen_size_class_diam %>% factor() %>% forcats::fct_rev()
+  ) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(
+    stand_lab = paste0(
+        suid
+        , "\nTotal TPA: "
+        , scales::comma(stand_trees_per_ac, accuracy = 1)
+    ) %>% factor() %>% forcats::fct_reorder(desc(stand_trees_per_ac))
+  ) %>% 
+  ggplot(
+    mapping = aes(x = trees_per_ac, y = regen_size_class_diam, fill=trees_per_ac, label = scales::comma(trees_per_ac, accuracy = 0.1))
+  ) +
+    geom_col(
+      width = 0.7, alpha=0.8
+    ) +
+    geom_text(
+      color = "black", size = 2.5
+      , hjust = -0.1
+    ) +
+    scale_fill_viridis_c(option = "mako", direction = -1) +
+    scale_x_continuous(expand = expansion(mult = c(0, .13))) +
+    facet_wrap(facets = vars(stand_lab), ncol = 3) +
+    labs(
+      fill = ""
+      , y = "Regeneration Diameter Size Class (inches)"
+      , x = "Trees per Acre"
+      , title = "Trees per Acre by Regeneration Diameter Size Class (inches)"
+      , subtitle = "by harvest unit (with FACTS ID)"
+    ) +
+    theme_light() +
+    theme(
+      legend.position = "none"
+      , axis.title.x = element_text(size=10, face = "bold")
+      , axis.text.x = element_blank()
+      , axis.text.y = element_text(color = "black",size=12, face = "bold")
+      , axis.ticks.x = element_blank()
+      , strip.text = element_text(color = "black", size = 12)
+      , strip.background = element_rect(fill = "gray88")
+    )
+```
+
+### Stand Regeneration TPA Map
+
+Map regeneration TPA by harvest stand
+
+```{r regen-tpa-map, fig.height = 5}
+mapview::mapview(
+  bhef_boundary
+  , color = "black"
+  , lwd = 3
+  , alpha.regions = 0
+  , layer.name = "BHEF"
+  , label = FALSE
+  , legend = FALSE
+  , popup = FALSE
+) +
+    mapview::mapview(
+      harvests_regen_plt %>% 
+        sf::st_drop_geometry() %>% 
+        dplyr::group_by(suid, plot_dir_id) %>% 
+        dplyr::mutate(plot_area_ac = ifelse(dplyr::row_number()==1,plot_area_ac,0)) %>% 
+        dplyr::group_by(suid) %>% 
+        dplyr::summarise(
+          tpa = sum(number_of_trees_in_size_class)/sum(plot_area_ac)
+        ) %>%
+        dplyr::ungroup() %>% 
+        dplyr::inner_join(
+          harvests
+          , by = dplyr::join_by(suid)
+        ) %>% 
+        sf::st_set_geometry("geom")      
+      , zcol = "tpa"
+      , layer.name = "Regen. TPA" #latex2exp::TeX("Basal Area $ft^{2} \\cdot ac^{-1}$")
+      , col.regions = viridis::cividis(n=nrow(harvests)*1.1)
+      , alpha.regions = 0.7
+      , na.color = "transparent"
+      , popup = F
+    ) 
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(list = ls()[grep("_temp",ls())])
+gc()
+```
+
+## Compare to UAS Data
+
+The UAS data only includes trees `r min(chm_rast %>% terra::values(), na.rm = T)` m (`r round(min(chm_rast %>% terra::values(), na.rm = T)*3.28,1)` ft) and above. 
+
+```{r, include=FALSE, eval=FALSE}
+
+
+treetops_sf_with_dbh %>% 
+  dplyr::filter(dbh_in < 5) %>% 
+  ggplot(mapping=aes(x=tree_height_ft, y=dbh_in)) + geom_point() + geom_smooth()
+
+# get the estimated dbh at the minimum UAS tree height
+  min_uas_tree_dbh_temp = predict(
+      mod_quad
+      , newdata = dplyr::tibble(tree_height_m = c(
+        min(chm_rast %>% terra::values(), na.rm = T)
+      ))
+      , probs = c(.05, .95)
+    ) %>%
+    dplyr::as_tibble() %>%
+    dplyr::rename(
+      lower_b = 3, upper_b = 4
+    ) %>% 
+    dplyr::rename_with(tolower) %>% 
+    dplyr::select(-c(est.error)) %>% 
+    dplyr::rename_with(~ paste0(.x, "_dbh_cm", recycle0 = TRUE)) %>% 
+    calc_imperial_units_fn()
+# get the minimum tree dbh measured in 
+  
+```
+

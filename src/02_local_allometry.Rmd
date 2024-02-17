@@ -1231,7 +1231,7 @@ sf::st_write(crowns_sf_with_dbh, paste0(delivery_dir,"/dbh_updated_detected_crow
 ```
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
-remove(list = ls()[grep("mod_",ls())])
+remove(mod_lin, mod_quad_noint, mod_pwr, mod_weib)
 remove(list = ls()[grep("plt_",ls())])
 gc()
 ```
@@ -1269,6 +1269,8 @@ harvests = harvests %>%
 ```
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+# check_ls_size_fn(ls()) %>% dplyr::slice_head(n=20)
+remove(crowns_sf_with_dbh)
 remove(list = ls()[grep("_temp",ls())])
 gc()
 ```

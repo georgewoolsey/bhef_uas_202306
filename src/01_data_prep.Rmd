@@ -37,6 +37,21 @@ library(Metrics) # mape, mae, rmse, etc
     homebutton = FALSE
     , basemaps = c("Esri.WorldImagery","OpenStreetMap")
   )
+##########
+# custom
+##########
+# check_ls_size_fn = function(ls) {
+#    ls %>%
+#     purrr::map(function(x){
+#       dplyr::tibble(
+#         nm = x
+#         , size = object.size(get(x))
+#       )
+#     }) %>%
+#     dplyr::bind_rows() %>%
+#     dplyr::arrange(desc(size))
+# }
+# check_ls_size_fn(ls())
 ```
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}

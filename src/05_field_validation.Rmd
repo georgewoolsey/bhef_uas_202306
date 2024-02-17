@@ -1038,3 +1038,10 @@ patchwork::wrap_plots(
   )
 ```
 
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+# check_ls_size_fn(ls()) %>% dplyr::slice_head(n=20)
+remove(select_best_tree_pair_fn, true_positive_trees, field_uas_plts, ortho_plt_fn)
+remove(list = ls()[grep("_temp",ls())])
+gc()
+```
+

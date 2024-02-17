@@ -60,3 +60,11 @@ detected-overstory-tp-reliability
 detected-overstory-tp-distribution-comparison
 commission-and-omission-locations
 othomosaic-commission-and-omission-locations
+regeneration-field-validation-data
+load-field-data-1
+regeneration-field-data-plot-map
+create-data-to-compare-to-uas
+field-regeneration-tpa-by-size-class
+stand-regeneration-tpa-by-size
+stand-regeneration-tpa-map
+compare-to-uas-data

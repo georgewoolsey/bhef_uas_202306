@@ -830,6 +830,24 @@ pdftools::pdf_combine(
 )
 ```
 
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+# check_ls_size_fn(ls()) %>% dplyr::slice_head(n=20)
+remove(
+  harvests_trees
+  , elev_contour
+  , seq_brk
+  , ortho_plt_fn
+  , report_fn
+  , plt_contour_map_fn
+  , tab_imp_fn
+  , tab_met_fn
+  , plt_inset_map_fn
+  , ht_dist_fn
+)
+remove(list = ls()[grep("_temp",ls())])
+gc()
+```
+
 
 ```{r include=FALSE, eval=FALSE}
 library(patchwork)
