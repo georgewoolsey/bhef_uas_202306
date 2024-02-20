@@ -1,5 +1,6 @@
 tab:fld-dta-tp-data
 tab:fld-dta-sum-rmse
+tab:uas-fld-regentab
 introduction
 objective
 data_prep
@@ -65,6 +66,8 @@ load-field-data-1
 regeneration-field-data-plot-map
 create-data-to-compare-to-uas
 field-regeneration-tpa-by-size-class
-stand-regeneration-tpa-by-size
 stand-regeneration-tpa-map
-compare-to-uas-data
+uas-estimated-regeneration-distribution
+uas-vs-field-regeneration-tpa
+define-functions-for-summary
+harvest-unit-regen-summary-reports

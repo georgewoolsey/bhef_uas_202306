@@ -317,6 +317,7 @@ ortho_plt_fn = function(my_suid){
           harvests %>% dplyr::filter(suid==my_suid) %>% 
           terra::vect()
         ) %>% 
+        terra::aggregate(fact = 2, fun = "mean", na.rm = T) %>% 
         `*`(3.28) %>% # transform to feet
         as.data.frame(xy=T) %>% 
         rename(f=3)
@@ -833,8 +834,7 @@ pdftools::pdf_combine(
 ```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
 # check_ls_size_fn(ls()) %>% dplyr::slice_head(n=20)
 remove(
-  harvests_trees
-  , elev_contour
+  elev_contour
   , seq_brk
   , ortho_plt_fn
   , report_fn
