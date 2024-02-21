@@ -238,9 +238,9 @@ field_regen_plt_diam %>%
     scale_x_continuous(expand = expansion(mult = c(0, .12))) +
     labs(
       fill = ""
-      , y = "Regeneration Diameter Size Class (inches)"
+      , y = "Regeneration Diameter Size Class (in)"
       , x = "Trees per Acre"
-      , title = "Trees per Acre by Regeneration Diameter Size Class (inches)"
+      , title = "Field-Based TPA by Regeneration Diameter Size Class"
       , subtitle = paste0(
         "Total TPA: "
         , scales::comma(tpa_temp, accuracy = 1)
@@ -250,9 +250,12 @@ field_regen_plt_diam %>%
     theme(
       legend.position = "none"
       , axis.title.x = element_text(size=10, face = "bold")
+      , axis.title.y = element_text(size=9)
       , axis.text.x = element_blank()
       , axis.text.y = element_text(color = "black",size=12, face = "bold")
       , axis.ticks.x = element_blank()
+      , plot.title = element_text(size=10)
+      , plot.subtitle = element_text(size=9, face = "bold")
     )
 ```
 
@@ -570,8 +573,10 @@ plt_regen_dist_fn <- function(my_suid){
         , axis.text.x = element_blank()
         , axis.text.y = element_text(color = "black",size=12, face = "bold")
         , axis.ticks.x = element_blank()
-        , strip.text = element_text(color = "black", size = 12)
-        , strip.background = element_rect(fill = "gray88")
+        , plot.title = element_text(size = 10)
+        , plot.subtitle = element_text(size = 8)
+        # , strip.text = element_text(color = "black", size = 12)
+        # , strip.background = element_rect(fill = "gray88")
       )
 }
 # plt_regen_dist_fn(harvests$suid[2])
@@ -705,34 +710,40 @@ ortho_plt_fn = function(my_suid){
       , mapping = aes(x = x, y = y, fill = f)
       , na.rm = T
     ) +
-    scale_fill_viridis_c(option="plasma", alpha = 0.6) +
+    scale_fill_viridis_c(option="plasma", alpha = 0.6, breaks = scales::extended_breaks(n=6), na.value = "transparent") +
     geom_sf(
       data = harvests %>% dplyr::filter(suid==my_suid)
       , alpha = 0
       , lwd = 1.5
       , color = "#b22222"
     ) +
-    geom_sf(
-      data = treetops_sf_with_dbh %>% 
-        sf::st_intersection(harvests %>% dplyr::filter(suid==my_suid)) %>% 
-        dplyr::filter(
-          tree_height_ft <
-          pred_mod_quad %>%
-            dplyr::filter(estimate_in < 5) %>% 
-            dplyr::pull(tree_height_ft) %>% max()
-        )
-      , color = "#330099"
-      , shape = "."
-    ) +
+    # geom_sf(
+    #   data = treetops_sf_with_dbh %>% 
+    #     sf::st_intersection(harvests %>% dplyr::filter(suid==my_suid))
+    #   , color = "#330099"
+    #   , shape = "."
+    # ) +
     labs(
-      fill = "canopy ht. (ft)"
+      fill = "regeneration\ncanopy ht. (ft)"
       # , title = "Trees identified within stand boundary"
-      , title = "<span><span style='color:#330099;'><b><i>Trees</i></b></span> identified within <span style='color:#b22222;'><b><i>stand</i></b></span> boundary</span>"
+      # , title = "<span><span style='color:#330099;'><b><i>Trees</i></b></span> identified within <span style='color:#b22222;'><b><i>stand</i></b></span> boundary</span>"
+      , title = paste0(
+          "Regeneration trees ("
+          , scales::comma(
+            min(chm_rast %>% terra::values(), na.rm = T)*3.28
+            , accuracy = 0.1
+          )
+          , "-"
+          , pred_mod_quad %>%
+            dplyr::filter(estimate_in < 5) %>% 
+            dplyr::pull(tree_height_ft) %>% max() %>% scales::comma(accuracy = 0.1)
+          , " ft) within stand boundary"
+      )
       , subtitle = paste0(
         "trees over "
         , pred_mod_quad %>%
             dplyr::filter(estimate_in < 5) %>% 
-            dplyr::pull(tree_height_ft) %>% max() %>% scales::comma(accuracy = .1)
+            dplyr::pull(tree_height_ft) %>% max() %>% scales::comma(accuracy = 0.1)
         , " ft shown in gray"
       )
     ) +
@@ -742,7 +753,8 @@ ortho_plt_fn = function(my_suid){
       , legend.margin = margin(0,0,-1,0)
       , legend.text = element_text(size = 8)
       , legend.title = element_text(size = 8)
-      , plot.title = ggtext::element_markdown(size = 10, hjust = 0.5)
+      # , plot.title = ggtext::element_markdown(size = 10, hjust = 0.5)
+      , plot.title = element_text(size = 10, hjust = 0.5)
       , plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic")
     )
   return(plt_combine)
