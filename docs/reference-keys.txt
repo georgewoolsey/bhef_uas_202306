@@ -1,6 +1,7 @@
 tab:fld-dta-tp-data
 tab:fld-dta-sum-rmse
 tab:uas-fld-regentab
+tab:regen-dta-sum-rmse
 introduction
 objective
 data_prep
@@ -39,12 +40,6 @@ canopy-height-model-chm-map
 dbh-distribution
 height-distribution
 relationship-between-height-and-dbh
-silvicultural-metrics
-distribution-of-silvicultural-metrics
-stand-basal-area-map
-stand-qmd-map
-define-functions-for-stand-summary
-harvest-unit-summary-reports
 overstory-field-validation-data
 load-field-data
 build-uas-field-validation-data
@@ -67,7 +62,9 @@ regeneration-field-data-plot-map
 create-data-to-compare-to-uas
 field-regeneration-tpa-by-size-class
 stand-regeneration-tpa-map
-uas-estimated-regeneration-distribution
-uas-vs-field-regeneration-tpa
-define-functions-for-summary
-harvest-unit-regen-summary-reports
+uas-estimated-regeneration
+uas-vs-field-regneration-tpa-by-size-class
+uas-vs-field-regeneration-tpa-by-stand
+uas-vs-field-regeneration-tpa-in-sample-plots
+uas-vs-field-regeneration-tpa-correlation
+uas-regeneration-tpa-reliability
