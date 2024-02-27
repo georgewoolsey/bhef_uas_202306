@@ -1,0 +1,345 @@
+regeneration data
+
+## Define Functions for Summary
+
+Create plots to combine for report
+
+1) by harvest stand what was the estimated regeneration trees per acre?
+
+```{r stand-regen-class}
+plt_regen_dist_fn <- function(my_suid){
+  dta = harvests_regen_plt_diam %>% 
+    sf::st_drop_geometry() %>% 
+    dplyr::filter(suid == my_suid) %>% 
+    dplyr::group_by(suid,regen_size_class_diam) %>% 
+    dplyr::summarise(
+      number_of_plots = dplyr::n()
+      , sum_num_trees = sum(number_of_trees_in_size_class)
+      , sampled_area_ac = sum(plot_area_ac)
+    ) %>% 
+    dplyr::group_by(suid) %>% 
+    dplyr::mutate(
+      trees_per_ac = sum_num_trees/sampled_area_ac
+      , stand_trees_per_ac = sum(sum_num_trees)/max(sampled_area_ac)
+      , regen_size_class_diam = regen_size_class_diam %>% factor() %>% forcats::fct_rev()
+    ) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::mutate(
+      stand_lab = paste0(
+          # suid
+          "\nTotal TPA: "
+          , scales::comma(stand_trees_per_ac, accuracy = 1)
+      ) 
+      # factor() %>% forcats::fct_reorder(desc(stand_trees_per_ac))
+    )
+    ## plt
+    ggplot(
+      data = dta
+      , mapping = aes(
+        x = trees_per_ac, y = regen_size_class_diam
+        , fill=trees_per_ac
+        , label = scales::comma(trees_per_ac, accuracy = 0.1)
+      )
+    ) +
+      geom_col(
+        width = 0.7, alpha=0.8
+      ) +
+      geom_text(
+        color = "black", size = 3
+        , hjust = -0.1
+      ) +
+      scale_fill_viridis_c(option = "mako", direction = -1) +
+      scale_x_continuous(expand = expansion(mult = c(0, .13))) +
+      # facet_wrap(facets = vars(stand_lab), ncol = 3) +
+      labs(
+        fill = ""
+        , y = "Regeneration Diameter Size Class (inches)"
+        , x = "Trees per Acre"
+        , title = "Trees per Acre by Regeneration Diameter Size Class (inches)"
+        # , subtitle = "by harvest unit (with FACTS ID)"
+        , subtitle = dta$stand_lab[1]
+      ) +
+      theme_light() +
+      theme(
+        legend.position = "none"
+        , axis.title.x = element_text(size=10, face = "bold")
+        , axis.text.x = element_blank()
+        , axis.text.y = element_text(color = "black",size=12, face = "bold")
+        , axis.ticks.x = element_blank()
+        , plot.title = element_text(size = 10)
+        , plot.subtitle = element_text(size = 8)
+        # , strip.text = element_text(color = "black", size = 12)
+        # , strip.background = element_rect(fill = "gray88")
+      )
+}
+# plt_regen_dist_fn(harvests$suid[2])
+```
+
+6) inset map plot
+
+```{r inset-map45}
+plt_inset_map_fn <- function(my_suid){
+  (
+    ggplot() +
+      geom_sf(data = bhef_boundary, alpha = 0, lwd = 1, color = "black") +
+      geom_sf(data = harvests, alpha = 0, lwd = 0.4, color = "gray") +
+      geom_sf(
+        data = harvests %>% dplyr::filter(suid == my_suid)
+        , fill = "firebrick"
+        , alpha = 0.3
+        , lwd = 1.5
+        , color = "firebrick"
+      ) +
+      # geom_sf_label(
+      #   data = rx_fire
+      #   , aes(label = unit)
+      #   , label.size = NA
+      #   , alpha = 0
+      #   , size = 2.5
+      # ) +
+      xlab("") +
+      ylab("") +
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0)) +
+      theme_bw() +
+      theme(
+        axis.text = element_text(size = 5.5)
+        , axis.text.x = element_text(angle = 35)
+        , panel.border = element_blank()
+      )
+
+  )
+}
+# plt_inset_map_fn(harvests$suid[4])
+```
+
+1) orthomosaic + chm + stand plot
+
+```{r ortho-plt-fn49}
+######################################################################################
+# function to plot ortho + chm + points + stand
+######################################################################################
+ortho_plt_fn = function(my_suid){
+
+# convert to stars
+  ortho_st = ortho_rast %>%  
+    terra::subset(subset = c(1,2,3)) %>%
+    terra::crop(
+      # stand %>% 
+      harvests %>% dplyr::filter(suid==my_suid) %>% 
+        sf::st_buffer(20) %>% 
+        sf::st_bbox() %>% 
+        sf::st_as_sfc() %>% 
+        terra::vect()
+    ) %>% 
+    terra::aggregate(fact = 4, fun = "mean", na.rm = T) %>% 
+    stars::st_as_stars()
+  
+  # convert to rgb
+  ortho_rgb <- stars::st_rgb(
+    ortho_st[,,,1:3]
+    , dimension = 3
+    , use_alpha = FALSE
+    # , stretch = "histogram"
+    , probs = c(0.005, 0.995)
+    , stretch = "percent"
+  )
+  # ggplot
+  plt_rgb <- ggplot() +
+    stars::geom_stars(data = ortho_rgb[]) +
+    scale_fill_identity(na.value = "transparent") + # !!! don't take this out or RGB plot will kill your computer
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0)) +
+    labs(
+      x = ""
+      , y = ""
+    ) +
+    theme_void()
+  
+  # return(plt_rgb)
+  
+  # pull chm
+  chm = chm_rast %>% 
+    terra::crop(
+      harvests %>% dplyr::filter(suid==my_suid) %>% 
+      terra::vect()
+    ) %>% 
+    terra::mask(
+      harvests %>% dplyr::filter(suid==my_suid) %>% 
+      terra::vect()
+    ) %>% 
+    terra::aggregate(fact = 2, fun = "mean", na.rm = T) %>% 
+    `*`(3.28) %>% # transform to feet
+    as.data.frame(xy=T) %>% 
+    rename(f=3)
+  
+  # combine all plot elements
+  plt_combine =
+    plt_rgb +
+    # overstory
+    geom_tile(
+      data = chm %>% 
+        dplyr::filter(
+          f >=
+          pred_mod_best %>%
+            dplyr::filter(estimate_in < 5) %>% 
+            dplyr::pull(tree_height_ft) %>% max()
+        )
+      , mapping = aes(x = x, y = y)
+      , fill = "gray"
+      , alpha = 0.6
+      , na.rm = T
+    ) +
+    # regen
+    ggnewscale::new_scale_fill() +
+    geom_tile(
+      data = chm %>% 
+        dplyr::filter(
+          f <
+          pred_mod_best %>%
+            dplyr::filter(estimate_in < 5) %>% 
+            dplyr::pull(tree_height_ft) %>% max()
+        )
+      , mapping = aes(x = x, y = y, fill = f)
+      , na.rm = T
+    ) +
+    scale_fill_viridis_c(option="plasma", alpha = 0.6, breaks = scales::extended_breaks(n=6), na.value = "transparent") +
+    geom_sf(
+      data = harvests %>% dplyr::filter(suid==my_suid)
+      , alpha = 0
+      , lwd = 1.5
+      , color = "#b22222"
+    ) +
+    # geom_sf(
+    #   data = treetops_sf_with_dbh %>% 
+    #     sf::st_intersection(harvests %>% dplyr::filter(suid==my_suid))
+    #   , color = "#330099"
+    #   , shape = "."
+    # ) +
+    labs(
+      fill = "regeneration\ncanopy ht. (ft)"
+      # , title = "Trees identified within stand boundary"
+      # , title = "<span><span style='color:#330099;'><b><i>Trees</i></b></span> identified within <span style='color:#b22222;'><b><i>stand</i></b></span> boundary</span>"
+      , title = paste0(
+          "Regeneration trees ("
+          , scales::comma(
+            round(min(chm_rast %>% terra::values(), na.rm = T), 1)*3.28
+            , accuracy = 0.1
+          )
+          , "-"
+          , pred_mod_best %>%
+            dplyr::filter(estimate_in < 5) %>% 
+            dplyr::pull(tree_height_ft) %>% max() %>% scales::comma(accuracy = 0.1)
+          , " ft) within stand boundary"
+      )
+      , subtitle = paste0(
+        "trees over "
+        , pred_mod_best %>%
+            dplyr::filter(estimate_in < 5) %>% 
+            dplyr::pull(tree_height_ft) %>% max() %>% scales::comma(accuracy = 0.1)
+        , " ft shown in gray"
+      )
+    ) +
+    theme(
+      legend.position = "top" # c(0.5,1)
+      , legend.direction = "horizontal"
+      , legend.margin = margin(0,0,-1,0)
+      , legend.text = element_text(size = 8)
+      , legend.title = element_text(size = 8)
+      # , plot.title = ggtext::element_markdown(size = 10, hjust = 0.5)
+      , plot.title = element_text(size = 10, hjust = 0.5)
+      , plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic")
+    )
+  return(plt_combine)
+}
+# ortho_plt_fn(harvests$suid[2])
+```
+
+81) build report
+
+```{r report-fn79}
+report_fn = function(my_suid){
+  # generate plots
+  ortho_plt_temp = ortho_plt_fn(my_suid) # ortho_plt_fn(harvests$suid[4])
+  plt_regen_dist_temp =  plt_regen_dist_fn(my_suid)
+  plt_inset_map_temp = plt_inset_map_fn(my_suid) # plt_inset_map_fn(harvests$suid[4])
+  
+  # plot layout
+  # area(t,l,b,r)
+  layout_temp = c(
+    # map
+    area(1, 1, 4, 2)
+    # space
+    , area(1, 3, 1, 4)
+    # distributions 
+    , area(2, 3, 2, 4)
+    # space
+    , area(3, 3, 3, 4)
+    # map inset
+    , area(4, 3, 4, 3)
+  )
+  
+  # patchwork 
+  rpt = ortho_plt_temp +
+    patchwork::plot_spacer() +
+    plt_regen_dist_temp +
+    patchwork::plot_spacer() +
+    plt_inset_map_temp +
+    patchwork::plot_layout(
+      design = layout_temp
+      , heights = c(0.001,1,0.1,1)
+      , widths = c(0.5,1,0.5,0.5)
+    )
+  # export
+  ggplot2::ggsave(
+    filename = paste0(delivery_dir, "/suid_", my_suid, "_regen.pdf")
+    , plot = rpt
+    , device = "pdf"
+    , width = 11, height = 8.5, units = "in"
+  )
+  return(rpt)
+}
+```
+
+```{r, include=FALSE, eval=FALSE}
+# plot layout
+  # area(t,l,b,r)
+  layout_temp = c(
+    # map
+    area(1, 1, 5, 2)
+    # space
+    , area(1, 3, 1, 4)
+    # distributions 
+    , area(2, 3, 2, 4)
+    # space
+    , area(3, 3, 3, 4)
+    # map inset
+    , area(4, 3, 5, 3)
+  )
+  # check the layout
+  plot(layout_temp)
+  
+```
+
+## Harvest Unit Regen Summary Reports
+
+```{r print-reports34, results='hide', fig.show='asis', fig.height=8}
+# generate and print reports
+harvests$suid %>% 
+  purrr::map(report_fn) %>% 
+  print()
+```
+
+```{r pdf-comb47, results='hide'}
+# combine all pdfs together
+# combine with pdftools
+pdftools::pdf_combine(
+  sort(list.files(delivery_dir, pattern = "*_regen.pdf$", full.names = TRUE))
+  , output = paste0(
+    delivery_dir
+    , "/BHEF_UAS_202306_regen_report_"
+    , gsub("-", "", Sys.Date())
+    , ".pdf"
+  )
+)
+```

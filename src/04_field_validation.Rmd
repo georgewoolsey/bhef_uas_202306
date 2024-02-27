@@ -1,4 +1,4 @@
-# Overstory Field Validation Data
+# Overstory Field Validation Data{#ostory_valid}
 
 [Tinkham and Swayze (2021; p.6)](https://scholar.google.com/scholar?oi=bibs&hl=en&cluster=11260597505702247290) describe a methodology for matching UAS *detected* trees with stem mapped trees identified via traditional field *survey* methods. Note, *detected* trees in the excerpt below references UAS detected trees while *survey* trees references field-based stem mapped trees:
 
@@ -27,7 +27,7 @@ Load the overstory data, set parameters for processing, and map
 min_tree_height_m = min(chm_rast %>% terra::values(), na.rm = T)
 ### Only include trees above a specific DBH
   # e.g., set to match the minimum tree DBH for field sampling of overstory trees
-min_tree_dbh_cm = 12.689 # 3 in = 7.62 cm
+min_tree_dbh_cm = 5*2.54 # 3 in = 7.62 cm
 ### Find all nearest neighbors within maximum distance and then filter them based on 
 ### distance and height error 
 max_dist_m = 3
@@ -37,7 +37,7 @@ max_height_error_m = 2
 ##################################################################################################
 # load Field Validation Data
 field_overstory = readr::read_csv(
-    file = "../data/field_data/Voodoo_overstory_data.csv"
+    file = "../data/field_data/Voodoo_overstory_data_old.csv"
   ) %>% 
   dplyr::rename_with(~ .x %>%
       # replace all non alphanumeric with _

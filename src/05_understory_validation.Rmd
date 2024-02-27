@@ -1,4 +1,4 @@
-# Regeneration Field Validation Data
+# Regeneration Field Validation Data{#ustory_valid}
 
 The 2023-06 BHEF field surveys used $\frac{1}{400}$ acre (10.117 m^2^) plots with a 5.89 ft (1.795 m) radius for regeneration sampling.
 
@@ -799,7 +799,11 @@ data.frame(
 ```
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(field_regen_plt_diam, plt_fld_tpa_diam, plt_uas_tpa_diam)
 remove(list = ls()[grep("_temp",ls())])
 gc()
+
+# check_ls_size_fn(ls()) %>% 
+#   dplyr::slice_head(n=20)
 ```
 

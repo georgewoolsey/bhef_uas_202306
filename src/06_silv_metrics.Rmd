@@ -1,0 +1,1267 @@
+# Silvicultural Metrics{#silv}
+
+```{r udp-silv, include=FALSE, eval=TRUE, echo=FALSE}
+##################################################################################################
+## USER DEFINED PARAMETERS
+##################################################################################################
+### Only include trees above a specific DBH
+  # e.g., set to match the minimum tree DBH for field sampling of overstory trees
+  # !!!!!!!!!!!!!!!!!!!!!!INCLUSIVE ... i.e. ostory_dbh >= ostory_min_tree_dbh_cm
+ostory_min_tree_dbh_cm = 5*2.54 # 3 in = 7.62 cm
+
+### Only include trees under a specific DBH
+  # e.g., set to match the minimum tree DBH for field sampling of overstory trees
+  # !!!!!!!!!!!!!!!!!!!!!!EXCLUSIVE ... i.e. ustory_dbh < ustory_max_tree_dbh_cm
+ustory_max_tree_dbh_cm = 5*2.54 # 3 in = 7.62 cm
+##################################################################################################
+## USER DEFINED PARAMETERS
+##################################################################################################
+```
+
+Overstory metrics are calculated using the UAS SfM-derived DBH and height measurements, where DBH is estimated using a [local DBH-Height allometric relationship](#local_mod). [Validation](#ostory_valid) of the UAS SfM-derived DBH and height measurements was completed using field-based sampling data. In the following analysis and reporting, overstory includes any tree where the DBH is `r scales::comma(ostory_min_tree_dbh_cm/2.54,accuracy = 0.1)` in. (`r scales::comma(ostory_min_tree_dbh_cm,accuracy = 0.01)` cm) or greater.
+
+Understory (i.e. regeneration) metrics are calculated using the field-based sampling data reviewed in [this section](#ustory_valid). The following analysis and reporting, understory includes any tree where the DBH is less than `r scales::comma(ustory_max_tree_dbh_cm/2.54,accuracy = 0.1)` in. (`r scales::comma(ustory_max_tree_dbh_cm,accuracy = 0.01)` cm) or greater. 
+
+```{r silv-calc, results='hide'}
+# Common silvicultural metrics are calculated for the entire extent.
+  # Note, that stand-level summaries can be computed if stand vector data is provided.
+  # metrics include:
+    # "n_trees"
+    # "stand_area_ha"
+    # "trees_per_ha"
+    # "mean_dbh_cm"
+    # "qmd_cm"
+    # "mean_tree_height_m"
+    # "loreys_height_m"
+    # "basal_area_m2"
+    # "basal_area_m2_per_ha"
+
+### stand-level summaries
+  silv_metrics = harvests_trees %>%
+    sf::st_drop_geometry() %>%
+    dplyr::filter(dbh_cm >= ostory_min_tree_dbh_cm) %>% 
+    dplyr::ungroup() %>%
+    dplyr::group_by(suid,stand_area_ha) %>%
+    dplyr::summarise(
+      n_trees = dplyr::n_distinct(treeID)
+      , mean_dbh_cm = mean(dbh_cm, na.rm = T)
+      , mean_tree_height_m = mean(tree_height_m, na.rm = T)
+      , loreys_height_m = sum(basal_area_m2*tree_height_m, na.rm = T) / sum(basal_area_m2, na.rm = T)
+      , basal_area_m2 = sum(basal_area_m2, na.rm = T)
+      , sum_dbh_cm_sq = sum(dbh_cm^2, na.rm = T)
+    ) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(
+      trees_per_ha = (n_trees/stand_area_ha)
+      , basal_area_m2_per_ha = (basal_area_m2/stand_area_ha)
+      , qmd_cm = sqrt(sum_dbh_cm_sq/n_trees)
+    ) %>%
+    dplyr::select(-c(sum_dbh_cm_sq)) %>%
+    # convert to imperial units
+    calc_imperial_units_fn() %>%
+    dplyr::select(
+      "suid"
+      , "n_trees"
+      , "stand_area_ha"
+      , "trees_per_ha"
+      , "mean_dbh_cm"
+      , "qmd_cm"
+      , "mean_tree_height_m"
+      , "loreys_height_m"
+      , "basal_area_m2"
+      , "basal_area_m2_per_ha"
+      # imperial
+      , "stand_area_ac"
+      , "trees_per_ac"
+      , "mean_dbh_in"
+      , "qmd_in"
+      , "mean_tree_height_ft"
+      , "loreys_height_ft"
+      , "basal_area_ft2"
+      , "basal_area_ft2_per_ac"
+    )
+
+### export tabular
+  write.csv(
+      silv_metrics
+      , paste0(delivery_dir, "/stand_overstory_silv_metrics.csv")
+      , row.names = F
+    )
+
+  # join with spatial data
+  silv_metrics = harvests %>% 
+    # join with plot data data
+    dplyr::inner_join(
+      silv_metrics
+      , by = dplyr::join_by("suid")
+    )
+
+######################################################
+# UNDERSTORY SUMMARY
+######################################################
+ustory_silv_metrics = harvests_regen_plt_diam %>% 
+  sf::st_drop_geometry() %>%
+  dplyr::mutate(
+    dplyr::across(
+      tidyselect::starts_with("diam_inch_class")
+      , .fn = as.numeric
+    )
+  ) %>% 
+  dplyr::filter(
+    diam_inch_class_lower < ustory_max_tree_dbh_cm
+  ) %>% 
+  dplyr::group_by(suid, regen_size_class_diam) %>% 
+  dplyr::summarise(
+    number_of_plots = dplyr::n_distinct(plot_dir_id)
+    , max_diam_inch_class_upper = max(diam_inch_class_upper)
+    , sum_num_trees = sum(number_of_trees_in_size_class)
+    , sampled_area_ac = sum(plot_area_ac)
+    , sampled_area_ha = sum(plot_area_ha)
+  ) %>% 
+  dplyr::mutate(
+    size_class_trees_per_ac = sum_num_trees/sampled_area_ac
+    , size_class_trees_per_ha = sum_num_trees/sampled_area_ha
+  ) %>% 
+  dplyr::group_by(suid) %>% 
+  dplyr::mutate(
+    unit_trees_per_ac = sum(size_class_trees_per_ac)
+    , unit_trees_per_ha = sum(size_class_trees_per_ha)
+  ) %>% 
+  dplyr::ungroup()
+  
+### export tabular
+  write.csv(
+      ustory_silv_metrics
+      , paste0(delivery_dir, "/stand_understory_silv_metrics.csv")
+      , row.names = F
+    )
+```
+
+## Overstory Summary
+
+### Distribution of silvicultural metrics
+
+Distribution of silvicultural metrics across the `r nrow(silv_metrics)` stands in this analysis.
+
+```{r site-metrics}
+silv_metrics %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::select(
+    "suid"
+    , "stand_area_ac"
+    , "n_trees"
+    , "trees_per_ac"
+    , "mean_dbh_in"
+    , "qmd_in"
+    , "mean_tree_height_ft"
+    , "loreys_height_ft"
+    , "basal_area_ft2_per_ac"
+  ) %>% 
+  tidyr::pivot_longer(
+    cols = -c(suid), names_to = "metric", values_to = "val"
+  ) %>% 
+  # order metrics
+  dplyr::mutate(
+    metric = factor(
+      metric
+      , ordered = T
+      , levels = c(
+          "stand_area_ac"
+          , "n_trees"
+          , "trees_per_ac"
+          , "mean_tree_height_ft"
+          , "loreys_height_ft"
+          , "mean_dbh_in"
+          , "qmd_in"
+          , "basal_area_ft2_per_ac"
+        )
+      , labels = c(
+          latex2exp::TeX("Stand Area (ac)", output = "character")
+          , latex2exp::TeX("Number of Trees", output = "character")
+          , latex2exp::TeX("Trees $ac^{-1}$")
+          , latex2exp::TeX("Mean Tree Height (ft)", output = "character")
+          , latex2exp::TeX("Lorey's Mean Height (ft)", output = "character")
+          , latex2exp::TeX("Mean DBH (in)", output = "character")
+          , latex2exp::TeX("QMD (in)", output = "character")
+          , latex2exp::TeX("Basal Area $ft^{2} \\cdot ac^{-1}$")
+        )
+    )
+  ) %>% 
+  ggplot(
+    mapping = aes(
+      x = val
+      , y = 1
+    )
+  ) +
+  geom_boxplot(fill = "gray", width = 0.7, outlier.shape = NA) +
+  geom_point(mapping = aes(group = suid)) +
+  facet_wrap(facets = vars(metric), ncol = 2, scales = "free_x", labeller = label_parsed) +
+  scale_x_continuous(breaks = scales::extended_breaks(6)) +
+  scale_y_continuous(limits = c(0.5,1.5)) +
+  labs(
+    y = ""
+    , x = ""
+    , title = paste0(
+        "Overstory (>= "
+        , scales::comma(ostory_min_tree_dbh_cm/2.54,accuracy = 0.1)
+        , " in. DBH) Distribution of Silvicultural Metrics"
+      )
+    , subtitle = paste(nrow(silv_metrics), "stands included in analysis")
+  ) +
+  theme_light() + 
+  theme(
+    legend.position = "none"
+    , strip.text = element_text(color = "black")
+    , strip.background = element_rect(fill = "gray88")
+    , axis.text.y = element_blank()
+    , axis.ticks.y = element_blank()
+    , panel.grid.major.y = element_blank()
+    , panel.grid.minor.y = element_blank()
+  )
+```
+
+### Overstory Stand Basal Area Map
+
+```{r ba-map, fig.height = 5}
+mapview::mapview(
+  bhef_boundary
+  , color = "black"
+  , lwd = 3
+  , alpha.regions = 0
+  , layer.name = "BHEF"
+  , label = FALSE
+  , legend = FALSE
+  , popup = FALSE
+) +
+    mapview::mapview(
+      silv_metrics
+      , zcol = "basal_area_ft2_per_ac"
+      , layer.name = "BA (ft2 per ac)" #latex2exp::TeX("Basal Area $ft^{2} \\cdot ac^{-1}$")
+      , col.regions = viridis::cividis(n=nrow(silv_metrics)*1.1)
+      , alpha.regions = 0.7
+      , na.color = "transparent"
+      , popup = F
+    ) 
+```
+
+### Stand QMD Map
+
+Quadratic mean diameter (QMD) is a measure of the diameter of the tree of mean basal area:
+
+$$
+\textrm{quadratic mean diameter (QMD)} = \sqrt{\frac{\sum{d_{i}^{2}}}{n}}
+$$
+
+, where $d_{i}$ is the diameter at breast height of an individual tree, and $n$ is the total number of trees. 
+
+```{r qmd-map, fig.height = 5}
+mapview::mapview(
+  bhef_boundary
+  , color = "black"
+  , lwd = 3
+  , alpha.regions = 0
+  , layer.name = "BHEF"
+  , label = FALSE
+  , legend = FALSE
+  , popup = FALSE
+) +
+    mapview::mapview(
+      silv_metrics
+      , zcol = "qmd_in"
+      , layer.name = "QMD (in)" #latex2exp::TeX("Basal Area $ft^{2} \\cdot ac^{-1}$")
+      , col.regions = viridis::mako(n=nrow(silv_metrics)*1.1, direction = -1)
+      , alpha.regions = 0.7
+      , na.color = "transparent"
+      , popup = F
+    ) 
+```
+
+### Overstory DBH Distrubtion
+
+```{r os-dbh-dist}
+harvests_trees %>%
+  sf::st_drop_geometry() %>%
+  dplyr::filter(dbh_cm >= ostory_min_tree_dbh_cm) %>% 
+  dplyr::select(treeID, dbh_in) %>% 
+  dplyr::ungroup() %>%
+  dplyr::distinct() %>% 
+  ggplot(
+    mapping = aes(x = dbh_in)
+  ) +
+    geom_density(alpha = 0.8, fill = "navy", color = NA) + 
+    labs(
+      x = "DBH (in)"
+      , y = "density"
+      , title = paste0(
+        "Overstory (>= "
+        , scales::comma(ostory_min_tree_dbh_cm/2.54,accuracy = 0.1)
+        , " in. DBH) SfM-derived tree DBH distribution"
+      )
+    ) +
+    scale_x_continuous(breaks = scales::extended_breaks(n=20)) +
+    theme_light() +
+    theme(
+      legend.position = "none"
+    )
+```
+
+```{r os-dbh-dist2}
+tpa_temp = 
+  harvests_trees %>%
+    sf::st_drop_geometry() %>%
+    dplyr::filter(dbh_cm >= ostory_min_tree_dbh_cm) %>% 
+    dplyr::select(treeID, dbh_in) %>% 
+    dplyr::ungroup() %>%
+    dplyr::distinct() %>% 
+    dplyr::mutate(
+      dbh_cl = ggplot2::cut_width(dbh_in, width = 1, center = 0.5, closed = "left")
+    ) %>% 
+    dplyr::group_by(dbh_cl) %>% 
+    dplyr::summarise(
+      n_trees = dplyr::n()
+      , trees_per_ac = dplyr::n()/
+        (harvests %>% sf::st_union() %>% sf::st_area() %>% as.numeric() %>% `/`(10000) %>% `*`(2.471))
+      , trees_per_ha = dplyr::n()/
+        (harvests %>% sf::st_union() %>% sf::st_area() %>% as.numeric() %>% `/`(10000))
+    ) %>%
+    dplyr::ungroup() %>% 
+    dplyr::mutate(
+      tot_trees_per_ac = sum(trees_per_ac)
+      , tot_trees_per_ha = sum(trees_per_ha)
+      , pct = trees_per_ac/tot_trees_per_ac
+      , dbh_cl_lab = paste0(
+        stringr::word(dbh_cl, 1, sep = fixed(",")) %>% readr::parse_number()
+        , " to "
+        , stringr::word(dbh_cl, -1, sep = fixed(",")) %>% readr::parse_number() %>% `-`(0.1)
+      ) %>% 
+      factor() %>% 
+      forcats::fct_reorder(stringr::word(dbh_cl, 1, sep = fixed(",")) %>% readr::parse_number())
+    )
+# plot
+tpa_temp %>% 
+  ggplot(
+    mapping = aes(
+      x = dbh_cl_lab, y = trees_per_ac
+      , fill=trees_per_ac
+      , label = paste0(
+        scales::comma(trees_per_ac, accuracy = 0.1)
+        , "\n"
+        , scales::percent(pct, accuracy = 0.1)
+      )
+    )
+  ) +
+    geom_col(width = 0.7) +
+    geom_text(color = "black", size = 3, vjust = -0.2) +
+    scale_fill_viridis_c(option = "mako", direction = -1) +
+    scale_y_continuous(labels = scales::comma_format(accuracy = 1),expand = expansion(mult = c(0, .13))) +
+    labs(
+      x = "DBH (in) Class"
+      , y = "TPA"
+      , title = paste0(
+        "Overstory (>= "
+        , scales::comma(ostory_min_tree_dbh_cm/2.54,accuracy = 0.1)
+        , " in. DBH) Trees Per Acre by Diameter Class"
+      )
+      , subtitle = paste0(
+          "Total TPA: "
+          , scales::comma(tpa_temp$tot_trees_per_ac[1], accuracy = 1)
+        )
+    ) +
+    theme_light() +
+    theme(
+      legend.position = "none"
+      , axis.text.x = element_text(angle = 90, size = 10, face = "bold", vjust = 0.5, hjust = 1)
+    )
+```
+
+## Height Distribution
+
+```{r os-ht-dist}
+harvests_trees %>%
+  sf::st_drop_geometry() %>%
+  dplyr::filter(dbh_cm >= ostory_min_tree_dbh_cm) %>% 
+  dplyr::select(treeID, tree_height_ft) %>% 
+  dplyr::ungroup() %>%
+  dplyr::distinct() %>% 
+  ggplot(
+    mapping = aes(x = tree_height_ft)
+  ) +
+    geom_density(alpha = 0.8, fill = "steelblue", color = NA) + 
+    labs(
+      x = "Height (ft)"
+      , y = "density"
+      , title = paste0(
+        "Overstory (>= "
+        , scales::comma(ostory_min_tree_dbh_cm/2.54,accuracy = 0.1)
+        , " in. DBH) SfM-derived tree height distribution"
+      )
+    ) +
+    scale_x_continuous(breaks = scales::extended_breaks(n=10)) +
+    theme_light() +
+    theme(
+      legend.position = "none"
+    )
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(list = ls()[grep("_temp",ls())])
+gc()
+```
+
+## Understory Summary
+
+```{r us-tpa}
+# total
+tpa_temp = harvests_regen_plt_diam %>% 
+  sf::st_drop_geometry() %>%
+  dplyr::mutate(
+    dplyr::across(
+      tidyselect::starts_with("diam_inch_class")
+      , .fn = as.numeric
+    )
+  ) %>% 
+  dplyr::filter(
+    diam_inch_class_lower < ustory_max_tree_dbh_cm
+  ) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::distinct(plot_dir_id, regen_size_class_diam, number_of_trees_in_size_class, plot_area_ac, plot_area_ha) %>% 
+  dplyr::group_by(regen_size_class_diam) %>% 
+  dplyr::summarise(
+    number_of_plots = dplyr::n_distinct(plot_dir_id)
+    , sum_num_trees = sum(number_of_trees_in_size_class)
+    , sampled_area_ac = sum(plot_area_ac)
+    , sampled_area_ha = sum(plot_area_ha)
+  ) %>% 
+  dplyr::mutate(
+    size_class_trees_per_ac = sum_num_trees/sampled_area_ac
+    , size_class_trees_per_ha = sum_num_trees/sampled_area_ha
+  ) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(
+    tot_trees_per_ac = sum(size_class_trees_per_ac)
+    , tot_trees_per_ha = sum(size_class_trees_per_ha)
+    , pct = size_class_trees_per_ac/tot_trees_per_ac
+    , dbh_cl_lab = paste0(
+        stringr::word(regen_size_class_diam, 1, sep = fixed("-")) %>% readr::parse_number()
+        , " to "
+        , stringr::word(regen_size_class_diam, -1, sep = fixed("-")) %>% readr::parse_number() %>% `-`(0.1)
+      ) %>% 
+      factor() %>% 
+      forcats::fct_reorder(stringr::word(regen_size_class_diam, 1, sep = fixed("-")) %>% readr::parse_number())
+  )
+# plot
+tpa_temp %>% 
+  ggplot(
+    mapping = aes(
+      x = dbh_cl_lab, y = size_class_trees_per_ac
+      , fill=size_class_trees_per_ac
+      , label = paste0(
+        scales::comma(size_class_trees_per_ac, accuracy = 0.1)
+        , "\n"
+        , scales::percent(pct, accuracy = 0.1)
+      )
+    )
+  ) +
+    geom_col(width = 0.7) +
+    geom_text(color = "black", size = 3, vjust = -0.2) +
+    scale_fill_viridis_c(option = "mako", direction = -1) +
+    scale_y_continuous(labels = scales::comma_format(accuracy = 1),expand = expansion(mult = c(0, .13))) +
+    labs(
+      x = "DBH (in) Class"
+      , y = "TPA"
+      , title = paste0(
+        "Understory (< "
+        , scales::comma(ustory_max_tree_dbh_cm/2.54,accuracy = 0.1)
+        , " in. DBH) Trees Per Acre by Diameter Class"
+      )
+      , subtitle = paste0(
+          "Total TPA: "
+          , scales::comma(tpa_temp$tot_trees_per_ac[1], accuracy = 1)
+        )
+    ) +
+    theme_light() +
+    theme(
+      legend.position = "none"
+      , axis.text.x = element_text(angle = 90, size = 10, face = "bold", vjust = 0.5, hjust = 1)
+    )
+  
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(list = ls()[grep("_temp",ls())])
+gc()
+```
+
+## Define Functions for Stand Summary
+
+Create plots to combine for report
+
+1) orthomosaic + chm + tree tops + stand plot
+
+```{r ortho-plt-fn}
+######################################################################################
+# function to plot ortho + chm + points + stand
+######################################################################################
+ortho_plt_fn = function(my_suid){
+
+# convert to stars
+  ortho_st = ortho_rast %>%  
+    terra::subset(subset = c(1,2,3)) %>%
+    terra::crop(
+      # stand %>% 
+      harvests %>% dplyr::filter(suid==my_suid) %>% 
+        sf::st_buffer(20) %>% 
+        sf::st_bbox() %>% 
+        sf::st_as_sfc() %>% 
+        terra::vect()
+    ) %>% 
+    terra::aggregate(fact = 4, fun = "mean", na.rm = T) %>% 
+    stars::st_as_stars()
+  
+  # convert to rgb
+  ortho_rgb <- stars::st_rgb(
+    ortho_st[,,,1:3]
+    , dimension = 3
+    , use_alpha = FALSE
+    # , stretch = "histogram"
+    , probs = c(0.005, 0.995)
+    , stretch = "percent"
+  )
+  # ggplot
+  plt_rgb <- ggplot() +
+    stars::geom_stars(data = ortho_rgb[]) +
+    scale_fill_identity(na.value = "transparent") + # !!! don't take this out or RGB plot will kill your computer
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0)) +
+    labs(
+      x = ""
+      , y = ""
+    ) +
+    theme_void()
+  
+  # chm
+  chm = chm_rast %>% 
+    terra::crop(
+      harvests %>% dplyr::filter(suid==my_suid) %>% 
+      terra::vect()
+    ) %>% 
+    terra::mask(
+      harvests %>% dplyr::filter(suid==my_suid) %>% 
+      terra::vect()
+    ) %>% 
+    terra::aggregate(fact = 2, fun = "mean", na.rm = T) %>% 
+    `*`(3.28) %>% # transform to feet
+    as.data.frame(xy=T) %>% 
+    rename(f=3)
+  
+  # return(plt_rgb)
+  # combine all plot elements
+  plt_combine = plt_rgb +
+    # # understory
+    # geom_tile(
+    #   data = chm %>% 
+    #     dplyr::filter(
+    #       f <
+    #       pred_mod_best %>%
+    #         dplyr::filter(estimate_in < ustory_max_tree_dbh_cm/2.54) %>% 
+    #         dplyr::pull(tree_height_ft) %>% max()
+    #     )
+    #   , mapping = aes(x = x, y = y)
+    #   , fill = "gray"
+    #   , alpha = 0.4
+    #   , na.rm = T
+    # ) +
+    # overstory
+    ggnewscale::new_scale_fill() +
+    geom_tile(
+      data = chm %>% 
+        dplyr::filter(
+          f >=
+          pred_mod_best %>%
+            dplyr::filter(estimate_in >= ostory_min_tree_dbh_cm/2.54) %>% 
+            dplyr::pull(tree_height_ft) %>% min()
+        )
+      , mapping = aes(x = x, y = y, fill = f)
+      , na.rm = T
+    ) +
+    scale_fill_viridis_c(option="plasma", alpha = 0.6, breaks = scales::extended_breaks(n=6), na.value = "transparent") +
+    geom_sf(
+      data = harvests %>% dplyr::filter(suid==my_suid)
+      , alpha = 0
+      , lwd = 1.5
+      , color = "#b22222"
+    ) +
+    # geom_sf(
+    #   data = treetops_sf_with_dbh %>% 
+    #     sf::st_intersection(harvests %>% dplyr::filter(suid==my_suid))
+    #   , color = "#330099"
+    #   , shape = "."
+    # ) +
+    labs(
+      fill = "overstory\ncanopy ht. (ft)"
+      # , title = "Trees identified within stand boundary"
+      # , title = "<span><span style='color:#330099;'><b><i>Trees</i></b></span> identified within <span style='color:#b22222;'><b><i>stand</i></b></span> boundary</span>"
+      , title = paste0(
+        "Overstory (>= "
+        , scales::comma(ostory_min_tree_dbh_cm/2.54,accuracy = 0.1)
+        , " in. DBH) within stand boundary"
+      )
+      # , subtitle = paste0(
+      #   "trees under "
+      #   , scales::comma((ustory_max_tree_dbh_cm/2.54),accuracy = 0.1)
+      #   , " in. DBH shown in gray"
+      # )
+    ) +
+    theme(
+      legend.position = "top" # c(0.5,1)
+      , legend.direction = "horizontal"
+      , legend.margin = margin(0,0,-1,0)
+      , legend.text = element_text(size = 8)
+      , legend.title = element_text(size = 8)
+      # , plot.title = ggtext::element_markdown(size = 10, hjust = 0.5)
+      , plot.title = element_text(size = 10, hjust = 0.5, face = "bold")
+      , plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic")
+    )
+  return(plt_combine)
+}
+# ortho_plt_fn(harvests$suid[3])
+```
+
+```{r, include=FALSE, eval=F}
+######################################################################################
+# function to plot ortho + chm + points + stand
+######################################################################################
+  xxxxxortho_plt_fn = function(stand,ortho,points,chm){
+      # plot ortho
+      ortho %>% 
+        terra::crop(
+          stand %>% 
+            sf::st_buffer(20) %>% 
+            sf::st_bbox() %>% 
+            sf::st_as_sfc() %>% 
+            terra::vect()
+        ) %>% 
+        terra::aggregate(fact = 4, fun = "mean", na.rm = T) %>% 
+        terra::plotRGB(
+          r = 1, g = 2, b = 3, stretch = "lin", colNA = "transparent"
+          , mar = c(4,0,2,0)
+          , main = "Trees (blue) identified within stand boundary (red)"
+          , cex.main = 0.8
+        )
+      # plot chm
+      chm %>% 
+        `*`(3.28) %>% # transform to feet
+        terra::crop(stand %>% terra::vect()) %>% 
+        terra::mask(stand %>% terra::vect()) %>%
+        terra::aggregate(fact = 2, fun = "mean", na.rm = T) %>% 
+        terra::plot(
+          col = viridis::plasma(50), colNA = NA, alpha = 0.6, add = T
+          , plg = list(
+            title = "canopy ht. (ft)"
+            , title.cex = 0.8
+            , title.adj = 0
+          )
+        )
+      # legend(legend = 2,title = "canopy ht. (ft)")
+      
+      # plot stand
+        terra::plot(
+          stand %>% terra::vect()
+          , col = NA, border = "firebrick", lwd = 2.5
+          , add = T
+        )
+      # plot points
+      terra::plot(
+        terra::crop(points %>% terra::vect(), stand %>% terra::vect())
+        , pch = "."
+        , col = "blue"
+        , add = T
+      )
+      
+  }
+# ortho_1 = function(){ortho_plt_fn(
+#     stand = harvests[1,]
+#     , ortho = ortho_rast
+#     , points = treetops_sf_with_dbh
+#     , chm = chm_rast
+#   )}
+# ortho_1()
+```
+
+2) dbh distribution plot
+
+```{r dbh-dist-fn}
+dbh_dist_fn = function(my_suid){
+  harvests_trees %>% 
+    dplyr::filter(
+      suid == my_suid
+      & dbh_cm >= ostory_min_tree_dbh_cm
+    ) %>% 
+    sf::st_drop_geometry() %>% 
+    dplyr::select(treeID, dbh_in) %>% 
+    dplyr::distinct() %>% 
+    ggplot(
+      mapping = aes(x = dbh_in)
+    ) +
+      geom_density(alpha = 0.8, fill = "navy", color = NA) + 
+      labs(
+        x = "DBH (in)"
+        , y = "density"
+        , title = paste0(
+          "Overstory (>= "
+          , scales::comma(ostory_min_tree_dbh_cm/2.54,accuracy = 0.1)
+          , " in. DBH) DBH distribution"
+        )
+      ) +
+      scale_x_continuous(breaks = scales::extended_breaks(n=20)) +
+      theme_light() +
+      theme(
+        legend.position = "none"
+      )
+}
+# dbh_dist_fn(harvests$suid[1])
+```
+
+3) height distribution plot
+
+```{r ht-dist-fn}
+ht_dist_fn = function(my_suid){
+  harvests_trees %>% 
+    dplyr::filter(
+      suid == my_suid
+      & dbh_cm >= ostory_min_tree_dbh_cm
+    ) %>% 
+    sf::st_drop_geometry() %>% 
+    dplyr::select(treeID, tree_height_ft) %>% 
+    dplyr::distinct() %>% 
+    ggplot(
+      mapping = aes(x = tree_height_ft)
+    ) +
+      geom_density(alpha = 0.8, fill = "steelblue", color = NA) + 
+      labs(
+        x = "Height (ft)"
+        , y = "density"
+        , title = paste0(
+          "Overstory (>= "
+          , scales::comma(ostory_min_tree_dbh_cm/2.54,accuracy = 0.1)
+          , " in. DBH) height distribution"
+        )
+      ) +
+      scale_x_continuous(breaks = scales::extended_breaks(n=10)) +
+      theme_light() +
+      theme(
+        legend.position = "none"
+      )
+}
+# ht_dist_fn(harvests$suid[1])
+```
+
+4) silvicultural metrics imperial table
+
+```{r tbl-fn}
+tab_imp_fn = function(my_suid){
+  silv_metrics %>% 
+    dplyr::filter(suid == my_suid) %>% 
+    sf::st_drop_geometry() %>% 
+    dplyr::select(
+      "suid"
+      , "stand_area_ac"
+      , "n_trees"
+      , "trees_per_ac"
+      , "mean_dbh_in"
+      , "qmd_in"
+      , "mean_tree_height_ft"
+      , "loreys_height_ft"
+      , "basal_area_ft2_per_ac"
+    ) %>% 
+    tidyr::pivot_longer(
+      cols = -c(suid), names_to = "metric", values_to = "val"
+    ) %>% 
+    # order metrics
+    dplyr::mutate(
+      metric = factor(
+        metric
+        , ordered = T
+        , levels = c(
+            "stand_area_ac"
+            , "n_trees"
+            , "trees_per_ac"
+            , "mean_tree_height_ft"
+            , "loreys_height_ft"
+            , "mean_dbh_in"
+            , "qmd_in"
+            , "basal_area_ft2_per_ac"
+          )
+        , labels = c(
+            latex2exp::TeX("Stand Area (ac)", output = "character")
+            , latex2exp::TeX("Number of Trees", output = "character")
+            , latex2exp::TeX("Trees $ac^{-1}$")
+            , latex2exp::TeX("Mean Tree Height (ft)", output = "character")
+            , latex2exp::TeX("Lorey's Mean Height (ft)", output = "character")
+            , latex2exp::TeX("Mean DBH (in)", output = "character")
+            , latex2exp::TeX("QMD (in)", output = "character")
+            , latex2exp::TeX("Basal Area $ft^{2} \\cdot ac^{-1}$")
+          )
+      )
+    ) %>% 
+    dplyr::mutate(val = scales::comma(val,accuracy=0.1)) %>% 
+    dplyr::select(metric, val) %>% 
+    ggpubr::ggtexttable(
+      rows = NULL
+      , cols = rep("", 2)
+      , theme = ggpubr::ttheme(
+        base_style = "blank"
+        , tbody.style = ggpubr::tbody_style(
+          parse = T, fill = "white", linecolor = "gray"
+          , size = 10
+        )
+      )
+    ) %>% 
+    ggpubr::tab_add_title(
+      text = paste0(
+        "Silvicultural Metrics (imperial)"
+        , "\nOverstory (>= "
+        , scales::comma(ostory_min_tree_dbh_cm/2.54,accuracy = 0.1)
+        , " in. DBH)"
+        )
+      , face = "bold"
+      , size = 10, padding = unit(0.5, "line")
+    )
+}
+
+# tab_imp_fn(harvests$suid[2])
+
+```
+
+5) silvicultural metrics metric table
+
+```{r tbl-fn2}
+tab_met_fn = function(my_suid){
+  silv_metrics %>% 
+    dplyr::filter(suid == my_suid) %>% 
+    sf::st_drop_geometry() %>% 
+    dplyr::select(
+      "suid"
+      , "stand_area_ha"
+      , "n_trees"
+      , "trees_per_ha"
+      , "mean_dbh_cm"
+      , "qmd_cm"
+      , "mean_tree_height_m"
+      , "loreys_height_m"
+      , "basal_area_m2_per_ha"
+    ) %>% 
+    tidyr::pivot_longer(
+      cols = -c(suid), names_to = "metric", values_to = "val"
+    ) %>% 
+    # order metrics
+    dplyr::mutate(
+      metric = factor(
+        metric
+        , ordered = T
+        , levels = c(
+            "stand_area_ha"
+            , "n_trees"
+            , "trees_per_ha"
+            , "mean_tree_height_m"
+            , "loreys_height_m"
+            , "mean_dbh_cm"
+            , "qmd_cm"
+            , "basal_area_m2_per_ha"
+          )
+        , labels = c(
+            latex2exp::TeX("Stand Area (ha)", output = "character")
+            , latex2exp::TeX("Number of Trees", output = "character")
+            , latex2exp::TeX("Trees $ha^{-1}$")
+            , latex2exp::TeX("Mean Tree Height (m)", output = "character")
+            , latex2exp::TeX("Lorey's Mean Height (m)", output = "character")
+            , latex2exp::TeX("Mean DBH (cm)", output = "character")
+            , latex2exp::TeX("QMD (cm)", output = "character")
+            , latex2exp::TeX("Basal Area $m^{2} \\cdot ha^{-1}$")
+          )
+      )
+    ) %>% 
+    dplyr::mutate(val = scales::comma(val,accuracy=0.1)) %>% 
+    dplyr::select(metric, val) %>% 
+    ggpubr::ggtexttable(
+      rows = NULL
+      , cols = rep("", 2)
+      , theme = ggpubr::ttheme(
+        base_style = "blank"
+        , tbody.style = ggpubr::tbody_style(
+          parse = T, fill = "white", linecolor = "gray"
+          , size = 10
+        )
+      )
+    ) %>% 
+    ggpubr::tab_add_title(
+      text = paste0(
+        "Silvicultural Metrics (metric)"
+        , "\nOverstory (>= "
+        , scales::comma(ostory_min_tree_dbh_cm,accuracy = 0.1)
+        , " cm DBH)"
+        )
+      , face = "bold"
+      , size = 10, padding = unit(0.5, "line")
+    )
+}
+
+# tab_met_fn(harvests$suid[2])
+```
+
+6) inset map plot
+
+```{r inset-map}
+plt_inset_map_fn <- function(my_suid){
+  (
+    ggplot() +
+      geom_sf(data = bhef_boundary, alpha = 0, lwd = 1, color = "black") +
+      geom_sf(data = harvests, alpha = 0, lwd = 0.4, color = "gray") +
+      geom_sf(
+        data = harvests %>% dplyr::filter(suid == my_suid)
+        , fill = "firebrick"
+        , alpha = 0.3
+        , lwd = 1
+        , color = "firebrick"
+      ) +
+      # geom_sf_label(
+      #   data = rx_fire
+      #   , aes(label = unit)
+      #   , label.size = NA
+      #   , alpha = 0
+      #   , size = 2.5
+      # ) +
+      xlab("") +
+      ylab("") +
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0)) +
+      theme_bw() +
+      theme(
+        axis.text = element_text(size = 3.5)
+        , axis.text.x = element_text(angle = 35)
+        , panel.border = element_blank()
+      )
+
+  )
+}
+# plt_inset_map_fn(harvests$suid[4])
+```
+
+7) contour + elevation map plot
+
+```{r elev-plt-inset}
+# sequence by 5's to get 5m breaks list for contour
+contour_int_m <- 5
+seq_brk <- seq(0, 40000, contour_int_m)
+# create contour data
+elev_contour <- dtm_rast %>% 
+  stars::st_as_stars() %>% 
+  stars::st_contour(
+    na.rm = TRUE
+    , contour_lines = FALSE
+    , breaks = # classInt::classIntervals(na.omit(as.vector(x[[1]])))$brks
+        seq_brk[
+          seq_brk > min(na.omit(as.vector(dtm_rast[[1]]))) - contour_int_m
+          & seq_brk < max(na.omit(as.vector(dtm_rast[[1]]))) + contour_int_m
+        ]
+  )
+
+plt_contour_map_fn <- function(my_suid){
+  (
+    #########################################
+    #########################################
+    # map of unit w/ contour
+    #########################################
+    #########################################
+    # plot
+    ggplot() +
+      geom_tile(
+        data = dtm_rast %>% 
+          terra::crop(
+            harvests %>% dplyr::filter(suid == my_suid) %>% 
+              sf::st_buffer(dist = 20) %>% 
+              sf::st_bbox() %>% 
+              sf::st_as_sfc() %>% 
+              terra::vect()
+          ) %>% 
+          terra::aggregate(fact=2) %>% 
+          `*`(3.28) %>% # transform to feet
+          as.data.frame(xy=T) %>% 
+          dplyr::rename(elev = 3)
+        , mapping = aes(x=x,y=y,fill=elev)
+      ) +
+      geom_sf(data = elev_contour %>% 
+        sf::st_crop(
+          harvests %>% dplyr::filter(suid == my_suid) %>% 
+          sf::st_buffer(dist = 20) %>% 
+          sf::st_bbox()
+        )
+        , alpha = 0
+        , lwd = 0.5
+        , color = "gray30"
+        , show.legend = FALSE
+      ) +
+      geom_sf(data = harvests %>% dplyr::filter(suid == my_suid)
+          , alpha = 0
+          , lwd = 1.5
+          , color = "firebrick"
+          , show.legend = FALSE
+      ) +
+      scale_fill_viridis_c(
+        option = "viridis"
+        , alpha = 0.9
+        , na.value = "transparent"
+        , breaks = scales::extended_breaks(n = 6)
+        , labels = scales::comma
+      ) +
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0)) +
+      labs(
+        subtitle = paste0(
+          as.character(round(contour_int_m * 3.28, 1))
+          , " ft ("
+          , as.character(contour_int_m)
+          , " m) contours"
+        )
+        , fill = "elev. (ft)"
+        , x = ""
+        , y = ""
+      ) +
+      theme_void() +
+      theme(
+        legend.position = "top"
+        , legend.direction = "horizontal"
+        , legend.margin = margin(0,0,-1,0)
+        # , legend.box.margin = margin(-1,0,2,0)
+        , legend.text = element_text(size = 4, angle = 25, hjust = 0.7)
+        , legend.title = element_text(size = 4)
+        , plot.subtitle = element_text(
+            size=5, face="italic", color="gray20", margin = margin(0,0,0,0)
+            , hjust = 0.5
+        )
+      )
+  )
+}
+# plt_contour_map_fn(harvests$suid[1])
+```
+
+8) regen by size class
+
+```{r stand-regen-class}
+plt_regen_dist_fn <- function(my_suid){
+  dta = harvests_regen_plt_diam %>% 
+    sf::st_drop_geometry() %>%
+    dplyr::mutate(
+      dplyr::across(
+        tidyselect::starts_with("diam_inch_class")
+        , .fn = as.numeric
+      )
+    ) %>% 
+    dplyr::filter(
+      suid == my_suid
+      & diam_inch_class_lower < ustory_max_tree_dbh_cm
+    ) %>% 
+    dplyr::group_by(suid,regen_size_class_diam) %>% 
+    dplyr::summarise(
+      number_of_plots = dplyr::n()
+      , sum_num_trees = sum(number_of_trees_in_size_class)
+      , sampled_area_ac = sum(plot_area_ac)
+    ) %>% 
+    dplyr::group_by(suid) %>% 
+    dplyr::mutate(
+      trees_per_ac = sum_num_trees/sampled_area_ac
+      , stand_trees_per_ac = sum(sum_num_trees)/max(sampled_area_ac)
+      , regen_size_class_diam = regen_size_class_diam %>% factor() %>% forcats::fct_rev()
+    ) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::mutate(
+      stand_lab = paste0(
+          # suid
+          "\nTotal TPA: "
+          , scales::comma(stand_trees_per_ac, accuracy = 1)
+      ) 
+      # factor() %>% forcats::fct_reorder(desc(stand_trees_per_ac))
+    )
+    ## plt
+    ggplot(
+      data = dta
+      , mapping = aes(
+        x = trees_per_ac, y = regen_size_class_diam
+        , fill=trees_per_ac
+        , label = scales::comma(trees_per_ac, accuracy = 0.1)
+      )
+    ) +
+      geom_col(
+        width = 0.7
+      ) +
+      geom_text(
+        color = "black", size = 2
+        , hjust = -0.1
+      ) +
+      scale_fill_viridis_c(option = "mako", direction = -1) +
+      scale_x_continuous(expand = expansion(mult = c(0, .13))) +
+      # facet_wrap(facets = vars(stand_lab), ncol = 3) +
+      labs(
+        fill = ""
+        , y = "DBH (in) Class"
+        , x = "Trees per Acre"
+        , title = paste0(
+          "Understory (< "
+          , scales::comma(ustory_max_tree_dbh_cm/2.54,accuracy = 0.1)
+          , " in. DBH) Trees Per Acre"
+        )
+        # , subtitle = "by harvest unit (with FACTS ID)"
+        , subtitle = dta$stand_lab[1]
+      ) +
+      theme_light() +
+      theme(
+        legend.position = "none"
+        , axis.text.x = element_blank()
+        , axis.text.y = element_text(color = "black",size=12, face = "bold")
+        , axis.ticks.x = element_blank()
+        # , strip.text = element_text(color = "black", size = 12)
+        # , strip.background = element_rect(fill = "gray88")
+      )
+}
+# plt_regen_dist_fn(harvests$suid[2])
+```
+
+81) build report
+
+```{r report-fn}
+report_fn = function(my_suid){
+  # generate plots
+  ortho_plt_temp = ortho_plt_fn(my_suid) # ortho_plt_fn(harvests$suid[4])
+  dbh_dist_temp = dbh_dist_fn(my_suid) + # dbh_dist_fn(harvests$suid[4])
+    theme(
+      plot.background = element_rect(colour = "gray", fill=NA, size=1)
+      # , plot.title = element_text(size = 9)
+      # , plot.subtitle = element_text(size = 7)
+    )
+  ht_dist_temp = ht_dist_fn(my_suid) + # ht_dist_fn(harvests$suid[4]) 
+    theme(
+      plot.background = element_rect(colour = "gray", fill=NA, size=1)
+      # , plot.title = element_text(size = 9)
+      # , plot.subtitle = element_text(size = 7)
+    )
+  plt_inset_map_temp = plt_inset_map_fn(my_suid) # plt_inset_map_fn(harvests$suid[4])
+  plt_contour_map_temp = plt_contour_map_fn(my_suid) # plt_contour_map_fn(harvests$suid[4])
+  tab_imp_temp = tab_imp_fn(my_suid) # tab_imp_fn(harvests$suid[4])
+  tab_met_temp = tab_met_fn(my_suid) # tab_met_fn(harvests$suid[4]) 
+  plt_regen_dist_temp = plt_regen_dist_fn(my_suid) +
+    theme(plot.background = element_rect(colour = "gray", fill=NA, size=1))
+  # plot layout
+  # area(t,l,b,r)
+  layout_temp = c(
+    # map
+    area(1, 2, 2, 2)
+    # map inset
+    , area(1, 1, 1, 1)
+    # contour
+    , area(2, 1, 2, 1)
+    # # tables
+    , area(4, 1, 5, 1)
+    , area(6, 1, 7, 1)
+    # space
+    , area(3, 1, 3, 2)
+    # # # distributions 
+    , area(5, 2, 5, 2)
+    , area(6, 2, 6, 2)
+    , area(7, 2, 7, 2)
+  )
+  # check the layout
+  # plot(layout_temp)
+  
+  # patchwork 
+  rpt = 
+    ortho_plt_temp +
+    plt_inset_map_temp + 
+    plt_contour_map_temp + 
+    tab_imp_temp + 
+    tab_met_temp + 
+    patchwork::plot_spacer() +
+    dbh_dist_temp + ht_dist_temp + plt_regen_dist_temp +
+    patchwork::plot_layout(
+      design = layout_temp
+      , heights = c(0.7, 0.8, 0.3, 1,1,1,1)
+      , widths = c(0.5,1)
+    )
+  # export
+  ggplot2::ggsave(
+    filename = paste0(delivery_dir, "/suid_", my_suid, ".pdf")
+    , plot = rpt
+    , device = "pdf"
+    , width = 8.5, height = 11, units = "in"
+  )
+  return(rpt)
+}
+```
+
+## Harvest Unit Summary Reports
+
+```{r print-reports, results='hide', fig.show='asis', fig.height=11}
+# generate and print reports
+harvests$suid %>% 
+  # .[1] %>% 
+  purrr::map(report_fn) %>% 
+  print()
+```
+
+```{r pdf-comb, results='hide'}
+# combine all pdfs together
+# combine with pdftools
+pdftools::pdf_combine(
+  sort(list.files(delivery_dir, pattern = "\\.pdf$", full.names = TRUE))
+  , output = paste0(
+    delivery_dir
+    , "/BHEF_UAS_202306_report_"
+    , gsub("-", "", Sys.Date())
+    , ".pdf"
+  )
+)
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+# check_ls_size_fn(ls()) %>% dplyr::slice_head(n=20)
+remove(
+  elev_contour
+  , seq_brk
+  , ortho_plt_fn
+  , report_fn
+  , plt_contour_map_fn
+  , tab_imp_fn
+  , tab_met_fn
+  , plt_inset_map_fn
+  , ht_dist_fn
+)
+remove(list = ls()[grep("_temp",ls())])
+gc()
+```
+
+
+```{r include=FALSE, eval=FALSE}
+library(patchwork)
+# area(t,l,b,r)
+layout_temp = c(
+    # map
+    area(1, 2, 2, 2)
+    # map inset
+    , area(1, 1, 1, 1)
+    # contour
+    , area(2, 1, 2, 1)
+    # # tables
+    , area(4, 1, 5, 1)
+    , area(6, 1, 7, 1)
+    # space
+    , area(3, 1, 3, 2)
+    # # # distributions 
+    , area(5, 2, 5, 2)
+    , area(6, 2, 6, 2)
+    , area(7, 2, 7, 2)
+  )
+# check the layout
+  plot(layout_temp)
+  
+  
+```
+
