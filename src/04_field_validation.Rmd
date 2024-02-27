@@ -37,7 +37,7 @@ max_height_error_m = 2
 ##################################################################################################
 # load Field Validation Data
 field_overstory = readr::read_csv(
-    file = "../data/field_data/Voodoo_overstory_data_old.csv"
+    file = "../data/field_data/Voodoo_overstory_data.csv"
   ) %>% 
   dplyr::rename_with(~ .x %>%
       # replace all non alphanumeric with _
