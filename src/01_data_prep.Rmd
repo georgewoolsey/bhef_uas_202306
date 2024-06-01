@@ -31,6 +31,12 @@ library(pdftools) # combine pdf files
 # modelling
 library(brms) # bayesian modelling using STAN engine
 library(Metrics) # mape, mae, rmse, etc
+# forest patches
+# pak::pkg_install("mhahsler/dbscan", upgrade = T)
+library(dbscan)
+
+# pak::pkg_install("bi0m3trics/patchwoRk", upgrade = T)
+# library(patchwoRk)
 
 # option to put satellite imagery as base layer of mapview maps
   mapview::mapviewOptions(

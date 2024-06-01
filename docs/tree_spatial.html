@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en-US" xml:lang="en-US">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Section 9 UAS Tree Spatial Arrangement | Black Hills Experimental Forest UAS Mission Data Summary</title>
+  <meta name="description" content="Using the bookdown package to write a book of data exploration. The output format for this example is bookdown::gitbook." />
+  <meta name="generator" content="bookdown 0.34 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Section 9 UAS Tree Spatial Arrangement | Black Hills Experimental Forest UAS Mission Data Summary" />
+  <meta property="og:type" content="book" />
+  
+  <meta property="og:description" content="Using the bookdown package to write a book of data exploration. The output format for this example is bookdown::gitbook." />
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Section 9 UAS Tree Spatial Arrangement | Black Hills Experimental Forest UAS Mission Data Summary" />
+  
+  <meta name="twitter:description" content="Using the bookdown package to write a book of data exploration. The output format for this example is bookdown::gitbook." />
+  
+
+<meta name="author" content="George Woolsey" />
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="silv.html"/>
+
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+<script src="libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
+<link href="libs/bsTable-3.3.7/bootstrapTable.min.css" rel="stylesheet" />
+<script src="libs/bsTable-3.3.7/bootstrapTable.js"></script>
+<link href="libs/htmltools-fill-0.5.8.1/fill.css" rel="stylesheet" />
+<script src="libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+<link href="libs/leaflet-1.3.1/leaflet.css" rel="stylesheet" />
+<script src="libs/leaflet-1.3.1/leaflet.js"></script>
+<link href="libs/leafletfix-1.0.0/leafletfix.css" rel="stylesheet" />
+<script src="libs/proj4-2.6.2/proj4.min.js"></script>
+<script src="libs/Proj4Leaflet-1.0.1/proj4leaflet.js"></script>
+<link href="libs/rstudio_leaflet-1.3.1/rstudio_leaflet.css" rel="stylesheet" />
+<script src="libs/leaflet-binding-2.2.2/leaflet.js"></script>
+<script src="libs/leaflet-providers-2.0.0/leaflet-providers_2.0.0.js"></script>
+<script src="libs/leaflet-providers-plugin-2.2.2/leaflet-providers-plugin.js"></script>
+<script src="libs/clipboard-0.0.1/setClipboardText.js"></script>
+<link href="libs/mapviewCSS-0.0.1/mapview-popup.css" rel="stylesheet" />
+<link href="libs/mapviewCSS-0.0.1/mapview.css" rel="stylesheet" />
+<script src="libs/elev. (ft)_f97124-1/data_stars_elevft01e6af.txt"></script>
+<script src="libs/joda-0.0.1/joda.js"></script>
+<script src="libs/joda-0.0.1/addImageQuery-bindings.js"></script>
+<script src="libs/canopy ht. (ft)_da071c-1/data_stars_canopyhtfta20165.txt"></script>
+<script type="text/javascript">
+
+// toggle visibility of R source blocks in R Markdown output
+function toggle_R() {
+  var x = document.getElementsByClassName('r');
+  if (x.length == 0) return;
+  function toggle_vis(o) {
+    var d = o.style.display;
+    o.style.display = (d == 'block' || d == '') ? 'none':'block';
+  }
+
+  for (i = 0; i < x.length; i++) {
+    var y = x[i];
+    if (y.tagName.toLowerCase() === 'pre') toggle_vis(y);
+  }
+
+    var elem = document.getElementById("myButton1");
+    if (elem.value === "Hide Code") elem.value = "Show Code";
+    else elem.value = "Hide Code";
+}
+
+document.write('<input onclick="toggle_R();" type="button" value="Hide Code" id="myButton1" style="position: absolute; top: 10%; right: 2%; z-index: 200"></input>')
+
+</script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li class="chapter" data-level="1" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i><b>1</b> Introduction</a></li>
+<li class="chapter" data-level="2" data-path="objective.html"><a href="objective.html"><i class="fa fa-check"></i><b>2</b> Objective</a></li>
+<li class="chapter" data-level="3" data-path="data_prep.html"><a href="data_prep.html"><i class="fa fa-check"></i><b>3</b> Data Preparation</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="data_prep.html"><a href="data_prep.html#data-load"><i class="fa fa-check"></i><b>3.1</b> Data Load</a></li>
+<li class="chapter" data-level="3.2" data-path="data_prep.html"><a href="data_prep.html#load-orthomosaic-rasters"><i class="fa fa-check"></i><b>3.2</b> Load orthomosaic rasters</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="local_mod.html"><a href="local_mod.html"><i class="fa fa-check"></i><b>4</b> Local DBH to Height Model</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="local_mod.html"><a href="local_mod.html#random-forest-model"><i class="fa fa-check"></i><b>4.1</b> Random Forest Model</a>
+<ul>
+<li class="chapter" data-level="4.1.1" data-path="local_mod.html"><a href="local_mod.html#training-vs-non-training-dbh"><i class="fa fa-check"></i><b>4.1.1</b> Training vs Non-Training DBH</a></li>
+</ul></li>
+<li class="chapter" data-level="4.2" data-path="local_mod.html"><a href="local_mod.html#linear-model"><i class="fa fa-check"></i><b>4.2</b> Linear Model</a>
+<ul>
+<li class="chapter" data-level="4.2.1" data-path="local_mod.html"><a href="local_mod.html#model-parameter-estimates"><i class="fa fa-check"></i><b>4.2.1</b> Model Parameter Estimates</a></li>
+<li class="chapter" data-level="4.2.2" data-path="local_mod.html"><a href="local_mod.html#sfm-derived-height-to-dbh-allometry"><i class="fa fa-check"></i><b>4.2.2</b> SfM-derived Height to DBH Allometry</a></li>
+<li class="chapter" data-level="4.2.3" data-path="local_mod.html"><a href="local_mod.html#training-vs-non-training-dbh-1"><i class="fa fa-check"></i><b>4.2.3</b> Training vs Non-Training DBH</a></li>
+</ul></li>
+<li class="chapter" data-level="4.3" data-path="local_mod.html"><a href="local_mod.html#quadratic-model"><i class="fa fa-check"></i><b>4.3</b> Quadratic Model</a>
+<ul>
+<li class="chapter" data-level="4.3.1" data-path="local_mod.html"><a href="local_mod.html#model-parameter-estimates-1"><i class="fa fa-check"></i><b>4.3.1</b> Model Parameter Estimates</a></li>
+<li class="chapter" data-level="4.3.2" data-path="local_mod.html"><a href="local_mod.html#sfm-derived-height-to-dbh-allometry-1"><i class="fa fa-check"></i><b>4.3.2</b> SfM-derived Height to DBH Allometry</a></li>
+<li class="chapter" data-level="4.3.3" data-path="local_mod.html"><a href="local_mod.html#training-vs-non-training-dbh-2"><i class="fa fa-check"></i><b>4.3.3</b> Training vs Non-Training DBH</a></li>
+</ul></li>
+<li class="chapter" data-level="4.4" data-path="local_mod.html"><a href="local_mod.html#no-intercept-quadratic-model"><i class="fa fa-check"></i><b>4.4</b> No Intercept Quadratic Model</a>
+<ul>
+<li class="chapter" data-level="4.4.1" data-path="local_mod.html"><a href="local_mod.html#model-parameter-estimates-2"><i class="fa fa-check"></i><b>4.4.1</b> Model Parameter Estimates</a></li>
+<li class="chapter" data-level="4.4.2" data-path="local_mod.html"><a href="local_mod.html#sfm-derived-height-to-dbh-allometry-2"><i class="fa fa-check"></i><b>4.4.2</b> SfM-derived Height to DBH Allometry</a></li>
+<li class="chapter" data-level="4.4.3" data-path="local_mod.html"><a href="local_mod.html#training-vs-non-training-dbh-3"><i class="fa fa-check"></i><b>4.4.3</b> Training vs Non-Training DBH</a></li>
+</ul></li>
+<li class="chapter" data-level="4.5" data-path="local_mod.html"><a href="local_mod.html#nonlinear-power-model"><i class="fa fa-check"></i><b>4.5</b> Nonlinear Power Model</a>
+<ul>
+<li class="chapter" data-level="4.5.1" data-path="local_mod.html"><a href="local_mod.html#model-parameter-estimates-3"><i class="fa fa-check"></i><b>4.5.1</b> Model Parameter Estimates</a></li>
+<li class="chapter" data-level="4.5.2" data-path="local_mod.html"><a href="local_mod.html#sfm-derived-height-to-dbh-allometry-3"><i class="fa fa-check"></i><b>4.5.2</b> SfM-derived Height to DBH Allometry</a></li>
+<li class="chapter" data-level="4.5.3" data-path="local_mod.html"><a href="local_mod.html#training-vs-non-training-dbh-4"><i class="fa fa-check"></i><b>4.5.3</b> Training vs Non-Training DBH</a></li>
+</ul></li>
+<li class="chapter" data-level="4.6" data-path="local_mod.html"><a href="local_mod.html#nonlinear-weibull-model"><i class="fa fa-check"></i><b>4.6</b> Nonlinear Weibull Model</a>
+<ul>
+<li class="chapter" data-level="4.6.1" data-path="local_mod.html"><a href="local_mod.html#model-parameter-estimates-4"><i class="fa fa-check"></i><b>4.6.1</b> Model Parameter Estimates</a></li>
+<li class="chapter" data-level="4.6.2" data-path="local_mod.html"><a href="local_mod.html#sfm-derived-height-to-dbh-allometry-4"><i class="fa fa-check"></i><b>4.6.2</b> SfM-derived Height to DBH Allometry</a></li>
+<li class="chapter" data-level="4.6.3" data-path="local_mod.html"><a href="local_mod.html#training-vs-non-training-dbh-5"><i class="fa fa-check"></i><b>4.6.3</b> Training vs Non-Training DBH</a></li>
+</ul></li>
+<li class="chapter" data-level="4.7" data-path="local_mod.html"><a href="local_mod.html#model-comparison"><i class="fa fa-check"></i><b>4.7</b> Model Comparison</a></li>
+<li class="chapter" data-level="4.8" data-path="local_mod.html"><a href="local_mod.html#update-dbh-to-best-model"><i class="fa fa-check"></i><b>4.8</b> Update DBH to best model</a></li>
+<li class="chapter" data-level="4.9" data-path="local_mod.html"><a href="local_mod.html#combine-harvest-units-with-tree-locations"><i class="fa fa-check"></i><b>4.9</b> Combine harvest units with tree locations</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="exploratory-analysis.html"><a href="exploratory-analysis.html"><i class="fa fa-check"></i><b>5</b> Exploratory Analysis</a>
+<ul>
+<li class="chapter" data-level="5.1" data-path="exploratory-analysis.html"><a href="exploratory-analysis.html#study-location-map"><i class="fa fa-check"></i><b>5.1</b> Study Location Map</a></li>
+<li class="chapter" data-level="5.2" data-path="exploratory-analysis.html"><a href="exploratory-analysis.html#digital-terrain-model-dtm-map"><i class="fa fa-check"></i><b>5.2</b> Digital Terrain Model (DTM) Map</a></li>
+<li class="chapter" data-level="5.3" data-path="exploratory-analysis.html"><a href="exploratory-analysis.html#canopy-height-model-chm-map"><i class="fa fa-check"></i><b>5.3</b> Canopy height model (CHM) Map</a></li>
+<li class="chapter" data-level="5.4" data-path="exploratory-analysis.html"><a href="exploratory-analysis.html#dbh-distribution"><i class="fa fa-check"></i><b>5.4</b> DBH Distribution</a></li>
+<li class="chapter" data-level="5.5" data-path="exploratory-analysis.html"><a href="exploratory-analysis.html#height-distribution"><i class="fa fa-check"></i><b>5.5</b> Height Distribution</a></li>
+<li class="chapter" data-level="5.6" data-path="exploratory-analysis.html"><a href="exploratory-analysis.html#relationship-between-height-and-dbh"><i class="fa fa-check"></i><b>5.6</b> Relationship between height and DBH</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="ostory_valid.html"><a href="ostory_valid.html"><i class="fa fa-check"></i><b>6</b> Overstory Field Validation Data</a>
+<ul>
+<li class="chapter" data-level="6.1" data-path="ostory_valid.html"><a href="ostory_valid.html#load-field-data"><i class="fa fa-check"></i><b>6.1</b> Load Field Data</a></li>
+<li class="chapter" data-level="6.2" data-path="ostory_valid.html"><a href="ostory_valid.html#build-uas-field-validation-data"><i class="fa fa-check"></i><b>6.2</b> Build UAS-Field Validation Data</a>
+<ul>
+<li class="chapter" data-level="6.2.1" data-path="ostory_valid.html"><a href="ostory_valid.html#true-positive-identification"><i class="fa fa-check"></i><b>6.2.1</b> True Positive Identification</a></li>
+<li class="chapter" data-level="6.2.2" data-path="ostory_valid.html"><a href="ostory_valid.html#combine-with-commission-and-omission"><i class="fa fa-check"></i><b>6.2.2</b> Combine with Commission and Omission</a></li>
+</ul></li>
+<li class="chapter" data-level="6.3" data-path="ostory_valid.html"><a href="ostory_valid.html#summary-of-validation-data"><i class="fa fa-check"></i><b>6.3</b> Summary of Validation Data</a>
+<ul>
+<li class="chapter" data-level="6.3.1" data-path="ostory_valid.html"><a href="ostory_valid.html#true-positive-commission-ommission"><i class="fa fa-check"></i><b>6.3.1</b> True Positive, Commission, Ommission</a></li>
+<li class="chapter" data-level="6.3.2" data-path="ostory_valid.html"><a href="ostory_valid.html#f-score"><i class="fa fa-check"></i><b>6.3.2</b> F-score</a></li>
+<li class="chapter" data-level="6.3.3" data-path="ostory_valid.html"><a href="ostory_valid.html#height-vs.-dbh-of-tp-co-om"><i class="fa fa-check"></i><b>6.3.3</b> Height vs. DBH of <span class="math inline">\(Tp\)</span>, <span class="math inline">\(Co\)</span>, <span class="math inline">\(Om\)</span></a></li>
+<li class="chapter" data-level="6.3.4" data-path="ostory_valid.html"><a href="ostory_valid.html#height-and-dbh-distribution-tp-co-om"><i class="fa fa-check"></i><b>6.3.4</b> Height and DBH Distribution <span class="math inline">\(Tp\)</span>, <span class="math inline">\(Co\)</span>, <span class="math inline">\(Om\)</span></a></li>
+<li class="chapter" data-level="6.3.5" data-path="ostory_valid.html"><a href="ostory_valid.html#detected-overstory-tp-height-difference"><i class="fa fa-check"></i><b>6.3.5</b> Detected Overstory (<span class="math inline">\(TP\)</span>) Height Difference</a></li>
+<li class="chapter" data-level="6.3.6" data-path="ostory_valid.html"><a href="ostory_valid.html#detected-overstory-tp-dbh-difference"><i class="fa fa-check"></i><b>6.3.6</b> Detected Overstory (<span class="math inline">\(TP\)</span>) DBH Difference</a></li>
+<li class="chapter" data-level="6.3.7" data-path="ostory_valid.html"><a href="ostory_valid.html#detected-overstory-tp-reliability"><i class="fa fa-check"></i><b>6.3.7</b> Detected Overstory (<span class="math inline">\(TP\)</span>) Reliability</a></li>
+<li class="chapter" data-level="6.3.8" data-path="ostory_valid.html"><a href="ostory_valid.html#detected-overstory-tp-distribution-comparison"><i class="fa fa-check"></i><b>6.3.8</b> Detected Overstory (<span class="math inline">\(TP\)</span>) Distribution Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="6.4" data-path="ostory_valid.html"><a href="ostory_valid.html#commission-and-omission-locations"><i class="fa fa-check"></i><b>6.4</b> Commission and Omission Locations</a>
+<ul>
+<li class="chapter" data-level="6.4.1" data-path="ostory_valid.html"><a href="ostory_valid.html#othomosaic-commission-and-omission-locations"><i class="fa fa-check"></i><b>6.4.1</b> Othomosaic Commission and Omission Locations</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="ustory_valid.html"><a href="ustory_valid.html"><i class="fa fa-check"></i><b>7</b> Regeneration Field Validation Data</a>
+<ul>
+<li class="chapter" data-level="7.1" data-path="ustory_valid.html"><a href="ustory_valid.html#load-field-data-1"><i class="fa fa-check"></i><b>7.1</b> Load Field Data</a>
+<ul>
+<li class="chapter" data-level="7.1.1" data-path="ustory_valid.html"><a href="ustory_valid.html#regeneration-field-data-plot-map"><i class="fa fa-check"></i><b>7.1.1</b> Regeneration Field Data Plot Map</a></li>
+</ul></li>
+<li class="chapter" data-level="7.2" data-path="ustory_valid.html"><a href="ustory_valid.html#create-data-to-compare-to-uas"><i class="fa fa-check"></i><b>7.2</b> Create Data to Compare to UAS</a>
+<ul>
+<li class="chapter" data-level="7.2.1" data-path="ustory_valid.html"><a href="ustory_valid.html#field-regeneration-tpa-by-size-class"><i class="fa fa-check"></i><b>7.2.1</b> Field Regeneration TPA by Size Class</a></li>
+<li class="chapter" data-level="7.2.2" data-path="ustory_valid.html"><a href="ustory_valid.html#stand-regeneration-tpa-map"><i class="fa fa-check"></i><b>7.2.2</b> Stand Regeneration TPA Map</a></li>
+</ul></li>
+<li class="chapter" data-level="7.3" data-path="ustory_valid.html"><a href="ustory_valid.html#uas-estimated-regeneration"><i class="fa fa-check"></i><b>7.3</b> UAS Estimated Regeneration</a>
+<ul>
+<li class="chapter" data-level="7.3.1" data-path="ustory_valid.html"><a href="ustory_valid.html#uas-vs-field-regneration-tpa-by-size-class"><i class="fa fa-check"></i><b>7.3.1</b> UAS vs Field Regneration TPA by Size Class</a></li>
+<li class="chapter" data-level="7.3.2" data-path="ustory_valid.html"><a href="ustory_valid.html#uas-vs-field-regeneration-tpa-by-stand"><i class="fa fa-check"></i><b>7.3.2</b> UAS vs Field Regeneration TPA by Stand</a></li>
+<li class="chapter" data-level="7.3.3" data-path="ustory_valid.html"><a href="ustory_valid.html#uas-vs-field-regeneration-tpa-in-sample-plots"><i class="fa fa-check"></i><b>7.3.3</b> UAS vs Field Regeneration TPA in Sample Plots</a></li>
+<li class="chapter" data-level="7.3.4" data-path="ustory_valid.html"><a href="ustory_valid.html#uas-vs-field-regeneration-tpa-correlation"><i class="fa fa-check"></i><b>7.3.4</b> UAS vs Field Regeneration TPA Correlation</a></li>
+<li class="chapter" data-level="7.3.5" data-path="ustory_valid.html"><a href="ustory_valid.html#uas-regeneration-tpa-reliability"><i class="fa fa-check"></i><b>7.3.5</b> UAS Regeneration TPA Reliability</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="8" data-path="silv.html"><a href="silv.html"><i class="fa fa-check"></i><b>8</b> Silvicultural Metrics</a>
+<ul>
+<li class="chapter" data-level="8.1" data-path="silv.html"><a href="silv.html#overstory-summary"><i class="fa fa-check"></i><b>8.1</b> Overstory Summary</a>
+<ul>
+<li class="chapter" data-level="8.1.1" data-path="silv.html"><a href="silv.html#distribution-of-silvicultural-metrics"><i class="fa fa-check"></i><b>8.1.1</b> Distribution of silvicultural metrics</a></li>
+<li class="chapter" data-level="8.1.2" data-path="silv.html"><a href="silv.html#overstory-stand-basal-area-map"><i class="fa fa-check"></i><b>8.1.2</b> Overstory Stand Basal Area Map</a></li>
+<li class="chapter" data-level="8.1.3" data-path="silv.html"><a href="silv.html#stand-qmd-map"><i class="fa fa-check"></i><b>8.1.3</b> Stand QMD Map</a></li>
+<li class="chapter" data-level="8.1.4" data-path="silv.html"><a href="silv.html#overstory-dbh-distrubtion"><i class="fa fa-check"></i><b>8.1.4</b> Overstory DBH Distrubtion</a></li>
+</ul></li>
+<li class="chapter" data-level="8.2" data-path="silv.html"><a href="silv.html#height-distribution-1"><i class="fa fa-check"></i><b>8.2</b> Height Distribution</a></li>
+<li class="chapter" data-level="8.3" data-path="silv.html"><a href="silv.html#understory-summary"><i class="fa fa-check"></i><b>8.3</b> Understory Summary</a></li>
+<li class="chapter" data-level="8.4" data-path="silv.html"><a href="silv.html#define-functions-for-stand-summary"><i class="fa fa-check"></i><b>8.4</b> Define Functions for Stand Summary</a></li>
+<li class="chapter" data-level="8.5" data-path="silv.html"><a href="silv.html#harvest-unit-summary-reports"><i class="fa fa-check"></i><b>8.5</b> Harvest Unit Summary Reports</a></li>
+</ul></li>
+<li class="chapter" data-level="9" data-path="tree_spatial.html"><a href="tree_spatial.html"><i class="fa fa-check"></i><b>9</b> UAS Tree Spatial Arrangement</a></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Black Hills Experimental Forest UAS Mission Data Summary</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="tree_spatial" class="section level1 hasAnchor" number="9">
+<h1><span class="header-section-number">Section 9</span> UAS Tree Spatial Arrangement<a href="tree_spatial.html#tree_spatial" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<p>For now we’ll just make a visual overview of the UAS-SfM forest inventory process to present at the 2024 National Silvicultural Workshop.</p>
+<div class="sourceCode" id="cb95"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb95-1"><a href="tree_spatial.html#cb95-1" tabindex="-1"></a><span class="co"># focus on one harvest unit</span></span>
+<span id="cb95-2"><a href="tree_spatial.html#cb95-2" tabindex="-1"></a>my_suid <span class="ot">=</span> harvests<span class="sc">$</span>suid[<span class="dv">6</span>]</span>
+<span id="cb95-3"><a href="tree_spatial.html#cb95-3" tabindex="-1"></a><span class="co"># ht for overstory</span></span>
+<span id="cb95-4"><a href="tree_spatial.html#cb95-4" tabindex="-1"></a>ostory_ht_m_temp <span class="ot">=</span> <span class="dv">9</span></span>
+<span id="cb95-5"><a href="tree_spatial.html#cb95-5" tabindex="-1"></a><span class="co"># where is this</span></span>
+<span id="cb95-6"><a href="tree_spatial.html#cb95-6" tabindex="-1"></a>mapview<span class="sc">::</span><span class="fu">mapview</span>(harvests <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(suid<span class="sc">==</span>my_suid), <span class="at">layer.name =</span> <span class="st">&quot;BHEF&quot;</span>, <span class="at">label =</span> <span class="cn">FALSE</span>, <span class="at">legend =</span> <span class="cn">FALSE</span>, <span class="at">popup =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<div class="leaflet html-widget html-fill-item" id="htmlwidget-07bf6b03cf9ff6fb15b4" style="width:1008px;height:672px;"></div>
+<script type="application/json" data-for="htmlwidget-07bf6b03cf9ff6fb15b4">{"x":{"options":{"minZoom":1,"maxZoom":52,"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}},"preferCanvas":false,"bounceAtZoomLimits":false,"maxBounds":[[[-90,-370]],[[90,370]]]},"calls":[{"method":"addProviderTiles","args":["Esri.WorldImagery","Esri.WorldImagery","Esri.WorldImagery",{"errorTileUrl":"","noWrap":false,"detectRetina":false,"pane":"tilePane"}]},{"method":"addProviderTiles","args":["OpenStreetMap","OpenStreetMap","OpenStreetMap",{"errorTileUrl":"","noWrap":false,"detectRetina":false,"pane":"tilePane"}]},{"method":"createMapPane","args":["polygon",420]},{"method":"addPolygons","args":[[[[{"lng":[-103.61499635,-103.6148624503738,-103.614905962,-103.6148546889099,-103.6148318851605,-103.614896326,-103.614977554,-103.615024246,-103.615072903,-103.615122253,-103.615155623,-103.615188821,-103.615226249,-103.615271526,-103.615304763,-103.615336034,-103.615362019,-103.615396975,-103.615399023,-103.61543165,-103.615438602,-103.615466859,-103.615471354,-103.615514272,-103.61553469,-103.615552267,-103.615565888,-103.615572211,-103.61557305,-103.615597927,-103.615617591,-103.615594257,-103.615576613,-103.615564106,-103.615572301,-103.615564633,-103.615568688,-103.61556887,-103.615569836,-103.615574768,-103.61559199,-103.615588249,-103.615595635,-103.615613526,-103.615640311,-103.615663897,-103.6156926,-103.615741279,-103.615789942,-103.615839842,-103.615887572,-103.615923543,-103.615953977,-103.615968033,-103.615994069,-103.61601783,-103.616030113,-103.616051537,-103.616077338,-103.61610477,-103.616132729,-103.616157779,-103.616180841,-103.616218936,-103.616268879,-103.616291906,-103.616316024,-103.616373873,-103.61641838,-103.61646535,-103.616511609,-103.616550018,-103.616585994,-103.616617974,-103.616655631,-103.616692822,-103.616731023,-103.616770866,-103.616807412,-103.616857143,-103.616896425,-103.616926178,-103.616966347,-103.617021212,-103.617085703,-103.617104642,-103.617130886,-103.617179434,-103.617253043,-103.617289399,-103.617336565,-103.617370936,-103.617385639,-103.617389509,-103.617400844,-103.617387992,-103.617390473,-103.617382474,-103.617378477,-103.617380627,-103.617381855,-103.617380492,-103.617388626,-103.617418394,-103.617436227,-103.617474671,-103.617488446,-103.617481668,-103.617456895,-103.617447324,-103.61743816,-103.617431783,-103.617420491,-103.617422883,-103.61742616,-103.617433183,-103.617443867,-103.617456787,-103.617469397,-103.61748903,-103.617583803,-103.61762084,-103.617698516,-103.617742231,-103.617788694,-103.617837149,-103.617885191,-103.61793517,-103.618002149,-103.618056256,-103.618114925,-103.618166886,-103.61821469,-103.618265144,-103.61831574,-103.618365322,-103.618439089,-103.618468767,-103.618507918,-103.618527191,-103.618557279,-103.618579266,-103.618599543,-103.618603039,-103.618612405,-103.618632746,-103.61863484,-103.618656176,-103.618651694,-103.618640588,-103.61863775,-103.618611818,-103.618591713,-103.618571443,-103.618541411,-103.618498917,-103.61846651,-103.618422187,-103.618372577,-103.6183215,-103.618274107,-103.61822368,-103.61816754,-103.618113797,-103.618057156,-103.618000321,-103.617934886,-103.617870705,-103.617807694,-103.617743661,-103.617667041,-103.617597322,-103.617529992,-103.617461034,-103.617393798,-103.617323916,-103.617255059,-103.617185142,-103.617117138,-103.617045257,-103.616976856,-103.616909652,-103.616838942,-103.616772149,-103.616705483,-103.616643142,-103.616580985,-103.616517592,-103.616452295,-103.616383219,-103.61631115,-103.616238823,-103.616170123,-103.616099016,-103.616035999,-103.615966992,-103.615897345,-103.615829746,-103.615767673,-103.615707405,-103.615651315,-103.615582176,-103.615517418,-103.615445252,-103.615371581,-103.615297752,-103.615223026,-103.615146295,-103.615070447,-103.6149970695087,-103.61499635],"lat":[44.14645179300004,44.14177281563305,44.14162132199998,44.14150158675973,44.14070468828182,44.14068819400001,44.14071233700002,44.14078150000001,44.14083185599997,44.14085906999998,44.14089120400001,44.140948175,44.14097410599999,44.14100218999999,44.14104164399998,44.14109385299998,44.14112547600001,44.141185849,44.14121267500001,44.14125782399998,44.14130601199997,44.14134536799998,44.14136483800002,44.14140073300001,44.14145028799998,44.14146919199998,44.14153675099999,44.14157499100003,44.14162309599998,44.141666294,44.141709123,44.14172553999998,44.141759793,44.14178471200001,44.14180659700003,44.141848272,44.14188490499999,44.141926624,44.14196641199999,44.14200882799997,44.14205224499999,44.14208263400001,44.14212512599999,44.14213316399997,44.14218462899998,44.14220590600001,44.142243033,44.14224718100002,44.14225100599997,44.14225359300002,44.14224727099997,44.142236889,44.14221314299999,44.14217650499999,44.14214373399999,44.14210707799997,44.14206255300002,44.14202555399999,44.14199038800001,44.14195975899997,44.14191787099998,44.14189646599998,44.14187101599999,44.14185626599999,44.14184702599999,44.14183055500002,44.14181330399998,44.14183205699999,44.141846682,44.14186912899999,44.14189798199997,44.14192105299997,44.14194863300003,44.14197024100002,44.14199822699999,44.14201592199998,44.14203752999997,44.14204945300002,44.14207477399998,44.14209402199998,44.14211188199999,44.14213222599999,44.14215515799998,44.14219772799998,44.14223614600001,44.142248355,44.142270623,44.142295654,44.14231985599997,44.142333619,44.14235617199999,44.142391567,44.142428978,44.14244314500001,44.14247517,44.14251748200001,44.142545379,44.142552771,44.14257307700001,44.142593331,44.14261329200002,44.14264275199998,44.142687411,44.14272131899996,44.14273506099998,44.14275712400002,44.14276076399999,44.14279886999997,44.14282874700001,44.14287466399998,44.14292701499999,44.14297397000001,44.14301690000003,44.14306420200001,44.14311800899997,44.14316713599998,44.143229415,44.14327745200002,44.14331598899997,44.14336510700002,44.143517884,44.14356110099999,44.14363620199997,44.14368668499998,44.143736853,44.143784175,44.14382605399999,44.14385735600001,44.14391473900002,44.143965364,44.14400858099998,44.14405945800001,44.14410386899998,44.14415090900003,44.14418378800002,44.14423052,44.144270775,44.14433143700001,44.14438271400001,44.14440896999996,44.14446170500002,44.14451373600002,44.14457155799999,44.144632768,44.14468969599999,44.14475113200001,44.144808769,44.14487220500001,44.144929805,44.14498519300002,44.14504691600002,44.145094953,44.14515519899999,44.14521939100002,44.14527542000001,44.145333101,44.14538384600002,44.14543409800001,44.145477695,44.14552319900002,44.145569383,44.145610906,44.14564455599998,44.145676751,44.14571378400001,44.14574826299997,44.14578427100002,44.14581643000002,44.145846273,44.145877987,44.14590744899999,44.14593968499998,44.14596888099999,44.14600257500001,44.14603881499998,44.14607275899998,44.14610343700001,44.14613632700002,44.14617101499999,44.14620369599999,44.146235897,44.14626565899998,44.146299016,44.14633258100001,44.14636233599998,44.14639126399998,44.14641289399998,44.14644243800001,44.146467873,44.14649233199997,44.14651517099997,44.14653501100003,44.14655332400002,44.14656903500003,44.14658664900002,44.14659948299998,44.14661253899998,44.14661874400002,44.14661980699997,44.14662509599997,44.14662661599999,44.14663186100001,44.14663286000002,44.14663195100001,44.14662746599999,44.14662393100001,44.14662284899998,44.14661349400001,44.14660181099998,44.14658534816522,44.14645179300004]}]]],null,"BHEF",{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}},"pane":"polygon","stroke":true,"color":"#333333","weight":0.5,"opacity":0.9,"fill":true,"fillColor":"#6666FF","fillOpacity":0.6,"smoothFactor":1,"noClip":false},null,{"maxWidth":800,"minWidth":50,"autoPan":true,"keepInView":false,"closeButton":true,"closeOnClick":true,"className":""},null,{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true},{"stroke":true,"weight":1,"opacity":0.9,"fillOpacity":0.84,"bringToFront":false,"sendToBack":false}]},{"method":"addScaleBar","args":[{"maxWidth":100,"metric":true,"imperial":true,"updateWhenIdle":true,"position":"bottomleft"}]},{"method":"addLayersControl","args":[["Esri.WorldImagery","OpenStreetMap"],"BHEF",{"collapsed":true,"autoZIndex":true,"position":"topleft"}]}],"limits":{"lat":[44.14068819400001,44.14663286000002],"lng":[-103.618656176,-103.6148318851605]},"fitBounds":[44.14068819400001,-103.618656176,44.14663286000002,-103.6148318851605,[]]},"evals":[],"jsHooks":{"render":[{"code":"function(el, x, data) {\n  return (\n      function(el, x, data) {\n      // get the leaflet map\n      var map = this; //HTMLWidgets.find('#' + el.id);\n      // we need a new div element because we have to handle\n      // the mouseover output separately\n      // debugger;\n      function addElement () {\n      // generate new div Element\n      var newDiv = $(document.createElement('div'));\n      // append at end of leaflet htmlwidget container\n      $(el).append(newDiv);\n      //provide ID and style\n      newDiv.addClass('lnlt');\n      newDiv.css({\n      'position': 'relative',\n      'bottomleft':  '0px',\n      'background-color': 'rgba(255, 255, 255, 0.7)',\n      'box-shadow': '0 0 2px #bbb',\n      'background-clip': 'padding-box',\n      'margin': '0',\n      'padding-left': '5px',\n      'color': '#333',\n      'font': '9px/1.5 \"Helvetica Neue\", Arial, Helvetica, sans-serif',\n      'z-index': '700',\n      });\n      return newDiv;\n      }\n\n\n      // check for already existing lnlt class to not duplicate\n      var lnlt = $(el).find('.lnlt');\n\n      if(!lnlt.length) {\n      lnlt = addElement();\n\n      // grab the special div we generated in the beginning\n      // and put the mousmove output there\n\n      map.on('mousemove', function (e) {\n      if (e.originalEvent.ctrlKey) {\n      if (document.querySelector('.lnlt') === null) lnlt = addElement();\n      lnlt.text(\n                           ' lon: ' + (e.latlng.lng).toFixed(5) +\n                           ' | lat: ' + (e.latlng.lat).toFixed(5) +\n                           ' | zoom: ' + map.getZoom() +\n                           ' | x: ' + L.CRS.EPSG3857.project(e.latlng).x.toFixed(0) +\n                           ' | y: ' + L.CRS.EPSG3857.project(e.latlng).y.toFixed(0) +\n                           ' | epsg: 3857 ' +\n                           ' | proj4: +proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs ');\n      } else {\n      if (document.querySelector('.lnlt') === null) lnlt = addElement();\n      lnlt.text(\n                      ' lon: ' + (e.latlng.lng).toFixed(5) +\n                      ' | lat: ' + (e.latlng.lat).toFixed(5) +\n                      ' | zoom: ' + map.getZoom() + ' ');\n      }\n      });\n\n      // remove the lnlt div when mouse leaves map\n      map.on('mouseout', function (e) {\n      var strip = document.querySelector('.lnlt');\n      if( strip !==null) strip.remove();\n      });\n\n      };\n\n      //$(el).keypress(67, function(e) {\n      map.on('preclick', function(e) {\n      if (e.originalEvent.ctrlKey) {\n      if (document.querySelector('.lnlt') === null) lnlt = addElement();\n      lnlt.text(\n                      ' lon: ' + (e.latlng.lng).toFixed(5) +\n                      ' | lat: ' + (e.latlng.lat).toFixed(5) +\n                      ' | zoom: ' + map.getZoom() + ' ');\n      var txt = document.querySelector('.lnlt').textContent;\n      console.log(txt);\n      //txt.innerText.focus();\n      //txt.select();\n      setClipboardText('\"' + txt + '\"');\n      }\n      });\n\n      }\n      ).call(this.getMap(), el, x, data);\n}","data":null},{"code":"function(el, x, data) {\n  return (function(el,x,data){\n           var map = this;\n\n           map.on('keypress', function(e) {\n               console.log(e.originalEvent.code);\n               var key = e.originalEvent.code;\n               if (key === 'KeyE') {\n                   var bb = this.getBounds();\n                   var txt = JSON.stringify(bb);\n                   console.log(txt);\n\n                   setClipboardText('\\'' + txt + '\\'');\n               }\n           })\n        }).call(this.getMap(), el, x, data);\n}","data":null}]}}</script>
+<p>orthomosaic from UAS</p>
+<div class="sourceCode" id="cb96"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb96-1"><a href="tree_spatial.html#cb96-1" tabindex="-1"></a><span class="do">######################################################################################</span></span>
+<span id="cb96-2"><a href="tree_spatial.html#cb96-2" tabindex="-1"></a><span class="co"># function to plot ortho + stand</span></span>
+<span id="cb96-3"><a href="tree_spatial.html#cb96-3" tabindex="-1"></a><span class="do">######################################################################################</span></span>
+<span id="cb96-4"><a href="tree_spatial.html#cb96-4" tabindex="-1"></a>ortho_plt_fn <span class="ot">=</span> <span class="cf">function</span>(my_suid){</span>
+<span id="cb96-5"><a href="tree_spatial.html#cb96-5" tabindex="-1"></a><span class="co"># convert to stars</span></span>
+<span id="cb96-6"><a href="tree_spatial.html#cb96-6" tabindex="-1"></a>  ortho_st <span class="ot">=</span> ortho_rast <span class="sc">%&gt;%</span>  </span>
+<span id="cb96-7"><a href="tree_spatial.html#cb96-7" tabindex="-1"></a>    terra<span class="sc">::</span><span class="fu">subset</span>(<span class="at">subset =</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb96-8"><a href="tree_spatial.html#cb96-8" tabindex="-1"></a>    terra<span class="sc">::</span><span class="fu">crop</span>(</span>
+<span id="cb96-9"><a href="tree_spatial.html#cb96-9" tabindex="-1"></a>      <span class="co"># stand %&gt;% </span></span>
+<span id="cb96-10"><a href="tree_spatial.html#cb96-10" tabindex="-1"></a>      harvests <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(suid<span class="sc">==</span>my_suid) <span class="sc">%&gt;%</span> </span>
+<span id="cb96-11"><a href="tree_spatial.html#cb96-11" tabindex="-1"></a>        sf<span class="sc">::</span><span class="fu">st_buffer</span>(<span class="dv">20</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb96-12"><a href="tree_spatial.html#cb96-12" tabindex="-1"></a>        sf<span class="sc">::</span><span class="fu">st_bbox</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb96-13"><a href="tree_spatial.html#cb96-13" tabindex="-1"></a>        sf<span class="sc">::</span><span class="fu">st_as_sfc</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb96-14"><a href="tree_spatial.html#cb96-14" tabindex="-1"></a>        terra<span class="sc">::</span><span class="fu">vect</span>()</span>
+<span id="cb96-15"><a href="tree_spatial.html#cb96-15" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
+<span id="cb96-16"><a href="tree_spatial.html#cb96-16" tabindex="-1"></a>    terra<span class="sc">::</span><span class="fu">aggregate</span>(<span class="at">fact =</span> <span class="dv">2</span>, <span class="at">fun =</span> <span class="st">&quot;mean&quot;</span>, <span class="at">na.rm =</span> T) <span class="sc">%&gt;%</span> </span>
+<span id="cb96-17"><a href="tree_spatial.html#cb96-17" tabindex="-1"></a>    stars<span class="sc">::</span><span class="fu">st_as_stars</span>()</span>
+<span id="cb96-18"><a href="tree_spatial.html#cb96-18" tabindex="-1"></a>  </span>
+<span id="cb96-19"><a href="tree_spatial.html#cb96-19" tabindex="-1"></a>  <span class="co"># convert to rgb</span></span>
+<span id="cb96-20"><a href="tree_spatial.html#cb96-20" tabindex="-1"></a>  ortho_rgb <span class="ot">&lt;-</span> stars<span class="sc">::</span><span class="fu">st_rgb</span>(</span>
+<span id="cb96-21"><a href="tree_spatial.html#cb96-21" tabindex="-1"></a>    ortho_st[,,,<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>]</span>
+<span id="cb96-22"><a href="tree_spatial.html#cb96-22" tabindex="-1"></a>    , <span class="at">dimension =</span> <span class="dv">3</span></span>
+<span id="cb96-23"><a href="tree_spatial.html#cb96-23" tabindex="-1"></a>    , <span class="at">use_alpha =</span> <span class="cn">FALSE</span></span>
+<span id="cb96-24"><a href="tree_spatial.html#cb96-24" tabindex="-1"></a>    <span class="co"># , stretch = &quot;histogram&quot;</span></span>
+<span id="cb96-25"><a href="tree_spatial.html#cb96-25" tabindex="-1"></a>    , <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.005</span>, <span class="fl">0.995</span>)</span>
+<span id="cb96-26"><a href="tree_spatial.html#cb96-26" tabindex="-1"></a>    , <span class="at">stretch =</span> <span class="st">&quot;percent&quot;</span></span>
+<span id="cb96-27"><a href="tree_spatial.html#cb96-27" tabindex="-1"></a>  )</span>
+<span id="cb96-28"><a href="tree_spatial.html#cb96-28" tabindex="-1"></a>  <span class="co"># ggplot</span></span>
+<span id="cb96-29"><a href="tree_spatial.html#cb96-29" tabindex="-1"></a>  plt_rgb <span class="ot">&lt;-</span> <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb96-30"><a href="tree_spatial.html#cb96-30" tabindex="-1"></a>    stars<span class="sc">::</span><span class="fu">geom_stars</span>(<span class="at">data =</span> ortho_rgb[]) <span class="sc">+</span></span>
+<span id="cb96-31"><a href="tree_spatial.html#cb96-31" tabindex="-1"></a>    <span class="fu">scale_fill_identity</span>(<span class="at">na.value =</span> <span class="st">&quot;transparent&quot;</span>) <span class="sc">+</span> <span class="co"># !!! don&#39;t take this out or RGB plot will kill your computer</span></span>
+<span id="cb96-32"><a href="tree_spatial.html#cb96-32" tabindex="-1"></a>    <span class="fu">scale_x_continuous</span>(<span class="at">expand =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>)) <span class="sc">+</span></span>
+<span id="cb96-33"><a href="tree_spatial.html#cb96-33" tabindex="-1"></a>    <span class="fu">scale_y_continuous</span>(<span class="at">expand =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>)) <span class="sc">+</span></span>
+<span id="cb96-34"><a href="tree_spatial.html#cb96-34" tabindex="-1"></a>    <span class="fu">labs</span>(</span>
+<span id="cb96-35"><a href="tree_spatial.html#cb96-35" tabindex="-1"></a>      <span class="at">x =</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb96-36"><a href="tree_spatial.html#cb96-36" tabindex="-1"></a>      , <span class="at">y =</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb96-37"><a href="tree_spatial.html#cb96-37" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb96-38"><a href="tree_spatial.html#cb96-38" tabindex="-1"></a>    <span class="fu">theme_void</span>()</span>
+<span id="cb96-39"><a href="tree_spatial.html#cb96-39" tabindex="-1"></a>  </span>
+<span id="cb96-40"><a href="tree_spatial.html#cb96-40" tabindex="-1"></a>  <span class="co"># return(plt_rgb)</span></span>
+<span id="cb96-41"><a href="tree_spatial.html#cb96-41" tabindex="-1"></a>  <span class="co"># combine all plot elements</span></span>
+<span id="cb96-42"><a href="tree_spatial.html#cb96-42" tabindex="-1"></a>  plt_combine <span class="ot">=</span> plt_rgb <span class="sc">+</span></span>
+<span id="cb96-43"><a href="tree_spatial.html#cb96-43" tabindex="-1"></a>    <span class="fu">geom_sf</span>(</span>
+<span id="cb96-44"><a href="tree_spatial.html#cb96-44" tabindex="-1"></a>      <span class="at">data =</span> harvests <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(suid<span class="sc">==</span>my_suid)</span>
+<span id="cb96-45"><a href="tree_spatial.html#cb96-45" tabindex="-1"></a>      , <span class="at">alpha =</span> <span class="dv">0</span></span>
+<span id="cb96-46"><a href="tree_spatial.html#cb96-46" tabindex="-1"></a>      , <span class="at">lwd =</span> <span class="fl">1.5</span></span>
+<span id="cb96-47"><a href="tree_spatial.html#cb96-47" tabindex="-1"></a>      , <span class="at">color =</span> <span class="st">&quot;#b22222&quot;</span></span>
+<span id="cb96-48"><a href="tree_spatial.html#cb96-48" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb96-49"><a href="tree_spatial.html#cb96-49" tabindex="-1"></a>    <span class="fu">theme</span>(</span>
+<span id="cb96-50"><a href="tree_spatial.html#cb96-50" tabindex="-1"></a>      <span class="at">legend.position =</span> <span class="st">&quot;top&quot;</span> <span class="co"># c(0.5,1)</span></span>
+<span id="cb96-51"><a href="tree_spatial.html#cb96-51" tabindex="-1"></a>      , <span class="at">legend.direction =</span> <span class="st">&quot;horizontal&quot;</span></span>
+<span id="cb96-52"><a href="tree_spatial.html#cb96-52" tabindex="-1"></a>      , <span class="at">legend.margin =</span> <span class="fu">margin</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>)</span>
+<span id="cb96-53"><a href="tree_spatial.html#cb96-53" tabindex="-1"></a>      , <span class="at">legend.text =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">8</span>)</span>
+<span id="cb96-54"><a href="tree_spatial.html#cb96-54" tabindex="-1"></a>      , <span class="at">legend.title =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">8</span>)</span>
+<span id="cb96-55"><a href="tree_spatial.html#cb96-55" tabindex="-1"></a>      , <span class="at">legend.key =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="st">&quot;white&quot;</span>)</span>
+<span id="cb96-56"><a href="tree_spatial.html#cb96-56" tabindex="-1"></a>      <span class="co"># , plot.title = ggtext::element_markdown(size = 10, hjust = 0.5)</span></span>
+<span id="cb96-57"><a href="tree_spatial.html#cb96-57" tabindex="-1"></a>      , <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">10</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>, <span class="at">face =</span> <span class="st">&quot;bold&quot;</span>)</span>
+<span id="cb96-58"><a href="tree_spatial.html#cb96-58" tabindex="-1"></a>      , <span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">8</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>, <span class="at">face =</span> <span class="st">&quot;italic&quot;</span>)</span>
+<span id="cb96-59"><a href="tree_spatial.html#cb96-59" tabindex="-1"></a>    )</span>
+<span id="cb96-60"><a href="tree_spatial.html#cb96-60" tabindex="-1"></a>  <span class="fu">return</span>(plt_combine)</span>
+<span id="cb96-61"><a href="tree_spatial.html#cb96-61" tabindex="-1"></a>}</span>
+<span id="cb96-62"><a href="tree_spatial.html#cb96-62" tabindex="-1"></a><span class="co"># PLOT IT</span></span>
+<span id="cb96-63"><a href="tree_spatial.html#cb96-63" tabindex="-1"></a><span class="fu">ortho_plt_fn</span>(my_suid) <span class="sc">+</span></span>
+<span id="cb96-64"><a href="tree_spatial.html#cb96-64" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb96-65"><a href="tree_spatial.html#cb96-65" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">&quot;</span><span class="sc">\n</span><span class="st">stand boundary</span><span class="sc">\n</span><span class="st">&quot;</span></span>
+<span id="cb96-66"><a href="tree_spatial.html#cb96-66" tabindex="-1"></a>    <span class="co"># subtitle = &quot;&lt;span style=&#39;color:#b22222;&#39;&gt;&lt;b&gt;&lt;i&gt;stand boundary&lt;/i&gt;&lt;/b&gt;&lt;/span&gt;&quot;</span></span>
+<span id="cb96-67"><a href="tree_spatial.html#cb96-67" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb96-68"><a href="tree_spatial.html#cb96-68" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb96-69"><a href="tree_spatial.html#cb96-69" tabindex="-1"></a>    <span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="fl">9.5</span>, <span class="at">color =</span> <span class="st">&quot;#b22222&quot;</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>, <span class="at">face =</span> <span class="st">&quot;bold&quot;</span>)</span>
+<span id="cb96-70"><a href="tree_spatial.html#cb96-70" tabindex="-1"></a>  )</span></code></pre></div>
+<pre><code>## |---------|---------|---------|---------|=========================================                                          </code></pre>
+<p><img src="bhef_uas_202306_files/figure-html/unnamed-chunk-30-1.png" width="1008" /></p>
+<div class="sourceCode" id="cb98"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb98-1"><a href="tree_spatial.html#cb98-1" tabindex="-1"></a><span class="co"># save it</span></span>
+<span id="cb98-2"><a href="tree_spatial.html#cb98-2" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggsave</span>(<span class="st">&quot;../data/NSW_01.jpeg&quot;</span>, <span class="at">dpi =</span> <span class="st">&quot;print&quot;</span>, <span class="at">height =</span> <span class="dv">11</span>, <span class="at">width =</span> <span class="fl">5.8</span>, <span class="at">device =</span> <span class="st">&quot;jpeg&quot;</span>)</span></code></pre></div>
+<p>plot with CHM</p>
+<div class="sourceCode" id="cb99"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb99-1"><a href="tree_spatial.html#cb99-1" tabindex="-1"></a><span class="co"># chm</span></span>
+<span id="cb99-2"><a href="tree_spatial.html#cb99-2" tabindex="-1"></a>  chm_temp <span class="ot">=</span> chm_rast <span class="sc">%&gt;%</span> </span>
+<span id="cb99-3"><a href="tree_spatial.html#cb99-3" tabindex="-1"></a>    terra<span class="sc">::</span><span class="fu">crop</span>(</span>
+<span id="cb99-4"><a href="tree_spatial.html#cb99-4" tabindex="-1"></a>      harvests <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(suid<span class="sc">==</span>my_suid) <span class="sc">%&gt;%</span> </span>
+<span id="cb99-5"><a href="tree_spatial.html#cb99-5" tabindex="-1"></a>      terra<span class="sc">::</span><span class="fu">vect</span>()</span>
+<span id="cb99-6"><a href="tree_spatial.html#cb99-6" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
+<span id="cb99-7"><a href="tree_spatial.html#cb99-7" tabindex="-1"></a>    terra<span class="sc">::</span><span class="fu">mask</span>(</span>
+<span id="cb99-8"><a href="tree_spatial.html#cb99-8" tabindex="-1"></a>      harvests <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(suid<span class="sc">==</span>my_suid) <span class="sc">%&gt;%</span> </span>
+<span id="cb99-9"><a href="tree_spatial.html#cb99-9" tabindex="-1"></a>      terra<span class="sc">::</span><span class="fu">vect</span>()</span>
+<span id="cb99-10"><a href="tree_spatial.html#cb99-10" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
+<span id="cb99-11"><a href="tree_spatial.html#cb99-11" tabindex="-1"></a>    terra<span class="sc">::</span><span class="fu">aggregate</span>(<span class="at">fact =</span> <span class="dv">2</span>, <span class="at">fun =</span> <span class="st">&quot;mean&quot;</span>, <span class="at">na.rm =</span> T) <span class="sc">%&gt;%</span> </span>
+<span id="cb99-12"><a href="tree_spatial.html#cb99-12" tabindex="-1"></a>    <span class="st">`</span><span class="at">*</span><span class="st">`</span>(<span class="fl">3.28</span>) <span class="sc">%&gt;%</span> <span class="co"># transform to feet</span></span>
+<span id="cb99-13"><a href="tree_spatial.html#cb99-13" tabindex="-1"></a>    <span class="fu">as.data.frame</span>(<span class="at">xy=</span>T) <span class="sc">%&gt;%</span> </span>
+<span id="cb99-14"><a href="tree_spatial.html#cb99-14" tabindex="-1"></a>    <span class="fu">rename</span>(<span class="at">f=</span><span class="dv">3</span>)</span></code></pre></div>
+<pre><code>## |---------|---------|---------|---------|=========================================                                          </code></pre>
+<div class="sourceCode" id="cb101"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb101-1"><a href="tree_spatial.html#cb101-1" tabindex="-1"></a>  <span class="co"># plot it</span></span>
+<span id="cb101-2"><a href="tree_spatial.html#cb101-2" tabindex="-1"></a>  plt_chm_temp <span class="ot">=</span> <span class="fu">ortho_plt_fn</span>(my_suid) <span class="sc">+</span></span>
+<span id="cb101-3"><a href="tree_spatial.html#cb101-3" tabindex="-1"></a>    <span class="co"># chm</span></span>
+<span id="cb101-4"><a href="tree_spatial.html#cb101-4" tabindex="-1"></a>    ggnewscale<span class="sc">::</span><span class="fu">new_scale_fill</span>() <span class="sc">+</span></span>
+<span id="cb101-5"><a href="tree_spatial.html#cb101-5" tabindex="-1"></a>    <span class="fu">geom_tile</span>(</span>
+<span id="cb101-6"><a href="tree_spatial.html#cb101-6" tabindex="-1"></a>      <span class="at">data =</span> chm_temp</span>
+<span id="cb101-7"><a href="tree_spatial.html#cb101-7" tabindex="-1"></a>      , <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> y, <span class="at">fill =</span> f)</span>
+<span id="cb101-8"><a href="tree_spatial.html#cb101-8" tabindex="-1"></a>      , <span class="at">na.rm =</span> T</span>
+<span id="cb101-9"><a href="tree_spatial.html#cb101-9" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb101-10"><a href="tree_spatial.html#cb101-10" tabindex="-1"></a>    <span class="fu">scale_fill_viridis_c</span>(<span class="at">option=</span><span class="st">&quot;plasma&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.8</span>, <span class="at">breaks =</span> scales<span class="sc">::</span><span class="fu">extended_breaks</span>(<span class="at">n=</span><span class="dv">6</span>), <span class="at">na.value =</span> <span class="st">&quot;transparent&quot;</span>) <span class="sc">+</span></span>
+<span id="cb101-11"><a href="tree_spatial.html#cb101-11" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">fill =</span> <span class="st">&quot;CHM (ft)&quot;</span>)</span></code></pre></div>
+<pre><code>## |---------|---------|---------|---------|=========================================                                          </code></pre>
+<div class="sourceCode" id="cb103"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb103-1"><a href="tree_spatial.html#cb103-1" tabindex="-1"></a><span class="co"># PLOT IT</span></span>
+<span id="cb103-2"><a href="tree_spatial.html#cb103-2" tabindex="-1"></a>plt_chm_temp</span></code></pre></div>
+<p><img src="bhef_uas_202306_files/figure-html/unnamed-chunk-31-1.png" width="1008" /></p>
+<div class="sourceCode" id="cb104"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb104-1"><a href="tree_spatial.html#cb104-1" tabindex="-1"></a><span class="co"># save it</span></span>
+<span id="cb104-2"><a href="tree_spatial.html#cb104-2" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggsave</span>(<span class="st">&quot;../data/NSW_02.jpeg&quot;</span>, <span class="at">dpi =</span> <span class="st">&quot;print&quot;</span>, <span class="at">height =</span> <span class="dv">11</span>, <span class="at">width =</span> <span class="fl">5.8</span>, <span class="at">device =</span> <span class="st">&quot;jpeg&quot;</span>)</span></code></pre></div>
+<p>ITD</p>
+<p>Height</p>
+<div class="sourceCode" id="cb105"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb105-1"><a href="tree_spatial.html#cb105-1" tabindex="-1"></a>plt_ttops_temp <span class="ot">=</span> <span class="fu">ortho_plt_fn</span>(my_suid) <span class="sc">+</span></span>
+<span id="cb105-2"><a href="tree_spatial.html#cb105-2" tabindex="-1"></a>    <span class="co"># treetops</span></span>
+<span id="cb105-3"><a href="tree_spatial.html#cb105-3" tabindex="-1"></a>    <span class="fu">geom_sf</span>(</span>
+<span id="cb105-4"><a href="tree_spatial.html#cb105-4" tabindex="-1"></a>      <span class="at">data =</span> treetops_sf_with_dbh <span class="sc">%&gt;%</span></span>
+<span id="cb105-5"><a href="tree_spatial.html#cb105-5" tabindex="-1"></a>        sf<span class="sc">::</span><span class="fu">st_intersection</span>(harvests <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(suid<span class="sc">==</span>my_suid))</span>
+<span id="cb105-6"><a href="tree_spatial.html#cb105-6" tabindex="-1"></a>      , <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">color =</span> tree_height_ft)</span>
+<span id="cb105-7"><a href="tree_spatial.html#cb105-7" tabindex="-1"></a>      , <span class="at">size =</span> <span class="dv">1</span></span>
+<span id="cb105-8"><a href="tree_spatial.html#cb105-8" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb105-9"><a href="tree_spatial.html#cb105-9" tabindex="-1"></a>    <span class="fu">scale_color_viridis_c</span>(<span class="at">option=</span><span class="st">&quot;plasma&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.8</span>, <span class="at">breaks =</span> scales<span class="sc">::</span><span class="fu">extended_breaks</span>(<span class="at">n=</span><span class="dv">6</span>)) <span class="sc">+</span></span>
+<span id="cb105-10"><a href="tree_spatial.html#cb105-10" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">color =</span> <span class="st">&quot;Individual Tree</span><span class="sc">\n</span><span class="st">Ht. (ft)&quot;</span>)</span></code></pre></div>
+<pre><code>## |---------|---------|---------|---------|=========================================                                          </code></pre>
+<div class="sourceCode" id="cb107"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb107-1"><a href="tree_spatial.html#cb107-1" tabindex="-1"></a><span class="co"># PLOT IT</span></span>
+<span id="cb107-2"><a href="tree_spatial.html#cb107-2" tabindex="-1"></a>plt_ttops_temp</span></code></pre></div>
+<p><img src="bhef_uas_202306_files/figure-html/unnamed-chunk-33-1.png" width="1008" /></p>
+<div class="sourceCode" id="cb108"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb108-1"><a href="tree_spatial.html#cb108-1" tabindex="-1"></a><span class="co"># save it</span></span>
+<span id="cb108-2"><a href="tree_spatial.html#cb108-2" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggsave</span>(<span class="st">&quot;../data/NSW_03.jpeg&quot;</span>, <span class="at">dpi =</span> <span class="st">&quot;print&quot;</span>, <span class="at">height =</span> <span class="dv">11</span>, <span class="at">width =</span> <span class="fl">5.8</span>, <span class="at">device =</span> <span class="st">&quot;jpeg&quot;</span>)</span></code></pre></div>
+<p>overstory/understory</p>
+<div class="sourceCode" id="cb109"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb109-1"><a href="tree_spatial.html#cb109-1" tabindex="-1"></a>plt_ttops_temp <span class="ot">=</span> <span class="fu">ortho_plt_fn</span>(my_suid) <span class="sc">+</span></span>
+<span id="cb109-2"><a href="tree_spatial.html#cb109-2" tabindex="-1"></a>    <span class="co"># treetops</span></span>
+<span id="cb109-3"><a href="tree_spatial.html#cb109-3" tabindex="-1"></a>    <span class="fu">geom_sf</span>(</span>
+<span id="cb109-4"><a href="tree_spatial.html#cb109-4" tabindex="-1"></a>      <span class="at">data =</span> treetops_sf_with_dbh <span class="sc">%&gt;%</span></span>
+<span id="cb109-5"><a href="tree_spatial.html#cb109-5" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb109-6"><a href="tree_spatial.html#cb109-6" tabindex="-1"></a>          <span class="at">ostory =</span> <span class="fu">ifelse</span>(tree_height_m<span class="sc">&gt;=</span>ostory_ht_m_temp,<span class="st">&quot;overstory&quot;</span>,<span class="st">&quot;understory&quot;</span>)</span>
+<span id="cb109-7"><a href="tree_spatial.html#cb109-7" tabindex="-1"></a>          , <span class="at">ostory_sz =</span> <span class="fu">ifelse</span>(tree_height_m<span class="sc">&gt;=</span><span class="dv">9</span>,<span class="fl">0.51</span>,<span class="fl">0.5</span>)</span>
+<span id="cb109-8"><a href="tree_spatial.html#cb109-8" tabindex="-1"></a>        ) <span class="sc">%&gt;%</span> </span>
+<span id="cb109-9"><a href="tree_spatial.html#cb109-9" tabindex="-1"></a>        sf<span class="sc">::</span><span class="fu">st_intersection</span>(harvests <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(suid<span class="sc">==</span>my_suid))</span>
+<span id="cb109-10"><a href="tree_spatial.html#cb109-10" tabindex="-1"></a>      , <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">color =</span> ostory)</span>
+<span id="cb109-11"><a href="tree_spatial.html#cb109-11" tabindex="-1"></a>      , <span class="at">size =</span> <span class="dv">1</span></span>
+<span id="cb109-12"><a href="tree_spatial.html#cb109-12" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb109-13"><a href="tree_spatial.html#cb109-13" tabindex="-1"></a>    <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;navy&quot;</span>,<span class="st">&quot;gray&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb109-14"><a href="tree_spatial.html#cb109-14" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">color =</span> <span class="st">&quot;&quot;</span>) <span class="sc">+</span></span>
+<span id="cb109-15"><a href="tree_spatial.html#cb109-15" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">legend.key =</span> <span class="fu">element_rect</span>(<span class="at">color =</span> <span class="cn">NA</span>, <span class="at">fill =</span> <span class="cn">NA</span>), <span class="at">legend.margin =</span> <span class="fu">margin</span>(<span class="fl">6.5</span>,<span class="dv">0</span>,<span class="fl">6.5</span>,<span class="dv">0</span>)) <span class="sc">+</span></span>
+<span id="cb109-16"><a href="tree_spatial.html#cb109-16" tabindex="-1"></a>    <span class="fu">guides</span>(<span class="at">size =</span> <span class="st">&quot;none&quot;</span>, <span class="at">color =</span> <span class="fu">guide_legend</span>(<span class="at">override.aes =</span> <span class="fu">list</span>(<span class="at">size =</span> <span class="dv">5</span>)))</span></code></pre></div>
+<pre><code>## |---------|---------|---------|---------|=========================================                                          </code></pre>
+<div class="sourceCode" id="cb111"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb111-1"><a href="tree_spatial.html#cb111-1" tabindex="-1"></a><span class="co"># PLOT IT</span></span>
+<span id="cb111-2"><a href="tree_spatial.html#cb111-2" tabindex="-1"></a>plt_ttops_temp</span></code></pre></div>
+<p><img src="bhef_uas_202306_files/figure-html/unnamed-chunk-34-1.png" width="1008" /></p>
+<div class="sourceCode" id="cb112"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb112-1"><a href="tree_spatial.html#cb112-1" tabindex="-1"></a><span class="co"># save it</span></span>
+<span id="cb112-2"><a href="tree_spatial.html#cb112-2" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggsave</span>(<span class="st">&quot;../data/NSW_04.jpeg&quot;</span>, <span class="at">dpi =</span> <span class="st">&quot;print&quot;</span>, <span class="at">height =</span> <span class="dv">11</span>, <span class="at">width =</span> <span class="fl">5.8</span>, <span class="at">device =</span> <span class="st">&quot;jpeg&quot;</span>)</span></code></pre></div>
+<p>spatial pattern</p>
+<div class="sourceCode" id="cb113"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb113-1"><a href="tree_spatial.html#cb113-1" tabindex="-1"></a>ttops_temp <span class="ot">=</span> treetops_sf_with_dbh <span class="sc">%&gt;%</span></span>
+<span id="cb113-2"><a href="tree_spatial.html#cb113-2" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(tree_height_m<span class="sc">&gt;=</span>ostory_ht_m_temp) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-3"><a href="tree_spatial.html#cb113-3" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb113-4"><a href="tree_spatial.html#cb113-4" tabindex="-1"></a>    <span class="at">ostory =</span> <span class="fu">ifelse</span>(tree_height_m<span class="sc">&gt;=</span>ostory_ht_m_temp,<span class="st">&quot;overstory&quot;</span>,<span class="st">&quot;understory&quot;</span>)</span>
+<span id="cb113-5"><a href="tree_spatial.html#cb113-5" tabindex="-1"></a>    , <span class="at">X =</span> sf<span class="sc">::</span><span class="fu">st_coordinates</span>(.)[,<span class="dv">1</span>] <span class="sc">%&gt;%</span> <span class="fu">as.numeric</span>()</span>
+<span id="cb113-6"><a href="tree_spatial.html#cb113-6" tabindex="-1"></a>    , <span class="at">Y =</span> sf<span class="sc">::</span><span class="fu">st_coordinates</span>(.)[,<span class="dv">2</span>] <span class="sc">%&gt;%</span> <span class="fu">as.numeric</span>()</span>
+<span id="cb113-7"><a href="tree_spatial.html#cb113-7" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-8"><a href="tree_spatial.html#cb113-8" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_intersection</span>(harvests <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(suid<span class="sc">==</span>my_suid) <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">select</span>(suid))</span>
+<span id="cb113-9"><a href="tree_spatial.html#cb113-9" tabindex="-1"></a><span class="do">#############################################################################</span></span>
+<span id="cb113-10"><a href="tree_spatial.html#cb113-10" tabindex="-1"></a><span class="do">##### Identify clusters in each stem map plot                           #####</span></span>
+<span id="cb113-11"><a href="tree_spatial.html#cb113-11" tabindex="-1"></a><span class="do">#############################################################################</span></span>
+<span id="cb113-12"><a href="tree_spatial.html#cb113-12" tabindex="-1"></a><span class="do">### Place trees into clusters using and inter-tree distance of 6 m</span></span>
+<span id="cb113-13"><a href="tree_spatial.html#cb113-13" tabindex="-1"></a>my_dbscan <span class="ot">=</span>  ttops_temp <span class="sc">%&gt;%</span> </span>
+<span id="cb113-14"><a href="tree_spatial.html#cb113-14" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb113-15"><a href="tree_spatial.html#cb113-15" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(X,Y) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-16"><a href="tree_spatial.html#cb113-16" tabindex="-1"></a>  dbscan<span class="sc">::</span><span class="fu">dbscan</span>(<span class="at">eps =</span> <span class="dv">6</span>, <span class="at">MinPts =</span> <span class="dv">2</span>)</span>
+<span id="cb113-17"><a href="tree_spatial.html#cb113-17" tabindex="-1"></a></span>
+<span id="cb113-18"><a href="tree_spatial.html#cb113-18" tabindex="-1"></a><span class="co"># my_dbscan %&gt;% str()</span></span>
+<span id="cb113-19"><a href="tree_spatial.html#cb113-19" tabindex="-1"></a></span>
+<span id="cb113-20"><a href="tree_spatial.html#cb113-20" tabindex="-1"></a><span class="do">### append cluster ID to trees</span></span>
+<span id="cb113-21"><a href="tree_spatial.html#cb113-21" tabindex="-1"></a>ttops_temp<span class="sc">$</span>cluster <span class="ot">=</span> my_dbscan<span class="sc">$</span>cluster</span>
+<span id="cb113-22"><a href="tree_spatial.html#cb113-22" tabindex="-1"></a><span class="co"># ttops_temp$cluster %&gt;% summary()</span></span>
+<span id="cb113-23"><a href="tree_spatial.html#cb113-23" tabindex="-1"></a><span class="co"># ttops_temp %&gt;% sf::st_drop_geometry() %&gt;% dplyr::count(cluster) %&gt;% dplyr::arrange(desc(n)) %&gt;% dplyr::slice_head(n=11)</span></span>
+<span id="cb113-24"><a href="tree_spatial.html#cb113-24" tabindex="-1"></a></span>
+<span id="cb113-25"><a href="tree_spatial.html#cb113-25" tabindex="-1"></a><span class="do">### cluster metrics</span></span>
+<span id="cb113-26"><a href="tree_spatial.html#cb113-26" tabindex="-1"></a>ttops_temp <span class="ot">=</span> ttops_temp <span class="sc">%&gt;%</span> </span>
+<span id="cb113-27"><a href="tree_spatial.html#cb113-27" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(cluster) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-28"><a href="tree_spatial.html#cb113-28" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb113-29"><a href="tree_spatial.html#cb113-29" tabindex="-1"></a>    <span class="co"># unique cluster for individuals</span></span>
+<span id="cb113-30"><a href="tree_spatial.html#cb113-30" tabindex="-1"></a>    <span class="at">cluster_unq =</span> dplyr<span class="sc">::</span><span class="fu">case_when</span>(</span>
+<span id="cb113-31"><a href="tree_spatial.html#cb113-31" tabindex="-1"></a>      cluster <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">max</span>(my_dbscan<span class="sc">$</span>cluster)<span class="sc">+</span>dplyr<span class="sc">::</span><span class="fu">row_number</span>()</span>
+<span id="cb113-32"><a href="tree_spatial.html#cb113-32" tabindex="-1"></a>      , T <span class="sc">~</span> cluster</span>
+<span id="cb113-33"><a href="tree_spatial.html#cb113-33" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-34"><a href="tree_spatial.html#cb113-34" tabindex="-1"></a>    <span class="fu">factor</span>()</span>
+<span id="cb113-35"><a href="tree_spatial.html#cb113-35" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-36"><a href="tree_spatial.html#cb113-36" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(cluster_unq) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-37"><a href="tree_spatial.html#cb113-37" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb113-38"><a href="tree_spatial.html#cb113-38" tabindex="-1"></a>    <span class="at">cluster =</span> <span class="fu">factor</span>(cluster)</span>
+<span id="cb113-39"><a href="tree_spatial.html#cb113-39" tabindex="-1"></a>    , <span class="at">cluster_n_trees =</span> dplyr<span class="sc">::</span><span class="fu">n</span>()</span>
+<span id="cb113-40"><a href="tree_spatial.html#cb113-40" tabindex="-1"></a>    , <span class="at">cluster_grp =</span> <span class="fu">cut</span>(</span>
+<span id="cb113-41"><a href="tree_spatial.html#cb113-41" tabindex="-1"></a>        cluster_n_trees</span>
+<span id="cb113-42"><a href="tree_spatial.html#cb113-42" tabindex="-1"></a>        ,<span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">4</span>,<span class="dv">9</span>,<span class="dv">15</span>,<span class="cn">Inf</span>)</span>
+<span id="cb113-43"><a href="tree_spatial.html#cb113-43" tabindex="-1"></a>        , <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">&quot;Individual&quot;</span>,<span class="st">&quot;2-4 trees&quot;</span>,<span class="st">&quot;5-9 trees&quot;</span>,<span class="st">&quot;10-15 trees&quot;</span>,<span class="st">&quot;&gt;15 trees&quot;</span>)</span>
+<span id="cb113-44"><a href="tree_spatial.html#cb113-44" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-45"><a href="tree_spatial.html#cb113-45" tabindex="-1"></a>      <span class="fu">factor</span>(</span>
+<span id="cb113-46"><a href="tree_spatial.html#cb113-46" tabindex="-1"></a>        <span class="at">ordered =</span> T</span>
+<span id="cb113-47"><a href="tree_spatial.html#cb113-47" tabindex="-1"></a>        , <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;Individual&quot;</span>,<span class="st">&quot;2-4 trees&quot;</span>,<span class="st">&quot;5-9 trees&quot;</span>,<span class="st">&quot;10-15 trees&quot;</span>,<span class="st">&quot;&gt;15 trees&quot;</span>)</span>
+<span id="cb113-48"><a href="tree_spatial.html#cb113-48" tabindex="-1"></a>      )</span>
+<span id="cb113-49"><a href="tree_spatial.html#cb113-49" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-50"><a href="tree_spatial.html#cb113-50" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">ungroup</span>()</span>
+<span id="cb113-51"><a href="tree_spatial.html#cb113-51" tabindex="-1"></a><span class="co"># ttops_temp %&gt;% dplyr::glimpse()</span></span></code></pre></div>
+<p>plot overstory tree clusters</p>
+<div class="sourceCode" id="cb114"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb114-1"><a href="tree_spatial.html#cb114-1" tabindex="-1"></a>plt_grps_temp <span class="ot">=</span> <span class="fu">ortho_plt_fn</span>(my_suid) <span class="sc">+</span></span>
+<span id="cb114-2"><a href="tree_spatial.html#cb114-2" tabindex="-1"></a>    <span class="co"># treetops</span></span>
+<span id="cb114-3"><a href="tree_spatial.html#cb114-3" tabindex="-1"></a>    <span class="fu">geom_sf</span>(</span>
+<span id="cb114-4"><a href="tree_spatial.html#cb114-4" tabindex="-1"></a>      <span class="at">data =</span> ttops_temp</span>
+<span id="cb114-5"><a href="tree_spatial.html#cb114-5" tabindex="-1"></a>      , <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">color =</span> cluster)</span>
+<span id="cb114-6"><a href="tree_spatial.html#cb114-6" tabindex="-1"></a>      , <span class="at">size =</span> <span class="dv">1</span></span>
+<span id="cb114-7"><a href="tree_spatial.html#cb114-7" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb114-8"><a href="tree_spatial.html#cb114-8" tabindex="-1"></a>    <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;white&quot;</span>,viridis<span class="sc">::</span><span class="fu">turbo</span>(<span class="fu">length</span>(<span class="fu">unique</span>(ttops_temp<span class="sc">$</span>cluster))<span class="sc">-</span><span class="dv">1</span>) <span class="sc">%&gt;%</span> <span class="fu">sample</span>())) <span class="sc">+</span></span>
+<span id="cb114-9"><a href="tree_spatial.html#cb114-9" tabindex="-1"></a>    <span class="co"># scale_color_viridis_d(&quot;turbo&quot;) +</span></span>
+<span id="cb114-10"><a href="tree_spatial.html#cb114-10" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">subtitle =</span> <span class="st">&quot;</span><span class="sc">\n</span><span class="st"> overstory tree groups</span><span class="sc">\n</span><span class="st">(individual trees in white)&quot;</span>) <span class="sc">+</span></span>
+<span id="cb114-11"><a href="tree_spatial.html#cb114-11" tabindex="-1"></a>    <span class="fu">theme</span>(</span>
+<span id="cb114-12"><a href="tree_spatial.html#cb114-12" tabindex="-1"></a>      <span class="at">legend.position =</span> <span class="st">&quot;none&quot;</span></span>
+<span id="cb114-13"><a href="tree_spatial.html#cb114-13" tabindex="-1"></a>      , <span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="fl">9.5</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>, <span class="at">face =</span> <span class="st">&quot;bold&quot;</span>)</span>
+<span id="cb114-14"><a href="tree_spatial.html#cb114-14" tabindex="-1"></a>    )</span></code></pre></div>
+<pre><code>## |---------|---------|---------|---------|=========================================                                          </code></pre>
+<div class="sourceCode" id="cb116"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb116-1"><a href="tree_spatial.html#cb116-1" tabindex="-1"></a><span class="co"># PLOT IT</span></span>
+<span id="cb116-2"><a href="tree_spatial.html#cb116-2" tabindex="-1"></a>plt_grps_temp</span></code></pre></div>
+<p><img src="bhef_uas_202306_files/figure-html/unnamed-chunk-36-1.png" width="1008" /></p>
+<div class="sourceCode" id="cb117"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb117-1"><a href="tree_spatial.html#cb117-1" tabindex="-1"></a><span class="co"># save it</span></span>
+<span id="cb117-2"><a href="tree_spatial.html#cb117-2" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggsave</span>(<span class="st">&quot;../data/NSW_05.jpeg&quot;</span>, <span class="at">dpi =</span> <span class="st">&quot;print&quot;</span>, <span class="at">height =</span> <span class="dv">11</span>, <span class="at">width =</span> <span class="fl">5.8</span>, <span class="at">device =</span> <span class="st">&quot;jpeg&quot;</span>)</span></code></pre></div>
+<p>and plot overstory tree clusters by number of trees</p>
+<div class="sourceCode" id="cb118"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb118-1"><a href="tree_spatial.html#cb118-1" tabindex="-1"></a>plt_grps_temp <span class="ot">=</span> <span class="fu">ortho_plt_fn</span>(my_suid) <span class="sc">+</span></span>
+<span id="cb118-2"><a href="tree_spatial.html#cb118-2" tabindex="-1"></a>    <span class="co"># treetops</span></span>
+<span id="cb118-3"><a href="tree_spatial.html#cb118-3" tabindex="-1"></a>    <span class="fu">geom_sf</span>(</span>
+<span id="cb118-4"><a href="tree_spatial.html#cb118-4" tabindex="-1"></a>      <span class="at">data =</span> ttops_temp</span>
+<span id="cb118-5"><a href="tree_spatial.html#cb118-5" tabindex="-1"></a>      , <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">color =</span> cluster_grp)</span>
+<span id="cb118-6"><a href="tree_spatial.html#cb118-6" tabindex="-1"></a>      , <span class="at">size =</span> <span class="dv">1</span></span>
+<span id="cb118-7"><a href="tree_spatial.html#cb118-7" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb118-8"><a href="tree_spatial.html#cb118-8" tabindex="-1"></a>    <span class="fu">scale_color_viridis_d</span>(<span class="at">option=</span><span class="st">&quot;mako&quot;</span>, <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb118-9"><a href="tree_spatial.html#cb118-9" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">color =</span> <span class="st">&quot;&quot;</span>) <span class="sc">+</span></span>
+<span id="cb118-10"><a href="tree_spatial.html#cb118-10" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">legend.key =</span> <span class="fu">element_rect</span>(<span class="at">color =</span> <span class="cn">NA</span>, <span class="at">fill =</span> <span class="cn">NA</span>), <span class="at">legend.margin =</span> <span class="fu">margin</span>(<span class="fl">6.5</span>,<span class="dv">0</span>,<span class="fl">6.5</span>,<span class="dv">0</span>)) <span class="sc">+</span></span>
+<span id="cb118-11"><a href="tree_spatial.html#cb118-11" tabindex="-1"></a>    <span class="fu">guides</span>(<span class="at">size =</span> <span class="st">&quot;none&quot;</span>, <span class="at">color =</span> <span class="fu">guide_legend</span>(<span class="at">override.aes =</span> <span class="fu">list</span>(<span class="at">size =</span> <span class="dv">5</span>)))</span></code></pre></div>
+<pre><code>## |---------|---------|---------|---------|=========================================                                          </code></pre>
+<div class="sourceCode" id="cb120"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb120-1"><a href="tree_spatial.html#cb120-1" tabindex="-1"></a><span class="co"># PLOT IT</span></span>
+<span id="cb120-2"><a href="tree_spatial.html#cb120-2" tabindex="-1"></a>plt_grps_temp</span></code></pre></div>
+<p><img src="bhef_uas_202306_files/figure-html/unnamed-chunk-37-1.png" width="1008" /></p>
+<div class="sourceCode" id="cb121"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb121-1"><a href="tree_spatial.html#cb121-1" tabindex="-1"></a><span class="co"># save it</span></span>
+<span id="cb121-2"><a href="tree_spatial.html#cb121-2" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggsave</span>(<span class="st">&quot;../data/NSW_06.jpeg&quot;</span>, <span class="at">dpi =</span> <span class="st">&quot;print&quot;</span>, <span class="at">height =</span> <span class="dv">11</span>, <span class="at">width =</span> <span class="fl">5.8</span>, <span class="at">device =</span> <span class="st">&quot;jpeg&quot;</span>)</span></code></pre></div>
+
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="silv.html" class="navigation navigation-prev navigation-unique" aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": true,
+"twitter": true,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"whatsapp": false,
+"all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": null,
+"search": {
+"engine": "fuse",
+"options": null
+},
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

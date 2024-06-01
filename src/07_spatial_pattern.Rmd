@@ -1,0 +1,329 @@
+# UAS Tree Spatial Arrangement{#tree_spatial}
+
+For now we'll just make a visual overview of the UAS-SfM forest inventory process to present at the 2024 National Silvicultural Workshop.
+
+```{r}
+# focus on one harvest unit
+my_suid = harvests$suid[6]
+# ht for overstory
+ostory_ht_m_temp = 9
+# where is this
+mapview::mapview(harvests %>% dplyr::filter(suid==my_suid), layer.name = "BHEF", label = FALSE, legend = FALSE, popup = FALSE)
+```
+
+orthomosaic from UAS
+
+```{r}
+######################################################################################
+# function to plot ortho + stand
+######################################################################################
+ortho_plt_fn = function(my_suid){
+# convert to stars
+  ortho_st = ortho_rast %>%  
+    terra::subset(subset = c(1,2,3)) %>%
+    terra::crop(
+      # stand %>% 
+      harvests %>% dplyr::filter(suid==my_suid) %>% 
+        sf::st_buffer(20) %>% 
+        sf::st_bbox() %>% 
+        sf::st_as_sfc() %>% 
+        terra::vect()
+    ) %>% 
+    terra::aggregate(fact = 2, fun = "mean", na.rm = T) %>% 
+    stars::st_as_stars()
+  
+  # convert to rgb
+  ortho_rgb <- stars::st_rgb(
+    ortho_st[,,,1:3]
+    , dimension = 3
+    , use_alpha = FALSE
+    # , stretch = "histogram"
+    , probs = c(0.005, 0.995)
+    , stretch = "percent"
+  )
+  # ggplot
+  plt_rgb <- ggplot() +
+    stars::geom_stars(data = ortho_rgb[]) +
+    scale_fill_identity(na.value = "transparent") + # !!! don't take this out or RGB plot will kill your computer
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0)) +
+    labs(
+      x = ""
+      , y = ""
+    ) +
+    theme_void()
+  
+  # return(plt_rgb)
+  # combine all plot elements
+  plt_combine = plt_rgb +
+    geom_sf(
+      data = harvests %>% dplyr::filter(suid==my_suid)
+      , alpha = 0
+      , lwd = 1.5
+      , color = "#b22222"
+    ) +
+    theme(
+      legend.position = "top" # c(0.5,1)
+      , legend.direction = "horizontal"
+      , legend.margin = margin(0,0,0,0)
+      , legend.text = element_text(size = 8)
+      , legend.title = element_text(size = 8)
+      , legend.key = element_rect(fill = "white")
+      # , plot.title = ggtext::element_markdown(size = 10, hjust = 0.5)
+      , plot.title = element_text(size = 10, hjust = 0.5, face = "bold")
+      , plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic")
+    )
+  return(plt_combine)
+}
+# PLOT IT
+ortho_plt_fn(my_suid) +
+  labs(
+    subtitle = "\nstand boundary\n"
+    # subtitle = "<span style='color:#b22222;'><b><i>stand boundary</i></b></span>"
+  ) +
+  theme(
+    plot.subtitle = element_text(size = 9.5, color = "#b22222", hjust = 0.5, face = "bold")
+  )
+# save it
+ggplot2::ggsave("../data/NSW_01.jpeg", dpi = "print", height = 11, width = 5.8, device = "jpeg")
+```
+
+plot with CHM
+
+```{r}
+# chm
+  chm_temp = chm_rast %>% 
+    terra::crop(
+      harvests %>% dplyr::filter(suid==my_suid) %>% 
+      terra::vect()
+    ) %>% 
+    terra::mask(
+      harvests %>% dplyr::filter(suid==my_suid) %>% 
+      terra::vect()
+    ) %>% 
+    terra::aggregate(fact = 2, fun = "mean", na.rm = T) %>% 
+    `*`(3.28) %>% # transform to feet
+    as.data.frame(xy=T) %>% 
+    rename(f=3)
+  
+  # plot it
+  plt_chm_temp = ortho_plt_fn(my_suid) +
+    # chm
+    ggnewscale::new_scale_fill() +
+    geom_tile(
+      data = chm_temp
+      , mapping = aes(x = x, y = y, fill = f)
+      , na.rm = T
+    ) +
+    scale_fill_viridis_c(option="plasma", alpha = 0.8, breaks = scales::extended_breaks(n=6), na.value = "transparent") +
+    labs(fill = "CHM (ft)")
+
+# PLOT IT
+plt_chm_temp
+  
+# save it
+ggplot2::ggsave("../data/NSW_02.jpeg", dpi = "print", height = 11, width = 5.8, device = "jpeg")
+
+```
+
+ITD
+
+```{r, include=FALSE,eval=FALSE}
+ortho_plt_fn(my_suid) + plt_chm_temp + 
+  patchwork::plot_annotation(tag_levels = list(c("hey","guy"))) & 
+  theme(
+    plot.tag.position = c(0, 1)
+    , plot.tag = element_text(size = 8, hjust = 0, vjust = 0)
+  )
+```
+
+Height
+
+```{r}
+plt_ttops_temp = ortho_plt_fn(my_suid) +
+    # treetops
+    geom_sf(
+      data = treetops_sf_with_dbh %>%
+        sf::st_intersection(harvests %>% dplyr::filter(suid==my_suid))
+      , mapping = aes(color = tree_height_ft)
+      , size = 1
+    ) +
+    scale_color_viridis_c(option="plasma", alpha = 0.8, breaks = scales::extended_breaks(n=6)) +
+    labs(color = "Individual Tree\nHt. (ft)")
+
+# PLOT IT
+plt_ttops_temp
+  
+# save it
+ggplot2::ggsave("../data/NSW_03.jpeg", dpi = "print", height = 11, width = 5.8, device = "jpeg")
+
+```
+
+
+overstory/understory
+
+```{r}
+plt_ttops_temp = ortho_plt_fn(my_suid) +
+    # treetops
+    geom_sf(
+      data = treetops_sf_with_dbh %>%
+        dplyr::mutate(
+          ostory = ifelse(tree_height_m>=ostory_ht_m_temp,"overstory","understory")
+          , ostory_sz = ifelse(tree_height_m>=9,0.51,0.5)
+        ) %>% 
+        sf::st_intersection(harvests %>% dplyr::filter(suid==my_suid))
+      , mapping = aes(color = ostory)
+      , size = 1
+    ) +
+    scale_color_manual(values = c("navy","gray")) +
+    labs(color = "") +
+    theme(legend.key = element_rect(color = NA, fill = NA), legend.margin = margin(6.5,0,6.5,0)) +
+    guides(size = "none", color = guide_legend(override.aes = list(size = 5)))
+
+# PLOT IT
+plt_ttops_temp
+  
+# save it
+ggplot2::ggsave("../data/NSW_04.jpeg", dpi = "print", height = 11, width = 5.8, device = "jpeg")
+
+```
+
+spatial pattern
+
+```{r}
+ttops_temp = treetops_sf_with_dbh %>%
+  dplyr::filter(tree_height_m>=ostory_ht_m_temp) %>% 
+  dplyr::mutate(
+    ostory = ifelse(tree_height_m>=ostory_ht_m_temp,"overstory","understory")
+    , X = sf::st_coordinates(.)[,1] %>% as.numeric()
+    , Y = sf::st_coordinates(.)[,2] %>% as.numeric()
+  ) %>% 
+  sf::st_intersection(harvests %>% dplyr::filter(suid==my_suid) %>% dplyr::select(suid))
+#############################################################################
+##### Identify clusters in each stem map plot                           #####
+#############################################################################
+### Place trees into clusters using and inter-tree distance of 6 m
+my_dbscan =  ttops_temp %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::select(X,Y) %>% 
+  dbscan::dbscan(eps = 6, MinPts = 2)
+
+# my_dbscan %>% str()
+
+### append cluster ID to trees
+ttops_temp$cluster = my_dbscan$cluster
+# ttops_temp$cluster %>% summary()
+# ttops_temp %>% sf::st_drop_geometry() %>% dplyr::count(cluster) %>% dplyr::arrange(desc(n)) %>% dplyr::slice_head(n=11)
+
+### cluster metrics
+ttops_temp = ttops_temp %>% 
+  dplyr::group_by(cluster) %>% 
+  dplyr::mutate(
+    # unique cluster for individuals
+    cluster_unq = dplyr::case_when(
+      cluster == 0 ~ max(my_dbscan$cluster)+dplyr::row_number()
+      , T ~ cluster
+    ) %>% 
+    factor()
+  ) %>% 
+  dplyr::group_by(cluster_unq) %>% 
+  dplyr::mutate(
+    cluster = factor(cluster)
+    , cluster_n_trees = dplyr::n()
+    , cluster_grp = cut(
+        cluster_n_trees
+        ,breaks = c(0,1,4,9,15,Inf)
+        , labels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+      ) %>% 
+      factor(
+        ordered = T
+        , levels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+      )
+  ) %>% 
+  dplyr::ungroup()
+# ttops_temp %>% dplyr::glimpse()
+```
+
+plot overstory tree clusters
+
+```{r}
+plt_grps_temp = ortho_plt_fn(my_suid) +
+    # treetops
+    geom_sf(
+      data = ttops_temp
+      , mapping = aes(color = cluster)
+      , size = 1
+    ) +
+    scale_color_manual(values = c("white",viridis::turbo(length(unique(ttops_temp$cluster))-1) %>% sample())) +
+    # scale_color_viridis_d("turbo") +
+    labs(subtitle = "\n overstory tree groups\n(individual trees in white)") +
+    theme(
+      legend.position = "none"
+      , plot.subtitle = element_text(size = 9.5, hjust = 0.5, face = "bold")
+    )
+
+# PLOT IT
+plt_grps_temp
+  
+# save it
+ggplot2::ggsave("../data/NSW_05.jpeg", dpi = "print", height = 11, width = 5.8, device = "jpeg")
+
+```
+
+and plot overstory tree clusters by number of trees
+
+```{r}
+plt_grps_temp = ortho_plt_fn(my_suid) +
+    # treetops
+    geom_sf(
+      data = ttops_temp
+      , mapping = aes(color = cluster_grp)
+      , size = 1
+    ) +
+    scale_color_viridis_d(option="mako", direction = -1) + 
+    labs(color = "") +
+    theme(legend.key = element_rect(color = NA, fill = NA), legend.margin = margin(6.5,0,6.5,0)) +
+    guides(size = "none", color = guide_legend(override.aes = list(size = 5)))
+
+# PLOT IT
+plt_grps_temp
+  
+# save it
+ggplot2::ggsave("../data/NSW_06.jpeg", dpi = "print", height = 11, width = 5.8, device = "jpeg")
+
+```
+
+```{r, include=FALSE,eval=FALSE}
+
+dplyr::group_by(cluster) %>% 
+dplyr::mutate(
+  dist = map_dbl(1:nrow(d_sf), function(x){
+    x <- d_sf[x,]
+    y <- centers_sf[centers_sf$g == x$g,]
+    st_distance(x, y)
+  })
+)
+
+for(i in unique(tall.trees$stand)) {
+  stand.trees <- subset(tall.trees, stand == i)
+  stand.trees$NN_m <- nndist(stand.trees$X, stand.trees$Y, k=1)
+  
+  temp.trees <- rbind(temp.trees, stand.trees)
+}
+
+tall.trees <- temp.trees
+
+### Create boxplots of distance to nearest tree within different clump sizes
+ggplot(data = tall.trees, aes(y=NN_m, x = clump.size)) +
+  geom_boxplot() +
+  labs(x = "Clump Size", 
+       y = "Distance to Nearest Neighbor in Clump (m)",
+       title = paste0("Histogram of distance to nearest clump neighbor ", "\n" ,min_height," m height threshold")) +
+  facet_wrap(vars(stand)) +
+  theme_bw()
+
+### Save plots out using stem map plot name to the Figures folder
+ggsave(paste0("Figures/Distance_to_nearest_clump_neighbor_", min_height,"m_height_threshold.tiff"), width = 4, height = 3, dpi = 300)
+```
+
+
