@@ -2,6 +2,8 @@ tab:fld-dta-tp-data
 tab:fld-dta-sum-rmse
 tab:uas-fld-regentab
 tab:regen-dta-sum-rmse
+tab:unnamed-chunk-50
+tab:unnamed-chunk-52
 introduction
 objective
 data_prep
@@ -79,3 +81,14 @@ understory-summary
 define-functions-for-stand-summary
 harvest-unit-summary-reports
 tree_spatial
+example-tree-group-workflow
+orthomosaic-from-uas
+itd
+tree-groups
+within-clump-distance
+create-function-to-get-tree-list-with-clumps
+clump-polygons-and-metrics
+clump-spacing
+clump-metrics
+ico-implementation
+determine-the-stand-average-density-target

@@ -69,10 +69,10 @@
 <script src="libs/clipboard-0.0.1/setClipboardText.js"></script>
 <link href="libs/mapviewCSS-0.0.1/mapview-popup.css" rel="stylesheet" />
 <link href="libs/mapviewCSS-0.0.1/mapview.css" rel="stylesheet" />
-<script src="libs/elev. (ft)_f97124-1/data_stars_elevft01e6af.txt"></script>
+<script src="libs/elev. (ft)_d84c2b-1/data_stars_elevft823c0b.txt"></script>
 <script src="libs/joda-0.0.1/joda.js"></script>
 <script src="libs/joda-0.0.1/addImageQuery-bindings.js"></script>
-<script src="libs/canopy ht. (ft)_da071c-1/data_stars_canopyhtfta20165.txt"></script>
+<script src="libs/canopy ht. (ft)_5e13a8-1/data_stars_canopyhtft0da4f6.txt"></script>
 <script type="text/javascript">
 
 // toggle visibility of R source blocks in R Markdown output
@@ -295,7 +295,23 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="8.4" data-path="silv.html"><a href="silv.html#define-functions-for-stand-summary"><i class="fa fa-check"></i><b>8.4</b> Define Functions for Stand Summary</a></li>
 <li class="chapter" data-level="8.5" data-path="silv.html"><a href="silv.html#harvest-unit-summary-reports"><i class="fa fa-check"></i><b>8.5</b> Harvest Unit Summary Reports</a></li>
 </ul></li>
-<li class="chapter" data-level="9" data-path="tree_spatial.html"><a href="tree_spatial.html"><i class="fa fa-check"></i><b>9</b> UAS Tree Spatial Arrangement</a></li>
+<li class="chapter" data-level="9" data-path="tree_spatial.html"><a href="tree_spatial.html"><i class="fa fa-check"></i><b>9</b> UAS Tree Spatial Arrangement</a>
+<ul>
+<li class="chapter" data-level="9.1" data-path="tree_spatial.html"><a href="tree_spatial.html#example-tree-group-workflow"><i class="fa fa-check"></i><b>9.1</b> Example Tree Group Workflow</a>
+<ul>
+<li class="chapter" data-level="9.1.1" data-path="tree_spatial.html"><a href="tree_spatial.html#orthomosaic-from-uas"><i class="fa fa-check"></i><b>9.1.1</b> Orthomosaic from UAS</a></li>
+<li class="chapter" data-level="9.1.2" data-path="tree_spatial.html"><a href="tree_spatial.html#itd"><i class="fa fa-check"></i><b>9.1.2</b> ITD</a></li>
+<li class="chapter" data-level="9.1.3" data-path="tree_spatial.html"><a href="tree_spatial.html#tree-groups"><i class="fa fa-check"></i><b>9.1.3</b> Tree Groups</a></li>
+<li class="chapter" data-level="9.1.4" data-path="tree_spatial.html"><a href="tree_spatial.html#within-clump-distance"><i class="fa fa-check"></i><b>9.1.4</b> Within Clump Distance</a></li>
+<li class="chapter" data-level="9.1.5" data-path="tree_spatial.html"><a href="tree_spatial.html#clump-polygons-and-metrics"><i class="fa fa-check"></i><b>9.1.5</b> Clump Polygons and Metrics</a></li>
+<li class="chapter" data-level="9.1.6" data-path="tree_spatial.html"><a href="tree_spatial.html#clump-spacing"><i class="fa fa-check"></i><b>9.1.6</b> Clump Spacing</a></li>
+<li class="chapter" data-level="9.1.7" data-path="tree_spatial.html"><a href="tree_spatial.html#clump-metrics"><i class="fa fa-check"></i><b>9.1.7</b> Clump Metrics</a></li>
+</ul></li>
+<li class="chapter" data-level="9.2" data-path="tree_spatial.html"><a href="tree_spatial.html#ico-implementation"><i class="fa fa-check"></i><b>9.2</b> ICO Implementation</a>
+<ul>
+<li class="chapter" data-level="9.2.1" data-path="tree_spatial.html"><a href="tree_spatial.html#determine-the-stand-average-density-target"><i class="fa fa-check"></i><b>9.2.1</b> 3. Determine the stand average density target</a></li>
+</ul></li>
+</ul></li>
 </ul>
 
       </nav>
@@ -315,16 +331,22 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
             <section class="normal" id="section-">
 <div id="tree_spatial" class="section level1 hasAnchor" number="9">
 <h1><span class="header-section-number">Section 9</span> UAS Tree Spatial Arrangement<a href="tree_spatial.html#tree_spatial" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="example-tree-group-workflow" class="section level2 hasAnchor" number="9.1">
+<h2><span class="header-section-number">9.1</span> Example Tree Group Workflow<a href="tree_spatial.html#example-tree-group-workflow" class="anchor-section" aria-label="Anchor link to header"></a></h2>
 <p>For now we’ll just make a visual overview of the UAS-SfM forest inventory process to present at the 2024 National Silvicultural Workshop.</p>
 <div class="sourceCode" id="cb95"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb95-1"><a href="tree_spatial.html#cb95-1" tabindex="-1"></a><span class="co"># focus on one harvest unit</span></span>
 <span id="cb95-2"><a href="tree_spatial.html#cb95-2" tabindex="-1"></a>my_suid <span class="ot">=</span> harvests<span class="sc">$</span>suid[<span class="dv">6</span>]</span>
 <span id="cb95-3"><a href="tree_spatial.html#cb95-3" tabindex="-1"></a><span class="co"># ht for overstory</span></span>
-<span id="cb95-4"><a href="tree_spatial.html#cb95-4" tabindex="-1"></a>ostory_ht_m_temp <span class="ot">=</span> <span class="dv">9</span></span>
-<span id="cb95-5"><a href="tree_spatial.html#cb95-5" tabindex="-1"></a><span class="co"># where is this</span></span>
-<span id="cb95-6"><a href="tree_spatial.html#cb95-6" tabindex="-1"></a>mapview<span class="sc">::</span><span class="fu">mapview</span>(harvests <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(suid<span class="sc">==</span>my_suid), <span class="at">layer.name =</span> <span class="st">&quot;BHEF&quot;</span>, <span class="at">label =</span> <span class="cn">FALSE</span>, <span class="at">legend =</span> <span class="cn">FALSE</span>, <span class="at">popup =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
-<div class="leaflet html-widget html-fill-item" id="htmlwidget-07bf6b03cf9ff6fb15b4" style="width:1008px;height:672px;"></div>
-<script type="application/json" data-for="htmlwidget-07bf6b03cf9ff6fb15b4">{"x":{"options":{"minZoom":1,"maxZoom":52,"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}},"preferCanvas":false,"bounceAtZoomLimits":false,"maxBounds":[[[-90,-370]],[[90,370]]]},"calls":[{"method":"addProviderTiles","args":["Esri.WorldImagery","Esri.WorldImagery","Esri.WorldImagery",{"errorTileUrl":"","noWrap":false,"detectRetina":false,"pane":"tilePane"}]},{"method":"addProviderTiles","args":["OpenStreetMap","OpenStreetMap","OpenStreetMap",{"errorTileUrl":"","noWrap":false,"detectRetina":false,"pane":"tilePane"}]},{"method":"createMapPane","args":["polygon",420]},{"method":"addPolygons","args":[[[[{"lng":[-103.61499635,-103.6148624503738,-103.614905962,-103.6148546889099,-103.6148318851605,-103.614896326,-103.614977554,-103.615024246,-103.615072903,-103.615122253,-103.615155623,-103.615188821,-103.615226249,-103.615271526,-103.615304763,-103.615336034,-103.615362019,-103.615396975,-103.615399023,-103.61543165,-103.615438602,-103.615466859,-103.615471354,-103.615514272,-103.61553469,-103.615552267,-103.615565888,-103.615572211,-103.61557305,-103.615597927,-103.615617591,-103.615594257,-103.615576613,-103.615564106,-103.615572301,-103.615564633,-103.615568688,-103.61556887,-103.615569836,-103.615574768,-103.61559199,-103.615588249,-103.615595635,-103.615613526,-103.615640311,-103.615663897,-103.6156926,-103.615741279,-103.615789942,-103.615839842,-103.615887572,-103.615923543,-103.615953977,-103.615968033,-103.615994069,-103.61601783,-103.616030113,-103.616051537,-103.616077338,-103.61610477,-103.616132729,-103.616157779,-103.616180841,-103.616218936,-103.616268879,-103.616291906,-103.616316024,-103.616373873,-103.61641838,-103.61646535,-103.616511609,-103.616550018,-103.616585994,-103.616617974,-103.616655631,-103.616692822,-103.616731023,-103.616770866,-103.616807412,-103.616857143,-103.616896425,-103.616926178,-103.616966347,-103.617021212,-103.617085703,-103.617104642,-103.617130886,-103.617179434,-103.617253043,-103.617289399,-103.617336565,-103.617370936,-103.617385639,-103.617389509,-103.617400844,-103.617387992,-103.617390473,-103.617382474,-103.617378477,-103.617380627,-103.617381855,-103.617380492,-103.617388626,-103.617418394,-103.617436227,-103.617474671,-103.617488446,-103.617481668,-103.617456895,-103.617447324,-103.61743816,-103.617431783,-103.617420491,-103.617422883,-103.61742616,-103.617433183,-103.617443867,-103.617456787,-103.617469397,-103.61748903,-103.617583803,-103.61762084,-103.617698516,-103.617742231,-103.617788694,-103.617837149,-103.617885191,-103.61793517,-103.618002149,-103.618056256,-103.618114925,-103.618166886,-103.61821469,-103.618265144,-103.61831574,-103.618365322,-103.618439089,-103.618468767,-103.618507918,-103.618527191,-103.618557279,-103.618579266,-103.618599543,-103.618603039,-103.618612405,-103.618632746,-103.61863484,-103.618656176,-103.618651694,-103.618640588,-103.61863775,-103.618611818,-103.618591713,-103.618571443,-103.618541411,-103.618498917,-103.61846651,-103.618422187,-103.618372577,-103.6183215,-103.618274107,-103.61822368,-103.61816754,-103.618113797,-103.618057156,-103.618000321,-103.617934886,-103.617870705,-103.617807694,-103.617743661,-103.617667041,-103.617597322,-103.617529992,-103.617461034,-103.617393798,-103.617323916,-103.617255059,-103.617185142,-103.617117138,-103.617045257,-103.616976856,-103.616909652,-103.616838942,-103.616772149,-103.616705483,-103.616643142,-103.616580985,-103.616517592,-103.616452295,-103.616383219,-103.61631115,-103.616238823,-103.616170123,-103.616099016,-103.616035999,-103.615966992,-103.615897345,-103.615829746,-103.615767673,-103.615707405,-103.615651315,-103.615582176,-103.615517418,-103.615445252,-103.615371581,-103.615297752,-103.615223026,-103.615146295,-103.615070447,-103.6149970695087,-103.61499635],"lat":[44.14645179300004,44.14177281563305,44.14162132199998,44.14150158675973,44.14070468828182,44.14068819400001,44.14071233700002,44.14078150000001,44.14083185599997,44.14085906999998,44.14089120400001,44.140948175,44.14097410599999,44.14100218999999,44.14104164399998,44.14109385299998,44.14112547600001,44.141185849,44.14121267500001,44.14125782399998,44.14130601199997,44.14134536799998,44.14136483800002,44.14140073300001,44.14145028799998,44.14146919199998,44.14153675099999,44.14157499100003,44.14162309599998,44.141666294,44.141709123,44.14172553999998,44.141759793,44.14178471200001,44.14180659700003,44.141848272,44.14188490499999,44.141926624,44.14196641199999,44.14200882799997,44.14205224499999,44.14208263400001,44.14212512599999,44.14213316399997,44.14218462899998,44.14220590600001,44.142243033,44.14224718100002,44.14225100599997,44.14225359300002,44.14224727099997,44.142236889,44.14221314299999,44.14217650499999,44.14214373399999,44.14210707799997,44.14206255300002,44.14202555399999,44.14199038800001,44.14195975899997,44.14191787099998,44.14189646599998,44.14187101599999,44.14185626599999,44.14184702599999,44.14183055500002,44.14181330399998,44.14183205699999,44.141846682,44.14186912899999,44.14189798199997,44.14192105299997,44.14194863300003,44.14197024100002,44.14199822699999,44.14201592199998,44.14203752999997,44.14204945300002,44.14207477399998,44.14209402199998,44.14211188199999,44.14213222599999,44.14215515799998,44.14219772799998,44.14223614600001,44.142248355,44.142270623,44.142295654,44.14231985599997,44.142333619,44.14235617199999,44.142391567,44.142428978,44.14244314500001,44.14247517,44.14251748200001,44.142545379,44.142552771,44.14257307700001,44.142593331,44.14261329200002,44.14264275199998,44.142687411,44.14272131899996,44.14273506099998,44.14275712400002,44.14276076399999,44.14279886999997,44.14282874700001,44.14287466399998,44.14292701499999,44.14297397000001,44.14301690000003,44.14306420200001,44.14311800899997,44.14316713599998,44.143229415,44.14327745200002,44.14331598899997,44.14336510700002,44.143517884,44.14356110099999,44.14363620199997,44.14368668499998,44.143736853,44.143784175,44.14382605399999,44.14385735600001,44.14391473900002,44.143965364,44.14400858099998,44.14405945800001,44.14410386899998,44.14415090900003,44.14418378800002,44.14423052,44.144270775,44.14433143700001,44.14438271400001,44.14440896999996,44.14446170500002,44.14451373600002,44.14457155799999,44.144632768,44.14468969599999,44.14475113200001,44.144808769,44.14487220500001,44.144929805,44.14498519300002,44.14504691600002,44.145094953,44.14515519899999,44.14521939100002,44.14527542000001,44.145333101,44.14538384600002,44.14543409800001,44.145477695,44.14552319900002,44.145569383,44.145610906,44.14564455599998,44.145676751,44.14571378400001,44.14574826299997,44.14578427100002,44.14581643000002,44.145846273,44.145877987,44.14590744899999,44.14593968499998,44.14596888099999,44.14600257500001,44.14603881499998,44.14607275899998,44.14610343700001,44.14613632700002,44.14617101499999,44.14620369599999,44.146235897,44.14626565899998,44.146299016,44.14633258100001,44.14636233599998,44.14639126399998,44.14641289399998,44.14644243800001,44.146467873,44.14649233199997,44.14651517099997,44.14653501100003,44.14655332400002,44.14656903500003,44.14658664900002,44.14659948299998,44.14661253899998,44.14661874400002,44.14661980699997,44.14662509599997,44.14662661599999,44.14663186100001,44.14663286000002,44.14663195100001,44.14662746599999,44.14662393100001,44.14662284899998,44.14661349400001,44.14660181099998,44.14658534816522,44.14645179300004]}]]],null,"BHEF",{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}},"pane":"polygon","stroke":true,"color":"#333333","weight":0.5,"opacity":0.9,"fill":true,"fillColor":"#6666FF","fillOpacity":0.6,"smoothFactor":1,"noClip":false},null,{"maxWidth":800,"minWidth":50,"autoPan":true,"keepInView":false,"closeButton":true,"closeOnClick":true,"className":""},null,{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true},{"stroke":true,"weight":1,"opacity":0.9,"fillOpacity":0.84,"bringToFront":false,"sendToBack":false}]},{"method":"addScaleBar","args":[{"maxWidth":100,"metric":true,"imperial":true,"updateWhenIdle":true,"position":"bottomleft"}]},{"method":"addLayersControl","args":[["Esri.WorldImagery","OpenStreetMap"],"BHEF",{"collapsed":true,"autoZIndex":true,"position":"topleft"}]}],"limits":{"lat":[44.14068819400001,44.14663286000002],"lng":[-103.618656176,-103.6148318851605]},"fitBounds":[44.14068819400001,-103.618656176,44.14663286000002,-103.6148318851605,[]]},"evals":[],"jsHooks":{"render":[{"code":"function(el, x, data) {\n  return (\n      function(el, x, data) {\n      // get the leaflet map\n      var map = this; //HTMLWidgets.find('#' + el.id);\n      // we need a new div element because we have to handle\n      // the mouseover output separately\n      // debugger;\n      function addElement () {\n      // generate new div Element\n      var newDiv = $(document.createElement('div'));\n      // append at end of leaflet htmlwidget container\n      $(el).append(newDiv);\n      //provide ID and style\n      newDiv.addClass('lnlt');\n      newDiv.css({\n      'position': 'relative',\n      'bottomleft':  '0px',\n      'background-color': 'rgba(255, 255, 255, 0.7)',\n      'box-shadow': '0 0 2px #bbb',\n      'background-clip': 'padding-box',\n      'margin': '0',\n      'padding-left': '5px',\n      'color': '#333',\n      'font': '9px/1.5 \"Helvetica Neue\", Arial, Helvetica, sans-serif',\n      'z-index': '700',\n      });\n      return newDiv;\n      }\n\n\n      // check for already existing lnlt class to not duplicate\n      var lnlt = $(el).find('.lnlt');\n\n      if(!lnlt.length) {\n      lnlt = addElement();\n\n      // grab the special div we generated in the beginning\n      // and put the mousmove output there\n\n      map.on('mousemove', function (e) {\n      if (e.originalEvent.ctrlKey) {\n      if (document.querySelector('.lnlt') === null) lnlt = addElement();\n      lnlt.text(\n                           ' lon: ' + (e.latlng.lng).toFixed(5) +\n                           ' | lat: ' + (e.latlng.lat).toFixed(5) +\n                           ' | zoom: ' + map.getZoom() +\n                           ' | x: ' + L.CRS.EPSG3857.project(e.latlng).x.toFixed(0) +\n                           ' | y: ' + L.CRS.EPSG3857.project(e.latlng).y.toFixed(0) +\n                           ' | epsg: 3857 ' +\n                           ' | proj4: +proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs ');\n      } else {\n      if (document.querySelector('.lnlt') === null) lnlt = addElement();\n      lnlt.text(\n                      ' lon: ' + (e.latlng.lng).toFixed(5) +\n                      ' | lat: ' + (e.latlng.lat).toFixed(5) +\n                      ' | zoom: ' + map.getZoom() + ' ');\n      }\n      });\n\n      // remove the lnlt div when mouse leaves map\n      map.on('mouseout', function (e) {\n      var strip = document.querySelector('.lnlt');\n      if( strip !==null) strip.remove();\n      });\n\n      };\n\n      //$(el).keypress(67, function(e) {\n      map.on('preclick', function(e) {\n      if (e.originalEvent.ctrlKey) {\n      if (document.querySelector('.lnlt') === null) lnlt = addElement();\n      lnlt.text(\n                      ' lon: ' + (e.latlng.lng).toFixed(5) +\n                      ' | lat: ' + (e.latlng.lat).toFixed(5) +\n                      ' | zoom: ' + map.getZoom() + ' ');\n      var txt = document.querySelector('.lnlt').textContent;\n      console.log(txt);\n      //txt.innerText.focus();\n      //txt.select();\n      setClipboardText('\"' + txt + '\"');\n      }\n      });\n\n      }\n      ).call(this.getMap(), el, x, data);\n}","data":null},{"code":"function(el, x, data) {\n  return (function(el,x,data){\n           var map = this;\n\n           map.on('keypress', function(e) {\n               console.log(e.originalEvent.code);\n               var key = e.originalEvent.code;\n               if (key === 'KeyE') {\n                   var bb = this.getBounds();\n                   var txt = JSON.stringify(bb);\n                   console.log(txt);\n\n                   setClipboardText('\\'' + txt + '\\'');\n               }\n           })\n        }).call(this.getMap(), el, x, data);\n}","data":null}]}}</script>
-<p>orthomosaic from UAS</p>
+<span id="cb95-4"><a href="tree_spatial.html#cb95-4" tabindex="-1"></a>ostory_ht_m <span class="ot">=</span> <span class="dv">9</span></span>
+<span id="cb95-5"><a href="tree_spatial.html#cb95-5" tabindex="-1"></a><span class="co"># maximum distance between trees for determining tree clumps</span></span>
+<span id="cb95-6"><a href="tree_spatial.html#cb95-6" tabindex="-1"></a>  <span class="co"># stems within 6 m of one another were considered to have the potential for developing interlocking crowns</span></span>
+<span id="cb95-7"><a href="tree_spatial.html#cb95-7" tabindex="-1"></a>tree_clump_dist_m <span class="ot">=</span> <span class="dv">6</span></span>
+<span id="cb95-8"><a href="tree_spatial.html#cb95-8" tabindex="-1"></a><span class="co"># where is this</span></span>
+<span id="cb95-9"><a href="tree_spatial.html#cb95-9" tabindex="-1"></a>mapview<span class="sc">::</span><span class="fu">mapview</span>(harvests <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(suid<span class="sc">==</span>my_suid), <span class="at">layer.name =</span> <span class="st">&quot;BHEF&quot;</span>, <span class="at">label =</span> <span class="cn">FALSE</span>, <span class="at">legend =</span> <span class="cn">FALSE</span>, <span class="at">popup =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<div class="leaflet html-widget html-fill-item" id="htmlwidget-1e8e8b2cfc5a2e49e1a8" style="width:1008px;height:672px;"></div>
+<script type="application/json" data-for="htmlwidget-1e8e8b2cfc5a2e49e1a8">{"x":{"options":{"minZoom":1,"maxZoom":52,"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}},"preferCanvas":false,"bounceAtZoomLimits":false,"maxBounds":[[[-90,-370]],[[90,370]]]},"calls":[{"method":"addProviderTiles","args":["Esri.WorldImagery","Esri.WorldImagery","Esri.WorldImagery",{"errorTileUrl":"","noWrap":false,"detectRetina":false,"pane":"tilePane"}]},{"method":"addProviderTiles","args":["OpenStreetMap","OpenStreetMap","OpenStreetMap",{"errorTileUrl":"","noWrap":false,"detectRetina":false,"pane":"tilePane"}]},{"method":"createMapPane","args":["polygon",420]},{"method":"addPolygons","args":[[[[{"lng":[-103.61499635,-103.6148624503738,-103.614905962,-103.6148546889099,-103.6148318851605,-103.614896326,-103.614977554,-103.615024246,-103.615072903,-103.615122253,-103.615155623,-103.615188821,-103.615226249,-103.615271526,-103.615304763,-103.615336034,-103.615362019,-103.615396975,-103.615399023,-103.61543165,-103.615438602,-103.615466859,-103.615471354,-103.615514272,-103.61553469,-103.615552267,-103.615565888,-103.615572211,-103.61557305,-103.615597927,-103.615617591,-103.615594257,-103.615576613,-103.615564106,-103.615572301,-103.615564633,-103.615568688,-103.61556887,-103.615569836,-103.615574768,-103.61559199,-103.615588249,-103.615595635,-103.615613526,-103.615640311,-103.615663897,-103.6156926,-103.615741279,-103.615789942,-103.615839842,-103.615887572,-103.615923543,-103.615953977,-103.615968033,-103.615994069,-103.61601783,-103.616030113,-103.616051537,-103.616077338,-103.61610477,-103.616132729,-103.616157779,-103.616180841,-103.616218936,-103.616268879,-103.616291906,-103.616316024,-103.616373873,-103.61641838,-103.61646535,-103.616511609,-103.616550018,-103.616585994,-103.616617974,-103.616655631,-103.616692822,-103.616731023,-103.616770866,-103.616807412,-103.616857143,-103.616896425,-103.616926178,-103.616966347,-103.617021212,-103.617085703,-103.617104642,-103.617130886,-103.617179434,-103.617253043,-103.617289399,-103.617336565,-103.617370936,-103.617385639,-103.617389509,-103.617400844,-103.617387992,-103.617390473,-103.617382474,-103.617378477,-103.617380627,-103.617381855,-103.617380492,-103.617388626,-103.617418394,-103.617436227,-103.617474671,-103.617488446,-103.617481668,-103.617456895,-103.617447324,-103.61743816,-103.617431783,-103.617420491,-103.617422883,-103.61742616,-103.617433183,-103.617443867,-103.617456787,-103.617469397,-103.61748903,-103.617583803,-103.61762084,-103.617698516,-103.617742231,-103.617788694,-103.617837149,-103.617885191,-103.61793517,-103.618002149,-103.618056256,-103.618114925,-103.618166886,-103.61821469,-103.618265144,-103.61831574,-103.618365322,-103.618439089,-103.618468767,-103.618507918,-103.618527191,-103.618557279,-103.618579266,-103.618599543,-103.618603039,-103.618612405,-103.618632746,-103.61863484,-103.618656176,-103.618651694,-103.618640588,-103.61863775,-103.618611818,-103.618591713,-103.618571443,-103.618541411,-103.618498917,-103.61846651,-103.618422187,-103.618372577,-103.6183215,-103.618274107,-103.61822368,-103.61816754,-103.618113797,-103.618057156,-103.618000321,-103.617934886,-103.617870705,-103.617807694,-103.617743661,-103.617667041,-103.617597322,-103.617529992,-103.617461034,-103.617393798,-103.617323916,-103.617255059,-103.617185142,-103.617117138,-103.617045257,-103.616976856,-103.616909652,-103.616838942,-103.616772149,-103.616705483,-103.616643142,-103.616580985,-103.616517592,-103.616452295,-103.616383219,-103.61631115,-103.616238823,-103.616170123,-103.616099016,-103.616035999,-103.615966992,-103.615897345,-103.615829746,-103.615767673,-103.615707405,-103.615651315,-103.615582176,-103.615517418,-103.615445252,-103.615371581,-103.615297752,-103.615223026,-103.615146295,-103.615070447,-103.6149970695087,-103.61499635],"lat":[44.14645179300004,44.14177281563305,44.14162132199998,44.14150158675973,44.14070468828182,44.14068819400001,44.14071233700002,44.14078150000001,44.14083185599997,44.14085906999998,44.14089120400001,44.140948175,44.14097410599999,44.14100218999999,44.14104164399998,44.14109385299998,44.14112547600001,44.141185849,44.14121267500001,44.14125782399998,44.14130601199997,44.14134536799998,44.14136483800002,44.14140073300001,44.14145028799998,44.14146919199998,44.14153675099999,44.14157499100003,44.14162309599998,44.141666294,44.141709123,44.14172553999998,44.141759793,44.14178471200001,44.14180659700003,44.141848272,44.14188490499999,44.141926624,44.14196641199999,44.14200882799997,44.14205224499999,44.14208263400001,44.14212512599999,44.14213316399997,44.14218462899998,44.14220590600001,44.142243033,44.14224718100002,44.14225100599997,44.14225359300002,44.14224727099997,44.142236889,44.14221314299999,44.14217650499999,44.14214373399999,44.14210707799997,44.14206255300002,44.14202555399999,44.14199038800001,44.14195975899997,44.14191787099998,44.14189646599998,44.14187101599999,44.14185626599999,44.14184702599999,44.14183055500002,44.14181330399998,44.14183205699999,44.141846682,44.14186912899999,44.14189798199997,44.14192105299997,44.14194863300003,44.14197024100002,44.14199822699999,44.14201592199998,44.14203752999997,44.14204945300002,44.14207477399998,44.14209402199998,44.14211188199999,44.14213222599999,44.14215515799998,44.14219772799998,44.14223614600001,44.142248355,44.142270623,44.142295654,44.14231985599997,44.142333619,44.14235617199999,44.142391567,44.142428978,44.14244314500001,44.14247517,44.14251748200001,44.142545379,44.142552771,44.14257307700001,44.142593331,44.14261329200002,44.14264275199998,44.142687411,44.14272131899996,44.14273506099998,44.14275712400002,44.14276076399999,44.14279886999997,44.14282874700001,44.14287466399998,44.14292701499999,44.14297397000001,44.14301690000003,44.14306420200001,44.14311800899997,44.14316713599998,44.143229415,44.14327745200002,44.14331598899997,44.14336510700002,44.143517884,44.14356110099999,44.14363620199997,44.14368668499998,44.143736853,44.143784175,44.14382605399999,44.14385735600001,44.14391473900002,44.143965364,44.14400858099998,44.14405945800001,44.14410386899998,44.14415090900003,44.14418378800002,44.14423052,44.144270775,44.14433143700001,44.14438271400001,44.14440896999996,44.14446170500002,44.14451373600002,44.14457155799999,44.144632768,44.14468969599999,44.14475113200001,44.144808769,44.14487220500001,44.144929805,44.14498519300002,44.14504691600002,44.145094953,44.14515519899999,44.14521939100002,44.14527542000001,44.145333101,44.14538384600002,44.14543409800001,44.145477695,44.14552319900002,44.145569383,44.145610906,44.14564455599998,44.145676751,44.14571378400001,44.14574826299997,44.14578427100002,44.14581643000002,44.145846273,44.145877987,44.14590744899999,44.14593968499998,44.14596888099999,44.14600257500001,44.14603881499998,44.14607275899998,44.14610343700001,44.14613632700002,44.14617101499999,44.14620369599999,44.146235897,44.14626565899998,44.146299016,44.14633258100001,44.14636233599998,44.14639126399998,44.14641289399998,44.14644243800001,44.146467873,44.14649233199997,44.14651517099997,44.14653501100003,44.14655332400002,44.14656903500003,44.14658664900002,44.14659948299998,44.14661253899998,44.14661874400002,44.14661980699997,44.14662509599997,44.14662661599999,44.14663186100001,44.14663286000002,44.14663195100001,44.14662746599999,44.14662393100001,44.14662284899998,44.14661349400001,44.14660181099998,44.14658534816522,44.14645179300004]}]]],null,"BHEF",{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}},"pane":"polygon","stroke":true,"color":"#333333","weight":0.5,"opacity":0.9,"fill":true,"fillColor":"#6666FF","fillOpacity":0.6,"smoothFactor":1,"noClip":false},null,{"maxWidth":800,"minWidth":50,"autoPan":true,"keepInView":false,"closeButton":true,"closeOnClick":true,"className":""},null,{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true},{"stroke":true,"weight":1,"opacity":0.9,"fillOpacity":0.84,"bringToFront":false,"sendToBack":false}]},{"method":"addScaleBar","args":[{"maxWidth":100,"metric":true,"imperial":true,"updateWhenIdle":true,"position":"bottomleft"}]},{"method":"addLayersControl","args":[["Esri.WorldImagery","OpenStreetMap"],"BHEF",{"collapsed":true,"autoZIndex":true,"position":"topleft"}]}],"limits":{"lat":[44.14068819400001,44.14663286000002],"lng":[-103.618656176,-103.6148318851605]},"fitBounds":[44.14068819400001,-103.618656176,44.14663286000002,-103.6148318851605,[]]},"evals":[],"jsHooks":{"render":[{"code":"function(el, x, data) {\n  return (\n      function(el, x, data) {\n      // get the leaflet map\n      var map = this; //HTMLWidgets.find('#' + el.id);\n      // we need a new div element because we have to handle\n      // the mouseover output separately\n      // debugger;\n      function addElement () {\n      // generate new div Element\n      var newDiv = $(document.createElement('div'));\n      // append at end of leaflet htmlwidget container\n      $(el).append(newDiv);\n      //provide ID and style\n      newDiv.addClass('lnlt');\n      newDiv.css({\n      'position': 'relative',\n      'bottomleft':  '0px',\n      'background-color': 'rgba(255, 255, 255, 0.7)',\n      'box-shadow': '0 0 2px #bbb',\n      'background-clip': 'padding-box',\n      'margin': '0',\n      'padding-left': '5px',\n      'color': '#333',\n      'font': '9px/1.5 \"Helvetica Neue\", Arial, Helvetica, sans-serif',\n      'z-index': '700',\n      });\n      return newDiv;\n      }\n\n\n      // check for already existing lnlt class to not duplicate\n      var lnlt = $(el).find('.lnlt');\n\n      if(!lnlt.length) {\n      lnlt = addElement();\n\n      // grab the special div we generated in the beginning\n      // and put the mousmove output there\n\n      map.on('mousemove', function (e) {\n      if (e.originalEvent.ctrlKey) {\n      if (document.querySelector('.lnlt') === null) lnlt = addElement();\n      lnlt.text(\n                           ' lon: ' + (e.latlng.lng).toFixed(5) +\n                           ' | lat: ' + (e.latlng.lat).toFixed(5) +\n                           ' | zoom: ' + map.getZoom() +\n                           ' | x: ' + L.CRS.EPSG3857.project(e.latlng).x.toFixed(0) +\n                           ' | y: ' + L.CRS.EPSG3857.project(e.latlng).y.toFixed(0) +\n                           ' | epsg: 3857 ' +\n                           ' | proj4: +proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs ');\n      } else {\n      if (document.querySelector('.lnlt') === null) lnlt = addElement();\n      lnlt.text(\n                      ' lon: ' + (e.latlng.lng).toFixed(5) +\n                      ' | lat: ' + (e.latlng.lat).toFixed(5) +\n                      ' | zoom: ' + map.getZoom() + ' ');\n      }\n      });\n\n      // remove the lnlt div when mouse leaves map\n      map.on('mouseout', function (e) {\n      var strip = document.querySelector('.lnlt');\n      if( strip !==null) strip.remove();\n      });\n\n      };\n\n      //$(el).keypress(67, function(e) {\n      map.on('preclick', function(e) {\n      if (e.originalEvent.ctrlKey) {\n      if (document.querySelector('.lnlt') === null) lnlt = addElement();\n      lnlt.text(\n                      ' lon: ' + (e.latlng.lng).toFixed(5) +\n                      ' | lat: ' + (e.latlng.lat).toFixed(5) +\n                      ' | zoom: ' + map.getZoom() + ' ');\n      var txt = document.querySelector('.lnlt').textContent;\n      console.log(txt);\n      //txt.innerText.focus();\n      //txt.select();\n      setClipboardText('\"' + txt + '\"');\n      }\n      });\n\n      }\n      ).call(this.getMap(), el, x, data);\n}","data":null},{"code":"function(el, x, data) {\n  return (function(el,x,data){\n           var map = this;\n\n           map.on('keypress', function(e) {\n               console.log(e.originalEvent.code);\n               var key = e.originalEvent.code;\n               if (key === 'KeyE') {\n                   var bb = this.getBounds();\n                   var txt = JSON.stringify(bb);\n                   console.log(txt);\n\n                   setClipboardText('\\'' + txt + '\\'');\n               }\n           })\n        }).call(this.getMap(), el, x, data);\n}","data":null}]}}</script>
+<div id="orthomosaic-from-uas" class="section level3 hasAnchor" number="9.1.1">
+<h3><span class="header-section-number">9.1.1</span> Orthomosaic from UAS<a href="tree_spatial.html#orthomosaic-from-uas" class="anchor-section" aria-label="Anchor link to header"></a></h3>
 <div class="sourceCode" id="cb96"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb96-1"><a href="tree_spatial.html#cb96-1" tabindex="-1"></a><span class="do">######################################################################################</span></span>
 <span id="cb96-2"><a href="tree_spatial.html#cb96-2" tabindex="-1"></a><span class="co"># function to plot ortho + stand</span></span>
 <span id="cb96-3"><a href="tree_spatial.html#cb96-3" tabindex="-1"></a><span class="do">######################################################################################</span></span>
@@ -432,7 +454,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p><img src="bhef_uas_202306_files/figure-html/unnamed-chunk-31-1.png" width="1008" /></p>
 <div class="sourceCode" id="cb104"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb104-1"><a href="tree_spatial.html#cb104-1" tabindex="-1"></a><span class="co"># save it</span></span>
 <span id="cb104-2"><a href="tree_spatial.html#cb104-2" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggsave</span>(<span class="st">&quot;../data/NSW_02.jpeg&quot;</span>, <span class="at">dpi =</span> <span class="st">&quot;print&quot;</span>, <span class="at">height =</span> <span class="dv">11</span>, <span class="at">width =</span> <span class="fl">5.8</span>, <span class="at">device =</span> <span class="st">&quot;jpeg&quot;</span>)</span></code></pre></div>
-<p>ITD</p>
+</div>
+<div id="itd" class="section level3 hasAnchor" number="9.1.2">
+<h3><span class="header-section-number">9.1.2</span> ITD<a href="tree_spatial.html#itd" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>individual trees detected from <code>lidR::locate_trees()</code></p>
 <p>Height</p>
 <div class="sourceCode" id="cb105"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb105-1"><a href="tree_spatial.html#cb105-1" tabindex="-1"></a>plt_ttops_temp <span class="ot">=</span> <span class="fu">ortho_plt_fn</span>(my_suid) <span class="sc">+</span></span>
 <span id="cb105-2"><a href="tree_spatial.html#cb105-2" tabindex="-1"></a>    <span class="co"># treetops</span></span>
@@ -456,7 +481,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb109-3"><a href="tree_spatial.html#cb109-3" tabindex="-1"></a>    <span class="fu">geom_sf</span>(</span>
 <span id="cb109-4"><a href="tree_spatial.html#cb109-4" tabindex="-1"></a>      <span class="at">data =</span> treetops_sf_with_dbh <span class="sc">%&gt;%</span></span>
 <span id="cb109-5"><a href="tree_spatial.html#cb109-5" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb109-6"><a href="tree_spatial.html#cb109-6" tabindex="-1"></a>          <span class="at">ostory =</span> <span class="fu">ifelse</span>(tree_height_m<span class="sc">&gt;=</span>ostory_ht_m_temp,<span class="st">&quot;overstory&quot;</span>,<span class="st">&quot;understory&quot;</span>)</span>
+<span id="cb109-6"><a href="tree_spatial.html#cb109-6" tabindex="-1"></a>          <span class="at">ostory =</span> <span class="fu">ifelse</span>(tree_height_m<span class="sc">&gt;=</span>ostory_ht_m,<span class="st">&quot;overstory&quot;</span>,<span class="st">&quot;understory&quot;</span>)</span>
 <span id="cb109-7"><a href="tree_spatial.html#cb109-7" tabindex="-1"></a>          , <span class="at">ostory_sz =</span> <span class="fu">ifelse</span>(tree_height_m<span class="sc">&gt;=</span><span class="dv">9</span>,<span class="fl">0.51</span>,<span class="fl">0.5</span>)</span>
 <span id="cb109-8"><a href="tree_spatial.html#cb109-8" tabindex="-1"></a>        ) <span class="sc">%&gt;%</span> </span>
 <span id="cb109-9"><a href="tree_spatial.html#cb109-9" tabindex="-1"></a>        sf<span class="sc">::</span><span class="fu">st_intersection</span>(harvests <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(suid<span class="sc">==</span>my_suid))</span>
@@ -473,98 +498,1241 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p><img src="bhef_uas_202306_files/figure-html/unnamed-chunk-34-1.png" width="1008" /></p>
 <div class="sourceCode" id="cb112"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb112-1"><a href="tree_spatial.html#cb112-1" tabindex="-1"></a><span class="co"># save it</span></span>
 <span id="cb112-2"><a href="tree_spatial.html#cb112-2" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggsave</span>(<span class="st">&quot;../data/NSW_04.jpeg&quot;</span>, <span class="at">dpi =</span> <span class="st">&quot;print&quot;</span>, <span class="at">height =</span> <span class="dv">11</span>, <span class="at">width =</span> <span class="fl">5.8</span>, <span class="at">device =</span> <span class="st">&quot;jpeg&quot;</span>)</span></code></pre></div>
-<p>spatial pattern</p>
-<div class="sourceCode" id="cb113"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb113-1"><a href="tree_spatial.html#cb113-1" tabindex="-1"></a>ttops_temp <span class="ot">=</span> treetops_sf_with_dbh <span class="sc">%&gt;%</span></span>
-<span id="cb113-2"><a href="tree_spatial.html#cb113-2" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(tree_height_m<span class="sc">&gt;=</span>ostory_ht_m_temp) <span class="sc">%&gt;%</span> </span>
-<span id="cb113-3"><a href="tree_spatial.html#cb113-3" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb113-4"><a href="tree_spatial.html#cb113-4" tabindex="-1"></a>    <span class="at">ostory =</span> <span class="fu">ifelse</span>(tree_height_m<span class="sc">&gt;=</span>ostory_ht_m_temp,<span class="st">&quot;overstory&quot;</span>,<span class="st">&quot;understory&quot;</span>)</span>
-<span id="cb113-5"><a href="tree_spatial.html#cb113-5" tabindex="-1"></a>    , <span class="at">X =</span> sf<span class="sc">::</span><span class="fu">st_coordinates</span>(.)[,<span class="dv">1</span>] <span class="sc">%&gt;%</span> <span class="fu">as.numeric</span>()</span>
-<span id="cb113-6"><a href="tree_spatial.html#cb113-6" tabindex="-1"></a>    , <span class="at">Y =</span> sf<span class="sc">::</span><span class="fu">st_coordinates</span>(.)[,<span class="dv">2</span>] <span class="sc">%&gt;%</span> <span class="fu">as.numeric</span>()</span>
-<span id="cb113-7"><a href="tree_spatial.html#cb113-7" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
-<span id="cb113-8"><a href="tree_spatial.html#cb113-8" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_intersection</span>(harvests <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(suid<span class="sc">==</span>my_suid) <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">select</span>(suid))</span>
-<span id="cb113-9"><a href="tree_spatial.html#cb113-9" tabindex="-1"></a><span class="do">#############################################################################</span></span>
-<span id="cb113-10"><a href="tree_spatial.html#cb113-10" tabindex="-1"></a><span class="do">##### Identify clusters in each stem map plot                           #####</span></span>
-<span id="cb113-11"><a href="tree_spatial.html#cb113-11" tabindex="-1"></a><span class="do">#############################################################################</span></span>
-<span id="cb113-12"><a href="tree_spatial.html#cb113-12" tabindex="-1"></a><span class="do">### Place trees into clusters using and inter-tree distance of 6 m</span></span>
-<span id="cb113-13"><a href="tree_spatial.html#cb113-13" tabindex="-1"></a>my_dbscan <span class="ot">=</span>  ttops_temp <span class="sc">%&gt;%</span> </span>
-<span id="cb113-14"><a href="tree_spatial.html#cb113-14" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb113-15"><a href="tree_spatial.html#cb113-15" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(X,Y) <span class="sc">%&gt;%</span> </span>
-<span id="cb113-16"><a href="tree_spatial.html#cb113-16" tabindex="-1"></a>  dbscan<span class="sc">::</span><span class="fu">dbscan</span>(<span class="at">eps =</span> <span class="dv">6</span>, <span class="at">MinPts =</span> <span class="dv">2</span>)</span>
-<span id="cb113-17"><a href="tree_spatial.html#cb113-17" tabindex="-1"></a></span>
-<span id="cb113-18"><a href="tree_spatial.html#cb113-18" tabindex="-1"></a><span class="co"># my_dbscan %&gt;% str()</span></span>
-<span id="cb113-19"><a href="tree_spatial.html#cb113-19" tabindex="-1"></a></span>
-<span id="cb113-20"><a href="tree_spatial.html#cb113-20" tabindex="-1"></a><span class="do">### append cluster ID to trees</span></span>
-<span id="cb113-21"><a href="tree_spatial.html#cb113-21" tabindex="-1"></a>ttops_temp<span class="sc">$</span>cluster <span class="ot">=</span> my_dbscan<span class="sc">$</span>cluster</span>
-<span id="cb113-22"><a href="tree_spatial.html#cb113-22" tabindex="-1"></a><span class="co"># ttops_temp$cluster %&gt;% summary()</span></span>
-<span id="cb113-23"><a href="tree_spatial.html#cb113-23" tabindex="-1"></a><span class="co"># ttops_temp %&gt;% sf::st_drop_geometry() %&gt;% dplyr::count(cluster) %&gt;% dplyr::arrange(desc(n)) %&gt;% dplyr::slice_head(n=11)</span></span>
-<span id="cb113-24"><a href="tree_spatial.html#cb113-24" tabindex="-1"></a></span>
-<span id="cb113-25"><a href="tree_spatial.html#cb113-25" tabindex="-1"></a><span class="do">### cluster metrics</span></span>
-<span id="cb113-26"><a href="tree_spatial.html#cb113-26" tabindex="-1"></a>ttops_temp <span class="ot">=</span> ttops_temp <span class="sc">%&gt;%</span> </span>
-<span id="cb113-27"><a href="tree_spatial.html#cb113-27" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(cluster) <span class="sc">%&gt;%</span> </span>
-<span id="cb113-28"><a href="tree_spatial.html#cb113-28" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb113-29"><a href="tree_spatial.html#cb113-29" tabindex="-1"></a>    <span class="co"># unique cluster for individuals</span></span>
-<span id="cb113-30"><a href="tree_spatial.html#cb113-30" tabindex="-1"></a>    <span class="at">cluster_unq =</span> dplyr<span class="sc">::</span><span class="fu">case_when</span>(</span>
-<span id="cb113-31"><a href="tree_spatial.html#cb113-31" tabindex="-1"></a>      cluster <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">max</span>(my_dbscan<span class="sc">$</span>cluster)<span class="sc">+</span>dplyr<span class="sc">::</span><span class="fu">row_number</span>()</span>
-<span id="cb113-32"><a href="tree_spatial.html#cb113-32" tabindex="-1"></a>      , T <span class="sc">~</span> cluster</span>
-<span id="cb113-33"><a href="tree_spatial.html#cb113-33" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
-<span id="cb113-34"><a href="tree_spatial.html#cb113-34" tabindex="-1"></a>    <span class="fu">factor</span>()</span>
-<span id="cb113-35"><a href="tree_spatial.html#cb113-35" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
-<span id="cb113-36"><a href="tree_spatial.html#cb113-36" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(cluster_unq) <span class="sc">%&gt;%</span> </span>
-<span id="cb113-37"><a href="tree_spatial.html#cb113-37" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb113-38"><a href="tree_spatial.html#cb113-38" tabindex="-1"></a>    <span class="at">cluster =</span> <span class="fu">factor</span>(cluster)</span>
-<span id="cb113-39"><a href="tree_spatial.html#cb113-39" tabindex="-1"></a>    , <span class="at">cluster_n_trees =</span> dplyr<span class="sc">::</span><span class="fu">n</span>()</span>
-<span id="cb113-40"><a href="tree_spatial.html#cb113-40" tabindex="-1"></a>    , <span class="at">cluster_grp =</span> <span class="fu">cut</span>(</span>
-<span id="cb113-41"><a href="tree_spatial.html#cb113-41" tabindex="-1"></a>        cluster_n_trees</span>
-<span id="cb113-42"><a href="tree_spatial.html#cb113-42" tabindex="-1"></a>        ,<span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">4</span>,<span class="dv">9</span>,<span class="dv">15</span>,<span class="cn">Inf</span>)</span>
-<span id="cb113-43"><a href="tree_spatial.html#cb113-43" tabindex="-1"></a>        , <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">&quot;Individual&quot;</span>,<span class="st">&quot;2-4 trees&quot;</span>,<span class="st">&quot;5-9 trees&quot;</span>,<span class="st">&quot;10-15 trees&quot;</span>,<span class="st">&quot;&gt;15 trees&quot;</span>)</span>
-<span id="cb113-44"><a href="tree_spatial.html#cb113-44" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span> </span>
-<span id="cb113-45"><a href="tree_spatial.html#cb113-45" tabindex="-1"></a>      <span class="fu">factor</span>(</span>
-<span id="cb113-46"><a href="tree_spatial.html#cb113-46" tabindex="-1"></a>        <span class="at">ordered =</span> T</span>
-<span id="cb113-47"><a href="tree_spatial.html#cb113-47" tabindex="-1"></a>        , <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;Individual&quot;</span>,<span class="st">&quot;2-4 trees&quot;</span>,<span class="st">&quot;5-9 trees&quot;</span>,<span class="st">&quot;10-15 trees&quot;</span>,<span class="st">&quot;&gt;15 trees&quot;</span>)</span>
-<span id="cb113-48"><a href="tree_spatial.html#cb113-48" tabindex="-1"></a>      )</span>
-<span id="cb113-49"><a href="tree_spatial.html#cb113-49" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
-<span id="cb113-50"><a href="tree_spatial.html#cb113-50" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">ungroup</span>()</span>
-<span id="cb113-51"><a href="tree_spatial.html#cb113-51" tabindex="-1"></a><span class="co"># ttops_temp %&gt;% dplyr::glimpse()</span></span></code></pre></div>
-<p>plot overstory tree clusters</p>
-<div class="sourceCode" id="cb114"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb114-1"><a href="tree_spatial.html#cb114-1" tabindex="-1"></a>plt_grps_temp <span class="ot">=</span> <span class="fu">ortho_plt_fn</span>(my_suid) <span class="sc">+</span></span>
-<span id="cb114-2"><a href="tree_spatial.html#cb114-2" tabindex="-1"></a>    <span class="co"># treetops</span></span>
-<span id="cb114-3"><a href="tree_spatial.html#cb114-3" tabindex="-1"></a>    <span class="fu">geom_sf</span>(</span>
-<span id="cb114-4"><a href="tree_spatial.html#cb114-4" tabindex="-1"></a>      <span class="at">data =</span> ttops_temp</span>
-<span id="cb114-5"><a href="tree_spatial.html#cb114-5" tabindex="-1"></a>      , <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">color =</span> cluster)</span>
-<span id="cb114-6"><a href="tree_spatial.html#cb114-6" tabindex="-1"></a>      , <span class="at">size =</span> <span class="dv">1</span></span>
-<span id="cb114-7"><a href="tree_spatial.html#cb114-7" tabindex="-1"></a>    ) <span class="sc">+</span></span>
-<span id="cb114-8"><a href="tree_spatial.html#cb114-8" tabindex="-1"></a>    <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;white&quot;</span>,viridis<span class="sc">::</span><span class="fu">turbo</span>(<span class="fu">length</span>(<span class="fu">unique</span>(ttops_temp<span class="sc">$</span>cluster))<span class="sc">-</span><span class="dv">1</span>) <span class="sc">%&gt;%</span> <span class="fu">sample</span>())) <span class="sc">+</span></span>
-<span id="cb114-9"><a href="tree_spatial.html#cb114-9" tabindex="-1"></a>    <span class="co"># scale_color_viridis_d(&quot;turbo&quot;) +</span></span>
-<span id="cb114-10"><a href="tree_spatial.html#cb114-10" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">subtitle =</span> <span class="st">&quot;</span><span class="sc">\n</span><span class="st"> overstory tree groups</span><span class="sc">\n</span><span class="st">(individual trees in white)&quot;</span>) <span class="sc">+</span></span>
-<span id="cb114-11"><a href="tree_spatial.html#cb114-11" tabindex="-1"></a>    <span class="fu">theme</span>(</span>
-<span id="cb114-12"><a href="tree_spatial.html#cb114-12" tabindex="-1"></a>      <span class="at">legend.position =</span> <span class="st">&quot;none&quot;</span></span>
-<span id="cb114-13"><a href="tree_spatial.html#cb114-13" tabindex="-1"></a>      , <span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="fl">9.5</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>, <span class="at">face =</span> <span class="st">&quot;bold&quot;</span>)</span>
-<span id="cb114-14"><a href="tree_spatial.html#cb114-14" tabindex="-1"></a>    )</span></code></pre></div>
+</div>
+<div id="tree-groups" class="section level3 hasAnchor" number="9.1.3">
+<h3><span class="header-section-number">9.1.3</span> Tree Groups<a href="tree_spatial.html#tree-groups" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Identify tree groups using <code>dbscan::dbscan()</code> as outlined by <a href="https://scholar.google.com/scholar?oi=bibs&amp;hl=en&amp;cluster=8254459212692276263">Hanna et al. (2024)</a>:</p>
+<blockquote>
+<p>To evaluate the ability of UAS-extracted trees to characterize horizontal and vertical heterogeneity tree arrangement, clusters of trees were identifed within the stem-mapped and UAS trees. A cluster of trees was defned as two or more trees with the potential for interlocking crowns. Overstory trees on the stem maps generally had a crown radius of ~3.0 m, so stems within 6 m of one another were considered to have the potential for developing interlocking crowns. Density-based spatial clustering of applications with noise (DBSCAN) from the fpr package (Hahsler et al., 2019) in R was used to assign trees to unique clusters, including individual trees that were assigned by themselves if they did not have the potential to develop interlocking crowns (&gt;6 m from another tree). (p. 529)</p>
+</blockquote>
+<blockquote>
+<p>To analyze the efect of tree aggregation on tree attributes, the identifed trees and clusters were designated as an “individual” or as a cluster consisting of 2-4, 5-9, 10-15, and &gt;15 trees. We then calculated the number of clusters, the percent of stand basal area, the height coefcient of variation, and the canopy area within the cluster size classes for each site. (p. 529-530)</p>
+</blockquote>
+<p>With repect to clump size groupings, <a href="https://scholarworks.umt.edu/ico/3">Churchill et al. (2016)</a> note that:</p>
+<blockquote>
+<p>Proportions for clump sizes should be lumped into four or five bins for operational simplicity. We use 4 or 5 bins (Fig 5): individual trees, small clumps (2-4 trees), medium clumps (5-9 trees), and large clumps (10-20+ trees). Note that when instructed to leave a large clump (e.g. 10-20 trees), marking crews often have difficulty leaving the upper end of the size range (e.g. an 18, 19, or 20 tree clump). Thus adding a fifth bin for “super clumps” may be necessary (e.g. 15-20 trees or 20-25+ trees), especially if the upper size range of clumps is desired. (p. 12-13)</p>
+</blockquote>
+<div class="sourceCode" id="cb113"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb113-1"><a href="tree_spatial.html#cb113-1" tabindex="-1"></a><span class="co"># filter trees spatially based on unit id</span></span>
+<span id="cb113-2"><a href="tree_spatial.html#cb113-2" tabindex="-1"></a>ttops_temp <span class="ot">=</span> treetops_sf_with_dbh <span class="sc">%&gt;%</span></span>
+<span id="cb113-3"><a href="tree_spatial.html#cb113-3" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(tree_height_m<span class="sc">&gt;=</span>ostory_ht_m) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-4"><a href="tree_spatial.html#cb113-4" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb113-5"><a href="tree_spatial.html#cb113-5" tabindex="-1"></a>    <span class="at">ostory =</span> <span class="fu">ifelse</span>(tree_height_m<span class="sc">&gt;=</span>ostory_ht_m,<span class="st">&quot;overstory&quot;</span>,<span class="st">&quot;understory&quot;</span>)</span>
+<span id="cb113-6"><a href="tree_spatial.html#cb113-6" tabindex="-1"></a>    , <span class="at">X =</span> sf<span class="sc">::</span><span class="fu">st_coordinates</span>(.)[,<span class="dv">1</span>] <span class="sc">%&gt;%</span> <span class="fu">as.numeric</span>()</span>
+<span id="cb113-7"><a href="tree_spatial.html#cb113-7" tabindex="-1"></a>    , <span class="at">Y =</span> sf<span class="sc">::</span><span class="fu">st_coordinates</span>(.)[,<span class="dv">2</span>] <span class="sc">%&gt;%</span> <span class="fu">as.numeric</span>()</span>
+<span id="cb113-8"><a href="tree_spatial.html#cb113-8" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-9"><a href="tree_spatial.html#cb113-9" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_intersection</span>(harvests <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(suid<span class="sc">==</span>my_suid) <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">select</span>(suid))</span>
+<span id="cb113-10"><a href="tree_spatial.html#cb113-10" tabindex="-1"></a><span class="do">#############################################################################</span></span>
+<span id="cb113-11"><a href="tree_spatial.html#cb113-11" tabindex="-1"></a><span class="do">##### Identify clusters in each stem map plot                           #####</span></span>
+<span id="cb113-12"><a href="tree_spatial.html#cb113-12" tabindex="-1"></a><span class="do">#############################################################################</span></span>
+<span id="cb113-13"><a href="tree_spatial.html#cb113-13" tabindex="-1"></a><span class="do">### Place trees into clusters using an inter-tree distance of 6 m</span></span>
+<span id="cb113-14"><a href="tree_spatial.html#cb113-14" tabindex="-1"></a>my_dbscan_temp <span class="ot">=</span>  ttops_temp <span class="sc">%&gt;%</span> </span>
+<span id="cb113-15"><a href="tree_spatial.html#cb113-15" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb113-16"><a href="tree_spatial.html#cb113-16" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(X,Y) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-17"><a href="tree_spatial.html#cb113-17" tabindex="-1"></a>  dbscan<span class="sc">::</span><span class="fu">dbscan</span>(<span class="at">eps =</span> tree_clump_dist_m, <span class="at">minPts =</span> <span class="dv">2</span>)</span>
+<span id="cb113-18"><a href="tree_spatial.html#cb113-18" tabindex="-1"></a></span>
+<span id="cb113-19"><a href="tree_spatial.html#cb113-19" tabindex="-1"></a><span class="co"># my_dbscan_temp %&gt;% str()</span></span>
+<span id="cb113-20"><a href="tree_spatial.html#cb113-20" tabindex="-1"></a></span>
+<span id="cb113-21"><a href="tree_spatial.html#cb113-21" tabindex="-1"></a><span class="do">### append cluster ID to trees</span></span>
+<span id="cb113-22"><a href="tree_spatial.html#cb113-22" tabindex="-1"></a>ttops_temp<span class="sc">$</span>dbscan_cluster <span class="ot">=</span> my_dbscan_temp<span class="sc">$</span>cluster</span>
+<span id="cb113-23"><a href="tree_spatial.html#cb113-23" tabindex="-1"></a><span class="co"># ttops_temp$cluster %&gt;% summary()</span></span>
+<span id="cb113-24"><a href="tree_spatial.html#cb113-24" tabindex="-1"></a><span class="co"># ttops_temp %&gt;% sf::st_drop_geometry() %&gt;% dplyr::count(cluster) %&gt;% dplyr::arrange(desc(n)) %&gt;% dplyr::slice_head(n=11)</span></span>
+<span id="cb113-25"><a href="tree_spatial.html#cb113-25" tabindex="-1"></a></span>
+<span id="cb113-26"><a href="tree_spatial.html#cb113-26" tabindex="-1"></a><span class="do">### cluster metrics</span></span>
+<span id="cb113-27"><a href="tree_spatial.html#cb113-27" tabindex="-1"></a>ttops_temp <span class="ot">=</span> ttops_temp <span class="sc">%&gt;%</span> </span>
+<span id="cb113-28"><a href="tree_spatial.html#cb113-28" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(dbscan_cluster) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-29"><a href="tree_spatial.html#cb113-29" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb113-30"><a href="tree_spatial.html#cb113-30" tabindex="-1"></a>    <span class="co"># unique dbscan_cluster for individuals</span></span>
+<span id="cb113-31"><a href="tree_spatial.html#cb113-31" tabindex="-1"></a>    <span class="at">clump_id =</span> dplyr<span class="sc">::</span><span class="fu">case_when</span>(</span>
+<span id="cb113-32"><a href="tree_spatial.html#cb113-32" tabindex="-1"></a>      dbscan_cluster <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">max</span>(my_dbscan_temp<span class="sc">$</span>cluster)<span class="sc">+</span>dplyr<span class="sc">::</span><span class="fu">row_number</span>()</span>
+<span id="cb113-33"><a href="tree_spatial.html#cb113-33" tabindex="-1"></a>      , T <span class="sc">~</span> dbscan_cluster</span>
+<span id="cb113-34"><a href="tree_spatial.html#cb113-34" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-35"><a href="tree_spatial.html#cb113-35" tabindex="-1"></a>    <span class="fu">factor</span>()</span>
+<span id="cb113-36"><a href="tree_spatial.html#cb113-36" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-37"><a href="tree_spatial.html#cb113-37" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(clump_id) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-38"><a href="tree_spatial.html#cb113-38" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb113-39"><a href="tree_spatial.html#cb113-39" tabindex="-1"></a>    <span class="at">dbscan_cluster =</span> <span class="fu">factor</span>(dbscan_cluster)</span>
+<span id="cb113-40"><a href="tree_spatial.html#cb113-40" tabindex="-1"></a>    , <span class="at">clump_n_trees =</span> dplyr<span class="sc">::</span><span class="fu">n</span>()</span>
+<span id="cb113-41"><a href="tree_spatial.html#cb113-41" tabindex="-1"></a>    , <span class="at">clump_n_trees_grp =</span> <span class="fu">cut</span>(</span>
+<span id="cb113-42"><a href="tree_spatial.html#cb113-42" tabindex="-1"></a>        clump_n_trees</span>
+<span id="cb113-43"><a href="tree_spatial.html#cb113-43" tabindex="-1"></a>        ,<span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">4</span>,<span class="dv">9</span>,<span class="dv">15</span>,<span class="cn">Inf</span>)</span>
+<span id="cb113-44"><a href="tree_spatial.html#cb113-44" tabindex="-1"></a>        , <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">&quot;Individual&quot;</span>,<span class="st">&quot;2-4 trees&quot;</span>,<span class="st">&quot;5-9 trees&quot;</span>,<span class="st">&quot;10-15 trees&quot;</span>,<span class="st">&quot;&gt;15 trees&quot;</span>)</span>
+<span id="cb113-45"><a href="tree_spatial.html#cb113-45" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-46"><a href="tree_spatial.html#cb113-46" tabindex="-1"></a>      <span class="fu">factor</span>(</span>
+<span id="cb113-47"><a href="tree_spatial.html#cb113-47" tabindex="-1"></a>        <span class="at">ordered =</span> T</span>
+<span id="cb113-48"><a href="tree_spatial.html#cb113-48" tabindex="-1"></a>        , <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;Individual&quot;</span>,<span class="st">&quot;2-4 trees&quot;</span>,<span class="st">&quot;5-9 trees&quot;</span>,<span class="st">&quot;10-15 trees&quot;</span>,<span class="st">&quot;&gt;15 trees&quot;</span>)</span>
+<span id="cb113-49"><a href="tree_spatial.html#cb113-49" tabindex="-1"></a>      )</span>
+<span id="cb113-50"><a href="tree_spatial.html#cb113-50" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-51"><a href="tree_spatial.html#cb113-51" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">ungroup</span>()</span>
+<span id="cb113-52"><a href="tree_spatial.html#cb113-52" tabindex="-1"></a><span class="co"># what?</span></span>
+<span id="cb113-53"><a href="tree_spatial.html#cb113-53" tabindex="-1"></a>ttops_temp <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">glimpse</span>()</span></code></pre></div>
+<pre><code>## Rows: 1,745
+## Columns: 52
+## $ treeID                    &lt;chr&gt; &quot;14552_610693.9_4889086.6&quot;, &quot;14912_610743.1_…
+## $ tree_height_m             &lt;dbl&gt; 13.338, 10.099, 9.421, 11.995, 9.847, 12.801…
+## $ crown_area_m2             &lt;dbl&gt; 14.4375, 9.1250, 15.5000, 39.1250, 17.8750, …
+## $ comp_trees_per_ha         &lt;dbl&gt; 254.7643, 127.3822, 382.1465, 382.1465, 509.…
+## $ comp_relative_tree_height &lt;dbl&gt; 100.00000, 100.00000, 100.00000, 100.00000, …
+## $ comp_dist_to_nearest_m    &lt;dbl&gt; 4.527693, 6.932712, 4.366062, 3.579455, 3.18…
+## $ mean_crown_ht_m           &lt;dbl&gt; 10.416134, 8.057918, 5.675045, 6.032072, 5.4…
+## $ median_crown_ht_m         &lt;dbl&gt; 10.85500, 8.36100, 5.63800, 6.19850, 5.13350…
+## $ min_crown_ht_m            &lt;dbl&gt; 4.504333, 4.988000, 1.662000, 1.370000, 1.45…
+## $ reg_est_dbh_cm            &lt;dbl&gt; 24.04701, 17.02899, 15.50624, 21.12010, 16.4…
+## $ reg_est_lower_dbh_cm      &lt;dbl&gt; 14.904274, 10.474773, 9.677058, 13.131286, 1…
+## $ reg_est_upper_dbh_cm      &lt;dbl&gt; 35.00581, 24.85781, 22.66006, 30.79028, 24.0…
+## $ is_training_data          &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FA…
+## $ dbh_cm                    &lt;dbl&gt; 27.52697, 19.86217, 18.30460, 24.62251, 19.3…
+## $ dbh_m                     &lt;dbl&gt; 0.2752697, 0.1986217, 0.1830460, 0.2462251, …
+## $ radius_m                  &lt;dbl&gt; 0.13763487, 0.09931085, 0.09152301, 0.123112…
+## $ basal_area_m2             &lt;dbl&gt; 0.05951231, 0.03098441, 0.02631543, 0.047616…
+## $ mod_lin_est_dbh_cm        &lt;dbl&gt; 27.52697, 19.86217, 18.30460, 24.62251, 19.3…
+## $ mod_quad_est_dbh_cm       &lt;dbl&gt; 27.04486, 20.53860, 19.21704, 24.12344, 19.9…
+## $ mod_quad_noint_est_dbh_cm &lt;dbl&gt; 26.56174, 15.72365, 13.70531, 21.85668, 14.8…
+## $ mod_pwr_est_dbh_cm        &lt;dbl&gt; 27.19279, 20.32636, 18.96742, 24.40468, 19.8…
+## $ mod_weib_est_dbh_cm       &lt;dbl&gt; 27.74978, 19.01651, 17.14152, 24.18198, 18.1…
+## $ mod_rf_est_dbh_cm         &lt;dbl&gt; 28.24706, 21.34073, 22.38780, 32.38542, 21.7…
+## $ reg_est_dbh_in            &lt;dbl&gt; 9.474521, 6.709424, 6.109457, 8.321318, 6.47…
+## $ reg_est_lower_dbh_in      &lt;dbl&gt; 5.872284, 4.127060, 3.812761, 5.173727, 4.05…
+## $ reg_est_upper_dbh_in      &lt;dbl&gt; 13.792290, 9.793977, 8.928062, 12.131369, 9.…
+## $ dbh_in                    &lt;dbl&gt; 10.845628, 7.825695, 7.212013, 9.701267, 7.6…
+## $ mod_lin_est_dbh_in        &lt;dbl&gt; 10.845628, 7.825695, 7.212013, 9.701267, 7.6…
+## $ mod_quad_est_dbh_in       &lt;dbl&gt; 10.655674, 8.092210, 7.571515, 9.504636, 7.8…
+## $ mod_quad_noint_est_dbh_in &lt;dbl&gt; 10.465326, 6.195120, 5.399893, 8.611532, 5.8…
+## $ mod_pwr_est_dbh_in        &lt;dbl&gt; 10.713957, 8.008587, 7.473164, 9.615443, 7.8…
+## $ mod_weib_est_dbh_in       &lt;dbl&gt; 10.933413, 7.492504, 6.753759, 9.527698, 7.1…
+## $ mod_rf_est_dbh_in         &lt;dbl&gt; 11.129343, 8.408246, 8.820795, 12.759855, 8.…
+## $ tree_height_ft            &lt;dbl&gt; 43.74864, 33.12472, 30.90088, 39.34360, 32.2…
+## $ comp_dist_to_nearest_ft   &lt;dbl&gt; 14.850832, 22.739296, 14.320684, 11.740613, …
+## $ mean_crown_ht_ft          &lt;dbl&gt; 34.16492, 26.42997, 18.61415, 19.78519, 17.7…
+## $ median_crown_ht_ft        &lt;dbl&gt; 35.60440, 27.42408, 18.49264, 20.33108, 16.8…
+## $ min_crown_ht_ft           &lt;dbl&gt; 14.77421, 16.36064, 5.45136, 4.49360, 4.7592…
+## $ dbh_ft                    &lt;dbl&gt; 0.9028848, 0.6514792, 0.6003910, 0.8076182, …
+## $ radius_ft                 &lt;dbl&gt; 0.4514424, 0.3257396, 0.3001955, 0.4038091, …
+## $ comp_trees_per_ac         &lt;dbl&gt; 103.17954, 51.58977, 154.76931, 154.76931, 2…
+## $ crown_area_ft2            &lt;dbl&gt; 155.40525, 98.22150, 166.84200, 421.14150, 1…
+## $ basal_area_ft2            &lt;dbl&gt; 0.6405905, 0.3335162, 0.2832593, 0.5125403, …
+## $ ostory                    &lt;chr&gt; &quot;overstory&quot;, &quot;overstory&quot;, &quot;overstory&quot;, &quot;over…
+## $ X                         &lt;dbl&gt; 610693.9, 610743.1, 610689.9, 610703.4, 6107…
+## $ Y                         &lt;dbl&gt; 4889087, 4889082, 4889082, 4889081, 4889080,…
+## $ suid                      &lt;chr&gt; &quot;0203088082660001000&quot;, &quot;0203088082660001000&quot;…
+## $ geom                      &lt;POINT [m]&gt; POINT (610693.9 4889087), POINT (61074…
+## $ dbscan_cluster            &lt;fct&gt; 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1,…
+## $ clump_id                  &lt;fct&gt; 258, 259, 260, 261, 262, 1, 263, 1, 264, 1, …
+## $ clump_n_trees             &lt;int&gt; 1, 1, 1, 1, 1, 20, 1, 20, 1, 20, 20, 20, 20,…
+## $ clump_n_trees_grp         &lt;ord&gt; Individual, Individual, Individual, Individu…</code></pre>
+<p>plot overstory tree clumps</p>
+<div class="sourceCode" id="cb115"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb115-1"><a href="tree_spatial.html#cb115-1" tabindex="-1"></a>plt_grps_temp <span class="ot">=</span> <span class="fu">ortho_plt_fn</span>(my_suid) <span class="sc">+</span></span>
+<span id="cb115-2"><a href="tree_spatial.html#cb115-2" tabindex="-1"></a>    <span class="co"># treetops</span></span>
+<span id="cb115-3"><a href="tree_spatial.html#cb115-3" tabindex="-1"></a>    <span class="fu">geom_sf</span>(</span>
+<span id="cb115-4"><a href="tree_spatial.html#cb115-4" tabindex="-1"></a>      <span class="at">data =</span> ttops_temp</span>
+<span id="cb115-5"><a href="tree_spatial.html#cb115-5" tabindex="-1"></a>      , <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">color =</span> dbscan_cluster)</span>
+<span id="cb115-6"><a href="tree_spatial.html#cb115-6" tabindex="-1"></a>      , <span class="at">size =</span> <span class="dv">1</span></span>
+<span id="cb115-7"><a href="tree_spatial.html#cb115-7" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb115-8"><a href="tree_spatial.html#cb115-8" tabindex="-1"></a>    <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(</span>
+<span id="cb115-9"><a href="tree_spatial.html#cb115-9" tabindex="-1"></a>      <span class="st">&quot;white&quot;</span></span>
+<span id="cb115-10"><a href="tree_spatial.html#cb115-10" tabindex="-1"></a>      , <span class="co"># get random list of colors from viridis and avoid whites</span></span>
+<span id="cb115-11"><a href="tree_spatial.html#cb115-11" tabindex="-1"></a>        <span class="fu">c</span>(</span>
+<span id="cb115-12"><a href="tree_spatial.html#cb115-12" tabindex="-1"></a>          viridis<span class="sc">::</span><span class="fu">turbo</span>(<span class="fu">length</span>(<span class="fu">unique</span>(ttops_temp<span class="sc">$</span>dbscan_cluster))<span class="sc">/</span><span class="dv">2</span> <span class="sc">%&gt;%</span> <span class="fu">round</span>())</span>
+<span id="cb115-13"><a href="tree_spatial.html#cb115-13" tabindex="-1"></a>          , viridis<span class="sc">::</span><span class="fu">plasma</span>(<span class="fu">length</span>(<span class="fu">unique</span>(ttops_temp<span class="sc">$</span>dbscan_cluster))<span class="sc">/</span><span class="dv">2</span> <span class="sc">%&gt;%</span> <span class="fu">round</span>(), <span class="at">end =</span> <span class="fl">0.95</span>)</span>
+<span id="cb115-14"><a href="tree_spatial.html#cb115-14" tabindex="-1"></a>          , viridis<span class="sc">::</span><span class="fu">viridis</span>(<span class="fu">length</span>(<span class="fu">unique</span>(ttops_temp<span class="sc">$</span>dbscan_cluster))<span class="sc">/</span><span class="dv">2</span> <span class="sc">%&gt;%</span> <span class="fu">round</span>(), <span class="at">end =</span> <span class="fl">0.9</span>)</span>
+<span id="cb115-15"><a href="tree_spatial.html#cb115-15" tabindex="-1"></a>          , viridis<span class="sc">::</span><span class="fu">cividis</span>(<span class="fu">length</span>(<span class="fu">unique</span>(ttops_temp<span class="sc">$</span>dbscan_cluster))<span class="sc">/</span><span class="dv">2</span> <span class="sc">%&gt;%</span> <span class="fu">round</span>(), <span class="at">end =</span> <span class="fl">0.9</span>)</span>
+<span id="cb115-16"><a href="tree_spatial.html#cb115-16" tabindex="-1"></a>        ) <span class="sc">%&gt;%</span> </span>
+<span id="cb115-17"><a href="tree_spatial.html#cb115-17" tabindex="-1"></a>          <span class="fu">sample</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb115-18"><a href="tree_spatial.html#cb115-18" tabindex="-1"></a>          .[<span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(<span class="fu">unique</span>(ttops_temp<span class="sc">$</span>dbscan_cluster))<span class="sc">-</span><span class="dv">1</span>]</span>
+<span id="cb115-19"><a href="tree_spatial.html#cb115-19" tabindex="-1"></a>      )</span>
+<span id="cb115-20"><a href="tree_spatial.html#cb115-20" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb115-21"><a href="tree_spatial.html#cb115-21" tabindex="-1"></a>    <span class="co"># scale_color_viridis_d(&quot;turbo&quot;) +</span></span>
+<span id="cb115-22"><a href="tree_spatial.html#cb115-22" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">subtitle =</span> <span class="st">&quot;</span><span class="sc">\n</span><span class="st"> overstory tree groups</span><span class="sc">\n</span><span class="st">(individual trees in white)&quot;</span>) <span class="sc">+</span></span>
+<span id="cb115-23"><a href="tree_spatial.html#cb115-23" tabindex="-1"></a>    <span class="fu">theme</span>(</span>
+<span id="cb115-24"><a href="tree_spatial.html#cb115-24" tabindex="-1"></a>      <span class="at">legend.position =</span> <span class="st">&quot;none&quot;</span></span>
+<span id="cb115-25"><a href="tree_spatial.html#cb115-25" tabindex="-1"></a>      , <span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="fl">9.5</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>, <span class="at">face =</span> <span class="st">&quot;bold&quot;</span>)</span>
+<span id="cb115-26"><a href="tree_spatial.html#cb115-26" tabindex="-1"></a>    )</span></code></pre></div>
 <pre><code>## |---------|---------|---------|---------|=========================================                                          </code></pre>
-<div class="sourceCode" id="cb116"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb116-1"><a href="tree_spatial.html#cb116-1" tabindex="-1"></a><span class="co"># PLOT IT</span></span>
-<span id="cb116-2"><a href="tree_spatial.html#cb116-2" tabindex="-1"></a>plt_grps_temp</span></code></pre></div>
-<p><img src="bhef_uas_202306_files/figure-html/unnamed-chunk-36-1.png" width="1008" /></p>
-<div class="sourceCode" id="cb117"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb117-1"><a href="tree_spatial.html#cb117-1" tabindex="-1"></a><span class="co"># save it</span></span>
-<span id="cb117-2"><a href="tree_spatial.html#cb117-2" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggsave</span>(<span class="st">&quot;../data/NSW_05.jpeg&quot;</span>, <span class="at">dpi =</span> <span class="st">&quot;print&quot;</span>, <span class="at">height =</span> <span class="dv">11</span>, <span class="at">width =</span> <span class="fl">5.8</span>, <span class="at">device =</span> <span class="st">&quot;jpeg&quot;</span>)</span></code></pre></div>
-<p>and plot overstory tree clusters by number of trees</p>
-<div class="sourceCode" id="cb118"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb118-1"><a href="tree_spatial.html#cb118-1" tabindex="-1"></a>plt_grps_temp <span class="ot">=</span> <span class="fu">ortho_plt_fn</span>(my_suid) <span class="sc">+</span></span>
-<span id="cb118-2"><a href="tree_spatial.html#cb118-2" tabindex="-1"></a>    <span class="co"># treetops</span></span>
-<span id="cb118-3"><a href="tree_spatial.html#cb118-3" tabindex="-1"></a>    <span class="fu">geom_sf</span>(</span>
-<span id="cb118-4"><a href="tree_spatial.html#cb118-4" tabindex="-1"></a>      <span class="at">data =</span> ttops_temp</span>
-<span id="cb118-5"><a href="tree_spatial.html#cb118-5" tabindex="-1"></a>      , <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">color =</span> cluster_grp)</span>
-<span id="cb118-6"><a href="tree_spatial.html#cb118-6" tabindex="-1"></a>      , <span class="at">size =</span> <span class="dv">1</span></span>
-<span id="cb118-7"><a href="tree_spatial.html#cb118-7" tabindex="-1"></a>    ) <span class="sc">+</span></span>
-<span id="cb118-8"><a href="tree_spatial.html#cb118-8" tabindex="-1"></a>    <span class="fu">scale_color_viridis_d</span>(<span class="at">option=</span><span class="st">&quot;mako&quot;</span>, <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">+</span> </span>
-<span id="cb118-9"><a href="tree_spatial.html#cb118-9" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">color =</span> <span class="st">&quot;&quot;</span>) <span class="sc">+</span></span>
-<span id="cb118-10"><a href="tree_spatial.html#cb118-10" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">legend.key =</span> <span class="fu">element_rect</span>(<span class="at">color =</span> <span class="cn">NA</span>, <span class="at">fill =</span> <span class="cn">NA</span>), <span class="at">legend.margin =</span> <span class="fu">margin</span>(<span class="fl">6.5</span>,<span class="dv">0</span>,<span class="fl">6.5</span>,<span class="dv">0</span>)) <span class="sc">+</span></span>
-<span id="cb118-11"><a href="tree_spatial.html#cb118-11" tabindex="-1"></a>    <span class="fu">guides</span>(<span class="at">size =</span> <span class="st">&quot;none&quot;</span>, <span class="at">color =</span> <span class="fu">guide_legend</span>(<span class="at">override.aes =</span> <span class="fu">list</span>(<span class="at">size =</span> <span class="dv">5</span>)))</span></code></pre></div>
-<pre><code>## |---------|---------|---------|---------|=========================================                                          </code></pre>
-<div class="sourceCode" id="cb120"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb120-1"><a href="tree_spatial.html#cb120-1" tabindex="-1"></a><span class="co"># PLOT IT</span></span>
-<span id="cb120-2"><a href="tree_spatial.html#cb120-2" tabindex="-1"></a>plt_grps_temp</span></code></pre></div>
+<div class="sourceCode" id="cb117"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb117-1"><a href="tree_spatial.html#cb117-1" tabindex="-1"></a><span class="co"># PLOT IT</span></span>
+<span id="cb117-2"><a href="tree_spatial.html#cb117-2" tabindex="-1"></a>plt_grps_temp</span></code></pre></div>
 <p><img src="bhef_uas_202306_files/figure-html/unnamed-chunk-37-1.png" width="1008" /></p>
-<div class="sourceCode" id="cb121"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb121-1"><a href="tree_spatial.html#cb121-1" tabindex="-1"></a><span class="co"># save it</span></span>
-<span id="cb121-2"><a href="tree_spatial.html#cb121-2" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggsave</span>(<span class="st">&quot;../data/NSW_06.jpeg&quot;</span>, <span class="at">dpi =</span> <span class="st">&quot;print&quot;</span>, <span class="at">height =</span> <span class="dv">11</span>, <span class="at">width =</span> <span class="fl">5.8</span>, <span class="at">device =</span> <span class="st">&quot;jpeg&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb118"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb118-1"><a href="tree_spatial.html#cb118-1" tabindex="-1"></a><span class="co"># save it</span></span>
+<span id="cb118-2"><a href="tree_spatial.html#cb118-2" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggsave</span>(<span class="st">&quot;../data/NSW_05.jpeg&quot;</span>, <span class="at">dpi =</span> <span class="st">&quot;print&quot;</span>, <span class="at">height =</span> <span class="dv">11</span>, <span class="at">width =</span> <span class="fl">5.8</span>, <span class="at">device =</span> <span class="st">&quot;jpeg&quot;</span>)</span></code></pre></div>
+<p>and plot overstory tree clumps by number of trees</p>
+<div class="sourceCode" id="cb119"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb119-1"><a href="tree_spatial.html#cb119-1" tabindex="-1"></a>plt_grps_temp <span class="ot">=</span> <span class="fu">ortho_plt_fn</span>(my_suid) <span class="sc">+</span></span>
+<span id="cb119-2"><a href="tree_spatial.html#cb119-2" tabindex="-1"></a>    <span class="co"># treetops</span></span>
+<span id="cb119-3"><a href="tree_spatial.html#cb119-3" tabindex="-1"></a>    <span class="fu">geom_sf</span>(</span>
+<span id="cb119-4"><a href="tree_spatial.html#cb119-4" tabindex="-1"></a>      <span class="at">data =</span> ttops_temp</span>
+<span id="cb119-5"><a href="tree_spatial.html#cb119-5" tabindex="-1"></a>      , <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">color =</span> clump_n_trees_grp)</span>
+<span id="cb119-6"><a href="tree_spatial.html#cb119-6" tabindex="-1"></a>      , <span class="at">size =</span> <span class="dv">1</span></span>
+<span id="cb119-7"><a href="tree_spatial.html#cb119-7" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb119-8"><a href="tree_spatial.html#cb119-8" tabindex="-1"></a>    <span class="fu">scale_color_viridis_d</span>(<span class="at">option=</span><span class="st">&quot;mako&quot;</span>, <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb119-9"><a href="tree_spatial.html#cb119-9" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">color =</span> <span class="st">&quot;&quot;</span>) <span class="sc">+</span></span>
+<span id="cb119-10"><a href="tree_spatial.html#cb119-10" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">legend.key =</span> <span class="fu">element_rect</span>(<span class="at">color =</span> <span class="cn">NA</span>, <span class="at">fill =</span> <span class="cn">NA</span>), <span class="at">legend.margin =</span> <span class="fu">margin</span>(<span class="fl">6.5</span>,<span class="dv">0</span>,<span class="fl">6.5</span>,<span class="dv">0</span>)) <span class="sc">+</span></span>
+<span id="cb119-11"><a href="tree_spatial.html#cb119-11" tabindex="-1"></a>    <span class="fu">guides</span>(<span class="at">size =</span> <span class="st">&quot;none&quot;</span>, <span class="at">color =</span> <span class="fu">guide_legend</span>(<span class="at">override.aes =</span> <span class="fu">list</span>(<span class="at">size =</span> <span class="dv">5</span>)))</span></code></pre></div>
+<pre><code>## |---------|---------|---------|---------|=========================================                                          </code></pre>
+<div class="sourceCode" id="cb121"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb121-1"><a href="tree_spatial.html#cb121-1" tabindex="-1"></a><span class="co"># PLOT IT</span></span>
+<span id="cb121-2"><a href="tree_spatial.html#cb121-2" tabindex="-1"></a>plt_grps_temp</span></code></pre></div>
+<p><img src="bhef_uas_202306_files/figure-html/unnamed-chunk-38-1.png" width="1008" /></p>
+<div class="sourceCode" id="cb122"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb122-1"><a href="tree_spatial.html#cb122-1" tabindex="-1"></a><span class="co"># save it</span></span>
+<span id="cb122-2"><a href="tree_spatial.html#cb122-2" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggsave</span>(<span class="st">&quot;../data/NSW_06.jpeg&quot;</span>, <span class="at">dpi =</span> <span class="st">&quot;print&quot;</span>, <span class="at">height =</span> <span class="dv">11</span>, <span class="at">width =</span> <span class="fl">5.8</span>, <span class="at">device =</span> <span class="st">&quot;jpeg&quot;</span>)</span></code></pre></div>
+</div>
+<div id="within-clump-distance" class="section level3 hasAnchor" number="9.1.4">
+<h3><span class="header-section-number">9.1.4</span> Within Clump Distance<a href="tree_spatial.html#within-clump-distance" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Determine nearest neighbor distance for the stand and within clusters. Some combination of these metrics has been used to describe relative aggregation. (<em>source?</em>)</p>
+<p>Calculate the distance to the nearest tree within each clump</p>
+<div class="sourceCode" id="cb123"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb123-1"><a href="tree_spatial.html#cb123-1" tabindex="-1"></a>ttops_temp <span class="ot">=</span></span>
+<span id="cb123-2"><a href="tree_spatial.html#cb123-2" tabindex="-1"></a>  ttops_temp <span class="sc">%&gt;%</span> </span>
+<span id="cb123-3"><a href="tree_spatial.html#cb123-3" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(clump_id) <span class="sc">%&gt;%</span></span>
+<span id="cb123-4"><a href="tree_spatial.html#cb123-4" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">nest</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb123-5"><a href="tree_spatial.html#cb123-5" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb123-6"><a href="tree_spatial.html#cb123-6" tabindex="-1"></a>    <span class="at">distance_clump_nn_m =</span> purrr<span class="sc">::</span><span class="fu">map</span>(data, <span class="cf">function</span>(x){</span>
+<span id="cb123-7"><a href="tree_spatial.html#cb123-7" tabindex="-1"></a>      <span class="co"># get index of nearest neighbor</span></span>
+<span id="cb123-8"><a href="tree_spatial.html#cb123-8" tabindex="-1"></a>      i <span class="ot">=</span> sf<span class="sc">::</span><span class="fu">st_nearest_feature</span>(x)</span>
+<span id="cb123-9"><a href="tree_spatial.html#cb123-9" tabindex="-1"></a>      <span class="co"># get dist</span></span>
+<span id="cb123-10"><a href="tree_spatial.html#cb123-10" tabindex="-1"></a>      d <span class="ot">=</span> sf<span class="sc">::</span><span class="fu">st_distance</span>(x, x[i,], <span class="at">by_element=</span><span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> <span class="fu">as.numeric</span>()</span>
+<span id="cb123-11"><a href="tree_spatial.html#cb123-11" tabindex="-1"></a>      <span class="fu">return</span>(d)</span>
+<span id="cb123-12"><a href="tree_spatial.html#cb123-12" tabindex="-1"></a>    })</span>
+<span id="cb123-13"><a href="tree_spatial.html#cb123-13" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb123-14"><a href="tree_spatial.html#cb123-14" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">unnest</span>(<span class="at">cols =</span> <span class="fu">c</span>(data, distance_clump_nn_m)) <span class="sc">%&gt;%</span> </span>
+<span id="cb123-15"><a href="tree_spatial.html#cb123-15" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_set_geometry</span>(<span class="st">&quot;geom&quot;</span>) <span class="sc">%&gt;%</span> <span class="co"># set it cuz it got lost </span></span>
+<span id="cb123-16"><a href="tree_spatial.html#cb123-16" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">ungroup</span>()</span>
+<span id="cb123-17"><a href="tree_spatial.html#cb123-17" tabindex="-1"></a>  <span class="co"># ggplot() + geom_point(aes(x=X,y=Y,color = distance_clump_nn_m)) + theme_light()</span></span></code></pre></div>
+<p>plot it</p>
+<div class="sourceCode" id="cb124"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb124-1"><a href="tree_spatial.html#cb124-1" tabindex="-1"></a><span class="fu">ortho_plt_fn</span>(my_suid) <span class="sc">+</span></span>
+<span id="cb124-2"><a href="tree_spatial.html#cb124-2" tabindex="-1"></a>    <span class="co"># treetops</span></span>
+<span id="cb124-3"><a href="tree_spatial.html#cb124-3" tabindex="-1"></a>    <span class="fu">geom_sf</span>(</span>
+<span id="cb124-4"><a href="tree_spatial.html#cb124-4" tabindex="-1"></a>      <span class="at">data =</span> ttops_temp</span>
+<span id="cb124-5"><a href="tree_spatial.html#cb124-5" tabindex="-1"></a>      , <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">color =</span> distance_clump_nn_m)</span>
+<span id="cb124-6"><a href="tree_spatial.html#cb124-6" tabindex="-1"></a>      , <span class="at">size =</span> <span class="dv">1</span></span>
+<span id="cb124-7"><a href="tree_spatial.html#cb124-7" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb124-8"><a href="tree_spatial.html#cb124-8" tabindex="-1"></a>    <span class="fu">scale_color_viridis_c</span>(<span class="at">option=</span><span class="st">&quot;viridis&quot;</span>, <span class="at">na.value =</span> <span class="st">&quot;white&quot;</span>) <span class="sc">+</span> </span>
+<span id="cb124-9"><a href="tree_spatial.html#cb124-9" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">color =</span> <span class="st">&quot;within clump</span><span class="sc">\n</span><span class="st">N.N. dist. (m)&quot;</span>)</span></code></pre></div>
+<pre><code>## |---------|---------|---------|---------|=========================================                                          </code></pre>
+<p><img src="bhef_uas_202306_files/figure-html/unnamed-chunk-40-1.png" width="1008" /></p>
+<div id="create-function-to-get-tree-list-with-clumps" class="section level4 hasAnchor" number="9.1.4.1">
+<h4><span class="header-section-number">9.1.4.1</span> Create function to get tree list with clumps<a href="tree_spatial.html#create-function-to-get-tree-list-with-clumps" class="anchor-section" aria-label="Anchor link to header"></a></h4>
+<div class="sourceCode" id="cb126"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb126-1"><a href="tree_spatial.html#cb126-1" tabindex="-1"></a><span class="co"># create function to pass a unit id and return list of trees with clump groupings</span></span>
+<span id="cb126-2"><a href="tree_spatial.html#cb126-2" tabindex="-1"></a>get_tree_clumps <span class="ot">=</span> <span class="cf">function</span>(my_suid, <span class="at">tree_clump_dist_m=</span><span class="dv">6</span>){</span>
+<span id="cb126-3"><a href="tree_spatial.html#cb126-3" tabindex="-1"></a>  ttops_temp <span class="ot">=</span> treetops_sf_with_dbh <span class="sc">%&gt;%</span></span>
+<span id="cb126-4"><a href="tree_spatial.html#cb126-4" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">filter</span>(tree_height_m<span class="sc">&gt;=</span>ostory_ht_m) <span class="sc">%&gt;%</span> </span>
+<span id="cb126-5"><a href="tree_spatial.html#cb126-5" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb126-6"><a href="tree_spatial.html#cb126-6" tabindex="-1"></a>      <span class="at">ostory =</span> <span class="fu">ifelse</span>(tree_height_m<span class="sc">&gt;=</span>ostory_ht_m,<span class="st">&quot;overstory&quot;</span>,<span class="st">&quot;understory&quot;</span>)</span>
+<span id="cb126-7"><a href="tree_spatial.html#cb126-7" tabindex="-1"></a>      , <span class="at">X =</span> sf<span class="sc">::</span><span class="fu">st_coordinates</span>(.)[,<span class="dv">1</span>] <span class="sc">%&gt;%</span> <span class="fu">as.numeric</span>()</span>
+<span id="cb126-8"><a href="tree_spatial.html#cb126-8" tabindex="-1"></a>      , <span class="at">Y =</span> sf<span class="sc">::</span><span class="fu">st_coordinates</span>(.)[,<span class="dv">2</span>] <span class="sc">%&gt;%</span> <span class="fu">as.numeric</span>()</span>
+<span id="cb126-9"><a href="tree_spatial.html#cb126-9" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
+<span id="cb126-10"><a href="tree_spatial.html#cb126-10" tabindex="-1"></a>    sf<span class="sc">::</span><span class="fu">st_intersection</span>(harvests <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(suid<span class="sc">==</span>my_suid) <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">select</span>(suid))</span>
+<span id="cb126-11"><a href="tree_spatial.html#cb126-11" tabindex="-1"></a>  <span class="do">#############################################################################</span></span>
+<span id="cb126-12"><a href="tree_spatial.html#cb126-12" tabindex="-1"></a>  <span class="do">##### Identify clusters in each stem map plot                           #####</span></span>
+<span id="cb126-13"><a href="tree_spatial.html#cb126-13" tabindex="-1"></a>  <span class="do">#############################################################################</span></span>
+<span id="cb126-14"><a href="tree_spatial.html#cb126-14" tabindex="-1"></a>  <span class="do">### Place trees into clusters using an inter-tree distance of 6 m</span></span>
+<span id="cb126-15"><a href="tree_spatial.html#cb126-15" tabindex="-1"></a>  my_dbscan_temp <span class="ot">=</span>  ttops_temp <span class="sc">%&gt;%</span> </span>
+<span id="cb126-16"><a href="tree_spatial.html#cb126-16" tabindex="-1"></a>    sf<span class="sc">::</span><span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb126-17"><a href="tree_spatial.html#cb126-17" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(X,Y) <span class="sc">%&gt;%</span> </span>
+<span id="cb126-18"><a href="tree_spatial.html#cb126-18" tabindex="-1"></a>    dbscan<span class="sc">::</span><span class="fu">dbscan</span>(<span class="at">eps =</span> tree_clump_dist_m, <span class="at">minPts =</span> <span class="dv">2</span>)</span>
+<span id="cb126-19"><a href="tree_spatial.html#cb126-19" tabindex="-1"></a>  </span>
+<span id="cb126-20"><a href="tree_spatial.html#cb126-20" tabindex="-1"></a>  <span class="co"># my_dbscan_temp %&gt;% str()</span></span>
+<span id="cb126-21"><a href="tree_spatial.html#cb126-21" tabindex="-1"></a>  </span>
+<span id="cb126-22"><a href="tree_spatial.html#cb126-22" tabindex="-1"></a>  <span class="do">### append cluster ID to trees</span></span>
+<span id="cb126-23"><a href="tree_spatial.html#cb126-23" tabindex="-1"></a>  ttops_temp<span class="sc">$</span>dbscan_cluster <span class="ot">=</span> my_dbscan_temp<span class="sc">$</span>cluster</span>
+<span id="cb126-24"><a href="tree_spatial.html#cb126-24" tabindex="-1"></a>  <span class="co"># ttops_temp$cluster %&gt;% summary()</span></span>
+<span id="cb126-25"><a href="tree_spatial.html#cb126-25" tabindex="-1"></a>  <span class="co"># ttops_temp %&gt;% sf::st_drop_geometry() %&gt;% dplyr::count(cluster) %&gt;% dplyr::arrange(desc(n)) %&gt;% dplyr::slice_head(n=11)</span></span>
+<span id="cb126-26"><a href="tree_spatial.html#cb126-26" tabindex="-1"></a>  </span>
+<span id="cb126-27"><a href="tree_spatial.html#cb126-27" tabindex="-1"></a>  <span class="do">### cluster metrics</span></span>
+<span id="cb126-28"><a href="tree_spatial.html#cb126-28" tabindex="-1"></a>  ttops_temp <span class="ot">=</span> ttops_temp <span class="sc">%&gt;%</span> </span>
+<span id="cb126-29"><a href="tree_spatial.html#cb126-29" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">group_by</span>(dbscan_cluster) <span class="sc">%&gt;%</span> </span>
+<span id="cb126-30"><a href="tree_spatial.html#cb126-30" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb126-31"><a href="tree_spatial.html#cb126-31" tabindex="-1"></a>      <span class="co"># unique dbscan_cluster for individuals</span></span>
+<span id="cb126-32"><a href="tree_spatial.html#cb126-32" tabindex="-1"></a>      <span class="at">clump_id =</span> dplyr<span class="sc">::</span><span class="fu">case_when</span>(</span>
+<span id="cb126-33"><a href="tree_spatial.html#cb126-33" tabindex="-1"></a>        dbscan_cluster <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">max</span>(my_dbscan_temp<span class="sc">$</span>cluster)<span class="sc">+</span>dplyr<span class="sc">::</span><span class="fu">row_number</span>()</span>
+<span id="cb126-34"><a href="tree_spatial.html#cb126-34" tabindex="-1"></a>        , T <span class="sc">~</span> dbscan_cluster</span>
+<span id="cb126-35"><a href="tree_spatial.html#cb126-35" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span> </span>
+<span id="cb126-36"><a href="tree_spatial.html#cb126-36" tabindex="-1"></a>      <span class="fu">factor</span>()</span>
+<span id="cb126-37"><a href="tree_spatial.html#cb126-37" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
+<span id="cb126-38"><a href="tree_spatial.html#cb126-38" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">group_by</span>(clump_id) <span class="sc">%&gt;%</span> </span>
+<span id="cb126-39"><a href="tree_spatial.html#cb126-39" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb126-40"><a href="tree_spatial.html#cb126-40" tabindex="-1"></a>      <span class="at">dbscan_cluster =</span> <span class="fu">factor</span>(dbscan_cluster)</span>
+<span id="cb126-41"><a href="tree_spatial.html#cb126-41" tabindex="-1"></a>      , <span class="at">clump_n_trees =</span> dplyr<span class="sc">::</span><span class="fu">n</span>()</span>
+<span id="cb126-42"><a href="tree_spatial.html#cb126-42" tabindex="-1"></a>      , <span class="at">clump_n_trees_grp =</span> <span class="fu">cut</span>(</span>
+<span id="cb126-43"><a href="tree_spatial.html#cb126-43" tabindex="-1"></a>          clump_n_trees</span>
+<span id="cb126-44"><a href="tree_spatial.html#cb126-44" tabindex="-1"></a>          ,<span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">4</span>,<span class="dv">9</span>,<span class="dv">15</span>,<span class="cn">Inf</span>)</span>
+<span id="cb126-45"><a href="tree_spatial.html#cb126-45" tabindex="-1"></a>          , <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">&quot;Individual&quot;</span>,<span class="st">&quot;2-4 trees&quot;</span>,<span class="st">&quot;5-9 trees&quot;</span>,<span class="st">&quot;10-15 trees&quot;</span>,<span class="st">&quot;&gt;15 trees&quot;</span>)</span>
+<span id="cb126-46"><a href="tree_spatial.html#cb126-46" tabindex="-1"></a>        ) <span class="sc">%&gt;%</span> </span>
+<span id="cb126-47"><a href="tree_spatial.html#cb126-47" tabindex="-1"></a>        <span class="fu">factor</span>(</span>
+<span id="cb126-48"><a href="tree_spatial.html#cb126-48" tabindex="-1"></a>          <span class="at">ordered =</span> T</span>
+<span id="cb126-49"><a href="tree_spatial.html#cb126-49" tabindex="-1"></a>          , <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;Individual&quot;</span>,<span class="st">&quot;2-4 trees&quot;</span>,<span class="st">&quot;5-9 trees&quot;</span>,<span class="st">&quot;10-15 trees&quot;</span>,<span class="st">&quot;&gt;15 trees&quot;</span>)</span>
+<span id="cb126-50"><a href="tree_spatial.html#cb126-50" tabindex="-1"></a>        )</span>
+<span id="cb126-51"><a href="tree_spatial.html#cb126-51" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
+<span id="cb126-52"><a href="tree_spatial.html#cb126-52" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">ungroup</span>()</span>
+<span id="cb126-53"><a href="tree_spatial.html#cb126-53" tabindex="-1"></a>  <span class="co"># add distance to nearest within clump</span></span>
+<span id="cb126-54"><a href="tree_spatial.html#cb126-54" tabindex="-1"></a>  ttops_temp <span class="ot">=</span></span>
+<span id="cb126-55"><a href="tree_spatial.html#cb126-55" tabindex="-1"></a>    ttops_temp <span class="sc">%&gt;%</span> </span>
+<span id="cb126-56"><a href="tree_spatial.html#cb126-56" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">group_by</span>(clump_id) <span class="sc">%&gt;%</span></span>
+<span id="cb126-57"><a href="tree_spatial.html#cb126-57" tabindex="-1"></a>    tidyr<span class="sc">::</span><span class="fu">nest</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb126-58"><a href="tree_spatial.html#cb126-58" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb126-59"><a href="tree_spatial.html#cb126-59" tabindex="-1"></a>      <span class="at">distance_clump_nn_m =</span> purrr<span class="sc">::</span><span class="fu">map</span>(data, <span class="cf">function</span>(x){</span>
+<span id="cb126-60"><a href="tree_spatial.html#cb126-60" tabindex="-1"></a>        <span class="co"># get index of nearest neighbor</span></span>
+<span id="cb126-61"><a href="tree_spatial.html#cb126-61" tabindex="-1"></a>        i <span class="ot">=</span> sf<span class="sc">::</span><span class="fu">st_nearest_feature</span>(x)</span>
+<span id="cb126-62"><a href="tree_spatial.html#cb126-62" tabindex="-1"></a>        <span class="co"># get dist</span></span>
+<span id="cb126-63"><a href="tree_spatial.html#cb126-63" tabindex="-1"></a>        d <span class="ot">=</span> sf<span class="sc">::</span><span class="fu">st_distance</span>(x, x[i,], <span class="at">by_element=</span><span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> <span class="fu">as.numeric</span>()</span>
+<span id="cb126-64"><a href="tree_spatial.html#cb126-64" tabindex="-1"></a>        <span class="fu">return</span>(d)</span>
+<span id="cb126-65"><a href="tree_spatial.html#cb126-65" tabindex="-1"></a>      })</span>
+<span id="cb126-66"><a href="tree_spatial.html#cb126-66" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
+<span id="cb126-67"><a href="tree_spatial.html#cb126-67" tabindex="-1"></a>    tidyr<span class="sc">::</span><span class="fu">unnest</span>(<span class="at">cols =</span> <span class="fu">c</span>(data, distance_clump_nn_m)) <span class="sc">%&gt;%</span> </span>
+<span id="cb126-68"><a href="tree_spatial.html#cb126-68" tabindex="-1"></a>    sf<span class="sc">::</span><span class="fu">st_set_geometry</span>(<span class="st">&quot;geom&quot;</span>) <span class="sc">%&gt;%</span> <span class="co"># set it cuz it got lost </span></span>
+<span id="cb126-69"><a href="tree_spatial.html#cb126-69" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">ungroup</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb126-70"><a href="tree_spatial.html#cb126-70" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">tree_clump_dist_m =</span> tree_clump_dist_m)</span>
+<span id="cb126-71"><a href="tree_spatial.html#cb126-71" tabindex="-1"></a>  <span class="co"># return</span></span>
+<span id="cb126-72"><a href="tree_spatial.html#cb126-72" tabindex="-1"></a>  <span class="fu">return</span>(ttops_temp)</span>
+<span id="cb126-73"><a href="tree_spatial.html#cb126-73" tabindex="-1"></a>}</span>
+<span id="cb126-74"><a href="tree_spatial.html#cb126-74" tabindex="-1"></a><span class="co"># call it</span></span>
+<span id="cb126-75"><a href="tree_spatial.html#cb126-75" tabindex="-1"></a>ttops_temp <span class="ot">=</span> <span class="fu">get_tree_clumps</span>(<span class="at">my_suid =</span> my_suid, <span class="at">tree_clump_dist_m =</span> tree_clump_dist_m)</span></code></pre></div>
+</div>
+</div>
+<div id="clump-polygons-and-metrics" class="section level3 hasAnchor" number="9.1.5">
+<h3><span class="header-section-number">9.1.5</span> Clump Polygons and Metrics<a href="tree_spatial.html#clump-polygons-and-metrics" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p><a href="https://scholarworks.umt.edu/ico/3">Churchill et al. (2016)</a> provide instructions for implementing the clump identification (Plotkin et al. 2002) in ArcGIS:</p>
+<blockquote>
+<p>Use the Buffer tool (in the Proximity toolset within the Analysis toolbox) to create a buffer of distance d/2, one half the inter-tree distance, around each point. This quantity d/2 is meant to approximate the crown radius of a “typical” overstory tree. Set the Dissolve Type option to ALL, which dissolves overlapping buffers, creating a reduced set of spatially non-overlapping polygons stored as a multipart polygon feature…<a href="https://scholar.google.com/scholar?cluster=15721451396848616769&amp;oi=gsb&amp;hl=en&amp;as_sdt=0,6">Sanchez Meador et al. (2011)</a> provide some useful examples of how clump attributes can be summarized…The method described here can be modified to use measured or modeled crown radii for each tree in place of d/2 (p.36)</p>
+</blockquote>
+<div class="sourceCode" id="cb127"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb127-1"><a href="tree_spatial.html#cb127-1" tabindex="-1"></a><span class="co"># create function to pass a return from get_tree_clumps() and create clump polygons with summary stats</span></span>
+<span id="cb127-2"><a href="tree_spatial.html#cb127-2" tabindex="-1"></a>get_clump_summary <span class="ot">=</span> <span class="cf">function</span>(dta){</span>
+<span id="cb127-3"><a href="tree_spatial.html#cb127-3" tabindex="-1"></a>  <span class="co"># get tree_clump_dist_m</span></span>
+<span id="cb127-4"><a href="tree_spatial.html#cb127-4" tabindex="-1"></a>  tree_clump_dist_m <span class="ot">=</span> <span class="fu">min</span>(dta<span class="sc">$</span>tree_clump_dist_m, <span class="at">na.rm =</span> T)</span>
+<span id="cb127-5"><a href="tree_spatial.html#cb127-5" tabindex="-1"></a>  <span class="co"># create clump polys and summary</span></span>
+<span id="cb127-6"><a href="tree_spatial.html#cb127-6" tabindex="-1"></a>  clump_polys_temp <span class="ot">=</span> </span>
+<span id="cb127-7"><a href="tree_spatial.html#cb127-7" tabindex="-1"></a>    dta <span class="sc">%&gt;%</span> </span>
+<span id="cb127-8"><a href="tree_spatial.html#cb127-8" tabindex="-1"></a>      dplyr<span class="sc">::</span><span class="fu">ungroup</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb127-9"><a href="tree_spatial.html#cb127-9" tabindex="-1"></a>      sf<span class="sc">::</span><span class="fu">st_set_geometry</span>(<span class="st">&quot;geometry&quot;</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb127-10"><a href="tree_spatial.html#cb127-10" tabindex="-1"></a>      sf<span class="sc">::</span><span class="fu">st_buffer</span>(tree_clump_dist_m<span class="sc">/</span><span class="dv">2</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb127-11"><a href="tree_spatial.html#cb127-11" tabindex="-1"></a>      dplyr<span class="sc">::</span><span class="fu">group_by</span>(suid, clump_id, dbscan_cluster, clump_n_trees_grp) <span class="sc">%&gt;%</span></span>
+<span id="cb127-12"><a href="tree_spatial.html#cb127-12" tabindex="-1"></a>      dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
+<span id="cb127-13"><a href="tree_spatial.html#cb127-13" tabindex="-1"></a>        <span class="co"># union buffered tree points</span></span>
+<span id="cb127-14"><a href="tree_spatial.html#cb127-14" tabindex="-1"></a>        <span class="at">geometry =</span> sf<span class="sc">::</span><span class="fu">st_union</span>(geometry)</span>
+<span id="cb127-15"><a href="tree_spatial.html#cb127-15" tabindex="-1"></a>        <span class="co"># summary metrics</span></span>
+<span id="cb127-16"><a href="tree_spatial.html#cb127-16" tabindex="-1"></a>        , <span class="at">n_trees =</span> dplyr<span class="sc">::</span><span class="fu">n_distinct</span>(treeID)</span>
+<span id="cb127-17"><a href="tree_spatial.html#cb127-17" tabindex="-1"></a>        , <span class="at">mean_dbh_cm =</span> <span class="fu">mean</span>(dbh_cm, <span class="at">na.rm =</span> T)</span>
+<span id="cb127-18"><a href="tree_spatial.html#cb127-18" tabindex="-1"></a>        , <span class="at">mean_tree_height_m =</span> <span class="fu">mean</span>(tree_height_m, <span class="at">na.rm =</span> T)</span>
+<span id="cb127-19"><a href="tree_spatial.html#cb127-19" tabindex="-1"></a>        , <span class="at">loreys_height_m =</span> <span class="fu">sum</span>(basal_area_m2<span class="sc">*</span>tree_height_m, <span class="at">na.rm =</span> T) <span class="sc">/</span> <span class="fu">sum</span>(basal_area_m2, <span class="at">na.rm =</span> T)</span>
+<span id="cb127-20"><a href="tree_spatial.html#cb127-20" tabindex="-1"></a>        , <span class="at">basal_area_m2 =</span> <span class="fu">sum</span>(basal_area_m2, <span class="at">na.rm =</span> T)</span>
+<span id="cb127-21"><a href="tree_spatial.html#cb127-21" tabindex="-1"></a>        , <span class="at">sum_dbh_cm_sq =</span> <span class="fu">sum</span>(dbh_cm<span class="sc">^</span><span class="dv">2</span>, <span class="at">na.rm =</span> T)</span>
+<span id="cb127-22"><a href="tree_spatial.html#cb127-22" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span></span>
+<span id="cb127-23"><a href="tree_spatial.html#cb127-23" tabindex="-1"></a>      dplyr<span class="sc">::</span><span class="fu">ungroup</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb127-24"><a href="tree_spatial.html#cb127-24" tabindex="-1"></a>      sf<span class="sc">::</span><span class="fu">st_make_valid</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb127-25"><a href="tree_spatial.html#cb127-25" tabindex="-1"></a>      dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb127-26"><a href="tree_spatial.html#cb127-26" tabindex="-1"></a>        <span class="at">clump_area_ha =</span> sf<span class="sc">::</span><span class="fu">st_area</span>(geometry) <span class="sc">%&gt;%</span> <span class="fu">as.numeric</span>() <span class="sc">%&gt;%</span> <span class="st">`</span><span class="at">/</span><span class="st">`</span>(<span class="dv">10000</span>)</span>
+<span id="cb127-27"><a href="tree_spatial.html#cb127-27" tabindex="-1"></a>        , <span class="at">trees_per_ha =</span> (n_trees<span class="sc">/</span>clump_area_ha)</span>
+<span id="cb127-28"><a href="tree_spatial.html#cb127-28" tabindex="-1"></a>        , <span class="at">basal_area_m2_per_ha =</span> (basal_area_m2<span class="sc">/</span>clump_area_ha)</span>
+<span id="cb127-29"><a href="tree_spatial.html#cb127-29" tabindex="-1"></a>        , <span class="at">pct_stand_basal_area =</span> basal_area_m2<span class="sc">/</span><span class="fu">sum</span>(basal_area_m2)</span>
+<span id="cb127-30"><a href="tree_spatial.html#cb127-30" tabindex="-1"></a>        , <span class="at">qmd_cm =</span> <span class="fu">sqrt</span>(sum_dbh_cm_sq<span class="sc">/</span>n_trees)</span>
+<span id="cb127-31"><a href="tree_spatial.html#cb127-31" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span></span>
+<span id="cb127-32"><a href="tree_spatial.html#cb127-32" tabindex="-1"></a>      dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(sum_dbh_cm_sq)) <span class="sc">%&gt;%</span></span>
+<span id="cb127-33"><a href="tree_spatial.html#cb127-33" tabindex="-1"></a>      <span class="co"># convert to imperial units</span></span>
+<span id="cb127-34"><a href="tree_spatial.html#cb127-34" tabindex="-1"></a>      <span class="fu">calc_imperial_units_fn</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb127-35"><a href="tree_spatial.html#cb127-35" tabindex="-1"></a>      dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">tree_clump_dist_m =</span> tree_clump_dist_m)</span>
+<span id="cb127-36"><a href="tree_spatial.html#cb127-36" tabindex="-1"></a>  <span class="co"># return</span></span>
+<span id="cb127-37"><a href="tree_spatial.html#cb127-37" tabindex="-1"></a>  <span class="fu">return</span>(clump_polys_temp)</span>
+<span id="cb127-38"><a href="tree_spatial.html#cb127-38" tabindex="-1"></a>}</span>
+<span id="cb127-39"><a href="tree_spatial.html#cb127-39" tabindex="-1"></a><span class="co"># get it</span></span>
+<span id="cb127-40"><a href="tree_spatial.html#cb127-40" tabindex="-1"></a><span class="co"># clump_polys_temp = get_clump_summary(</span></span>
+<span id="cb127-41"><a href="tree_spatial.html#cb127-41" tabindex="-1"></a><span class="co">#   dta = get_tree_clumps(my_suid = my_suid, tree_clump_dist_m = tree_clump_dist_m)</span></span>
+<span id="cb127-42"><a href="tree_spatial.html#cb127-42" tabindex="-1"></a><span class="co"># )</span></span>
+<span id="cb127-43"><a href="tree_spatial.html#cb127-43" tabindex="-1"></a>clump_polys_temp <span class="ot">=</span> <span class="fu">get_clump_summary</span>(ttops_temp)</span>
+<span id="cb127-44"><a href="tree_spatial.html#cb127-44" tabindex="-1"></a><span class="co"># what?</span></span>
+<span id="cb127-45"><a href="tree_spatial.html#cb127-45" tabindex="-1"></a>clump_polys_temp <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">glimpse</span>()</span></code></pre></div>
+<pre><code>## Rows: 461
+## Columns: 24
+## $ suid                  &lt;chr&gt; &quot;0203088082660001000&quot;, &quot;0203088082660001000&quot;, &quot;0…
+## $ clump_id              &lt;fct&gt; 258, 259, 260, 261, 262, 263, 264, 265, 266, 267…
+## $ dbscan_cluster        &lt;fct&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+## $ clump_n_trees_grp     &lt;ord&gt; Individual, Individual, Individual, Individual, …
+## $ geometry              &lt;POLYGON [m]&gt; POLYGON ((610696.9 4889087,..., POLYGON …
+## $ n_trees               &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, …
+## $ mean_dbh_cm           &lt;dbl&gt; 27.52697, 19.86217, 18.30460, 24.62251, 19.31073…
+## $ mean_tree_height_m    &lt;dbl&gt; 13.338, 10.099, 9.421, 11.995, 9.847, 12.864, 10…
+## $ loreys_height_m       &lt;dbl&gt; 13.338, 10.099, 9.421, 11.995, 9.847, 12.864, 10…
+## $ basal_area_m2         &lt;dbl&gt; 0.05951231, 0.03098441, 0.02631543, 0.04761616, …
+## $ clump_area_ha         &lt;dbl&gt; 0.002826142, 0.002826142, 0.002826142, 0.0028261…
+## $ trees_per_ha          &lt;dbl&gt; 353.8393, 353.8393, 353.8393, 353.8393, 353.8393…
+## $ basal_area_m2_per_ha  &lt;dbl&gt; 21.057796, 10.963503, 9.311434, 16.848469, 10.36…
+## $ pct_stand_basal_area  &lt;dbl&gt; 0.0005818653, 0.0003029416, 0.0002572919, 0.0004…
+## $ qmd_cm                &lt;dbl&gt; 27.52697, 19.86217, 18.30460, 24.62251, 19.31073…
+## $ mean_dbh_in           &lt;dbl&gt; 10.845628, 7.825695, 7.212013, 9.701267, 7.60842…
+## $ qmd_in                &lt;dbl&gt; 10.845628, 7.825695, 7.212013, 9.701267, 7.60842…
+## $ mean_tree_height_ft   &lt;dbl&gt; 43.74864, 33.12472, 30.90088, 39.34360, 32.29816…
+## $ loreys_height_ft      &lt;dbl&gt; 43.74864, 33.12472, 30.90088, 39.34360, 32.29816…
+## $ basal_area_ft2_per_ac &lt;dbl&gt; 91.79093, 47.78991, 40.58854, 73.44248, 45.17315…
+## $ trees_per_ac          &lt;dbl&gt; 143.3049, 143.3049, 143.3049, 143.3049, 143.3049…
+## $ clump_area_ac         &lt;dbl&gt; 0.006983396, 0.006983396, 0.006983396, 0.0069833…
+## $ basal_area_ft2        &lt;dbl&gt; 0.6405905, 0.3335162, 0.2832593, 0.5125403, 0.31…
+## $ tree_clump_dist_m     &lt;dbl&gt; 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, …</code></pre>
+<div class="sourceCode" id="cb129"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb129-1"><a href="tree_spatial.html#cb129-1" tabindex="-1"></a><span class="co"># do these numbers match</span></span>
+<span id="cb129-2"><a href="tree_spatial.html#cb129-2" tabindex="-1"></a><span class="fu">identical</span>(</span>
+<span id="cb129-3"><a href="tree_spatial.html#cb129-3" tabindex="-1"></a>  <span class="co"># clump polys</span></span>
+<span id="cb129-4"><a href="tree_spatial.html#cb129-4" tabindex="-1"></a>  <span class="fu">nrow</span>(clump_polys_temp)</span>
+<span id="cb129-5"><a href="tree_spatial.html#cb129-5" tabindex="-1"></a>  <span class="co"># clumps in tree list data</span></span>
+<span id="cb129-6"><a href="tree_spatial.html#cb129-6" tabindex="-1"></a>  , ttops_temp <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">distinct</span>(clump_id) <span class="sc">%&gt;%</span> <span class="fu">nrow</span>()</span>
+<span id="cb129-7"><a href="tree_spatial.html#cb129-7" tabindex="-1"></a>)</span></code></pre></div>
+<pre><code>## [1] TRUE</code></pre>
+<p>plot it</p>
+<div class="sourceCode" id="cb131"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb131-1"><a href="tree_spatial.html#cb131-1" tabindex="-1"></a><span class="fu">ortho_plt_fn</span>(my_suid) <span class="sc">+</span></span>
+<span id="cb131-2"><a href="tree_spatial.html#cb131-2" tabindex="-1"></a>  <span class="co"># clumps</span></span>
+<span id="cb131-3"><a href="tree_spatial.html#cb131-3" tabindex="-1"></a>  ggnewscale<span class="sc">::</span><span class="fu">new_scale_fill</span>() <span class="sc">+</span></span>
+<span id="cb131-4"><a href="tree_spatial.html#cb131-4" tabindex="-1"></a>  <span class="fu">geom_sf</span>(</span>
+<span id="cb131-5"><a href="tree_spatial.html#cb131-5" tabindex="-1"></a>    <span class="at">data =</span> clump_polys_temp</span>
+<span id="cb131-6"><a href="tree_spatial.html#cb131-6" tabindex="-1"></a>    , <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">fill =</span> dbscan_cluster)</span>
+<span id="cb131-7"><a href="tree_spatial.html#cb131-7" tabindex="-1"></a>    , <span class="at">color =</span> <span class="cn">NA</span>, <span class="at">alpha =</span> <span class="fl">0.9</span></span>
+<span id="cb131-8"><a href="tree_spatial.html#cb131-8" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb131-9"><a href="tree_spatial.html#cb131-9" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(</span>
+<span id="cb131-10"><a href="tree_spatial.html#cb131-10" tabindex="-1"></a>    <span class="st">&quot;white&quot;</span></span>
+<span id="cb131-11"><a href="tree_spatial.html#cb131-11" tabindex="-1"></a>    , <span class="co"># get random list of colors from viridis and avoid whites</span></span>
+<span id="cb131-12"><a href="tree_spatial.html#cb131-12" tabindex="-1"></a>      <span class="fu">c</span>(</span>
+<span id="cb131-13"><a href="tree_spatial.html#cb131-13" tabindex="-1"></a>        viridis<span class="sc">::</span><span class="fu">turbo</span>(<span class="fu">length</span>(<span class="fu">unique</span>(ttops_temp<span class="sc">$</span>dbscan_cluster))<span class="sc">/</span><span class="dv">2</span> <span class="sc">%&gt;%</span> <span class="fu">round</span>())</span>
+<span id="cb131-14"><a href="tree_spatial.html#cb131-14" tabindex="-1"></a>        , viridis<span class="sc">::</span><span class="fu">plasma</span>(<span class="fu">length</span>(<span class="fu">unique</span>(ttops_temp<span class="sc">$</span>dbscan_cluster))<span class="sc">/</span><span class="dv">2</span> <span class="sc">%&gt;%</span> <span class="fu">round</span>(), <span class="at">end =</span> <span class="fl">0.95</span>)</span>
+<span id="cb131-15"><a href="tree_spatial.html#cb131-15" tabindex="-1"></a>        , viridis<span class="sc">::</span><span class="fu">viridis</span>(<span class="fu">length</span>(<span class="fu">unique</span>(ttops_temp<span class="sc">$</span>dbscan_cluster))<span class="sc">/</span><span class="dv">2</span> <span class="sc">%&gt;%</span> <span class="fu">round</span>(), <span class="at">end =</span> <span class="fl">0.9</span>)</span>
+<span id="cb131-16"><a href="tree_spatial.html#cb131-16" tabindex="-1"></a>        , viridis<span class="sc">::</span><span class="fu">cividis</span>(<span class="fu">length</span>(<span class="fu">unique</span>(ttops_temp<span class="sc">$</span>dbscan_cluster))<span class="sc">/</span><span class="dv">2</span> <span class="sc">%&gt;%</span> <span class="fu">round</span>(), <span class="at">end =</span> <span class="fl">0.9</span>)</span>
+<span id="cb131-17"><a href="tree_spatial.html#cb131-17" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span> </span>
+<span id="cb131-18"><a href="tree_spatial.html#cb131-18" tabindex="-1"></a>        <span class="fu">sample</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb131-19"><a href="tree_spatial.html#cb131-19" tabindex="-1"></a>        .[<span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(<span class="fu">unique</span>(ttops_temp<span class="sc">$</span>dbscan_cluster))<span class="sc">-</span><span class="dv">1</span>]</span>
+<span id="cb131-20"><a href="tree_spatial.html#cb131-20" tabindex="-1"></a>    )</span>
+<span id="cb131-21"><a href="tree_spatial.html#cb131-21" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb131-22"><a href="tree_spatial.html#cb131-22" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">subtitle =</span> <span class="st">&quot;</span><span class="sc">\n</span><span class="st"> overstory tree group polygons</span><span class="sc">\n</span><span class="st">(individual trees in white)&quot;</span>) <span class="sc">+</span></span>
+<span id="cb131-23"><a href="tree_spatial.html#cb131-23" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb131-24"><a href="tree_spatial.html#cb131-24" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">&quot;none&quot;</span></span>
+<span id="cb131-25"><a href="tree_spatial.html#cb131-25" tabindex="-1"></a>    , <span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="fl">9.5</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>, <span class="at">face =</span> <span class="st">&quot;bold&quot;</span>)</span>
+<span id="cb131-26"><a href="tree_spatial.html#cb131-26" tabindex="-1"></a>  )</span></code></pre></div>
+<pre><code>## |---------|---------|---------|---------|=========================================                                          </code></pre>
+<p><img src="bhef_uas_202306_files/figure-html/unnamed-chunk-44-1.png" width="1008" /></p>
+</div>
+<div id="clump-spacing" class="section level3 hasAnchor" number="9.1.6">
+<h3><span class="header-section-number">9.1.6</span> Clump Spacing<a href="tree_spatial.html#clump-spacing" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>See <a href="https://scholarworks.umt.edu/ico/3">Churchill et al. (2016)</a> Figure 4 (p.10) and <a href="https://scholar.google.com/scholar?cluster=14613232085713826018&amp;hl=en&amp;as_sdt=0,6">Matonis and Binkley (2018)</a> who “calculated coverage of mosaic-meadows (percentage of stand &gt; 6 m from overstory trees)” (p. 124)</p>
+<p>Since we already buffered the tree points to approximate the crown radius, we’ll continue to use our <span class="math inline">\(d/2\)</span> where <span class="math inline">\(d\)</span> is maximum distance between trees for determining tree clumps and is meant to approximate the crown radius of a “typical” overstory tree</p>
+<div class="sourceCode" id="cb133"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb133-1"><a href="tree_spatial.html#cb133-1" tabindex="-1"></a><span class="co"># create function to pass a return from get_clump_summary() and get a distance raster</span></span>
+<span id="cb133-2"><a href="tree_spatial.html#cb133-2" tabindex="-1"></a>get_clump_dist_rast <span class="ot">=</span> <span class="cf">function</span>(dta){</span>
+<span id="cb133-3"><a href="tree_spatial.html#cb133-3" tabindex="-1"></a>  <span class="co"># get tree_clump_dist_m</span></span>
+<span id="cb133-4"><a href="tree_spatial.html#cb133-4" tabindex="-1"></a>  tree_clump_dist_m <span class="ot">=</span> <span class="fu">min</span>(dta<span class="sc">$</span>tree_clump_dist_m, <span class="at">na.rm =</span> T)</span>
+<span id="cb133-5"><a href="tree_spatial.html#cb133-5" tabindex="-1"></a>  <span class="co"># suid</span></span>
+<span id="cb133-6"><a href="tree_spatial.html#cb133-6" tabindex="-1"></a>  my_suid <span class="ot">=</span> dta<span class="sc">$</span>suid[<span class="dv">1</span>]</span>
+<span id="cb133-7"><a href="tree_spatial.html#cb133-7" tabindex="-1"></a>  <span class="co"># rasterize the clump polygons and then calculate distance between clumps as raster</span></span>
+<span id="cb133-8"><a href="tree_spatial.html#cb133-8" tabindex="-1"></a>  dist_rast <span class="ot">=</span> </span>
+<span id="cb133-9"><a href="tree_spatial.html#cb133-9" tabindex="-1"></a>    terra<span class="sc">::</span><span class="fu">rasterize</span>(</span>
+<span id="cb133-10"><a href="tree_spatial.html#cb133-10" tabindex="-1"></a>        <span class="at">x =</span> clump_polys_temp <span class="sc">%&gt;%</span> terra<span class="sc">::</span><span class="fu">vect</span>()</span>
+<span id="cb133-11"><a href="tree_spatial.html#cb133-11" tabindex="-1"></a>        , <span class="at">y =</span> clump_polys_temp <span class="sc">%&gt;%</span> </span>
+<span id="cb133-12"><a href="tree_spatial.html#cb133-12" tabindex="-1"></a>          terra<span class="sc">::</span><span class="fu">vect</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb133-13"><a href="tree_spatial.html#cb133-13" tabindex="-1"></a>          terra<span class="sc">::</span><span class="fu">rast</span>(<span class="at">res =</span> <span class="fl">0.2</span>)</span>
+<span id="cb133-14"><a href="tree_spatial.html#cb133-14" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span> </span>
+<span id="cb133-15"><a href="tree_spatial.html#cb133-15" tabindex="-1"></a>      terra<span class="sc">::</span><span class="fu">distance</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb133-16"><a href="tree_spatial.html#cb133-16" tabindex="-1"></a>      <span class="co"># crop it to stand extent</span></span>
+<span id="cb133-17"><a href="tree_spatial.html#cb133-17" tabindex="-1"></a>      terra<span class="sc">::</span><span class="fu">crop</span>(</span>
+<span id="cb133-18"><a href="tree_spatial.html#cb133-18" tabindex="-1"></a>        harvests <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(suid<span class="sc">==</span>my_suid) <span class="sc">%&gt;%</span> </span>
+<span id="cb133-19"><a href="tree_spatial.html#cb133-19" tabindex="-1"></a>        terra<span class="sc">::</span><span class="fu">vect</span>()</span>
+<span id="cb133-20"><a href="tree_spatial.html#cb133-20" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span> </span>
+<span id="cb133-21"><a href="tree_spatial.html#cb133-21" tabindex="-1"></a>      terra<span class="sc">::</span><span class="fu">mask</span>(</span>
+<span id="cb133-22"><a href="tree_spatial.html#cb133-22" tabindex="-1"></a>        harvests <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(suid<span class="sc">==</span>my_suid) <span class="sc">%&gt;%</span> </span>
+<span id="cb133-23"><a href="tree_spatial.html#cb133-23" tabindex="-1"></a>        terra<span class="sc">::</span><span class="fu">vect</span>()</span>
+<span id="cb133-24"><a href="tree_spatial.html#cb133-24" tabindex="-1"></a>      )</span>
+<span id="cb133-25"><a href="tree_spatial.html#cb133-25" tabindex="-1"></a>  <span class="do">######### part 2</span></span>
+<span id="cb133-26"><a href="tree_spatial.html#cb133-26" tabindex="-1"></a>  <span class="co"># now create openings vector data</span></span>
+<span id="cb133-27"><a href="tree_spatial.html#cb133-27" tabindex="-1"></a>  openings_vect <span class="ot">=</span> </span>
+<span id="cb133-28"><a href="tree_spatial.html#cb133-28" tabindex="-1"></a>    dist_rast <span class="sc">%&gt;%</span> </span>
+<span id="cb133-29"><a href="tree_spatial.html#cb133-29" tabindex="-1"></a>      terra<span class="sc">::</span><span class="fu">classify</span>(<span class="at">rcl =</span> <span class="fu">c</span>(tree_clump_dist_m<span class="sc">/</span><span class="dv">2</span>,<span class="cn">Inf</span>), <span class="at">others =</span> <span class="cn">NA</span>, <span class="at">include.lowest =</span> T) <span class="sc">%&gt;%</span> </span>
+<span id="cb133-30"><a href="tree_spatial.html#cb133-30" tabindex="-1"></a>      terra<span class="sc">::</span><span class="fu">as.polygons</span>(<span class="at">na.rm =</span> T) <span class="sc">%&gt;%</span> </span>
+<span id="cb133-31"><a href="tree_spatial.html#cb133-31" tabindex="-1"></a>      sf<span class="sc">::</span><span class="fu">st_as_sf</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb133-32"><a href="tree_spatial.html#cb133-32" tabindex="-1"></a>      sf<span class="sc">::</span><span class="fu">st_cast</span>(<span class="st">&quot;POLYGON&quot;</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb133-33"><a href="tree_spatial.html#cb133-33" tabindex="-1"></a>      dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">layer =</span> dplyr<span class="sc">::</span><span class="fu">row_number</span>()) <span class="sc">%&gt;%</span> </span>
+<span id="cb133-34"><a href="tree_spatial.html#cb133-34" tabindex="-1"></a>      dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb133-35"><a href="tree_spatial.html#cb133-35" tabindex="-1"></a>        <span class="at">openining_area_m2 =</span> sf<span class="sc">::</span><span class="fu">st_area</span>(geometry) <span class="sc">%&gt;%</span> <span class="fu">as.numeric</span>()</span>
+<span id="cb133-36"><a href="tree_spatial.html#cb133-36" tabindex="-1"></a>        , <span class="at">suid =</span> my_suid</span>
+<span id="cb133-37"><a href="tree_spatial.html#cb133-37" tabindex="-1"></a>        , <span class="at">tree_clump_dist_m =</span> tree_clump_dist_m</span>
+<span id="cb133-38"><a href="tree_spatial.html#cb133-38" tabindex="-1"></a>      )</span>
+<span id="cb133-39"><a href="tree_spatial.html#cb133-39" tabindex="-1"></a>  </span>
+<span id="cb133-40"><a href="tree_spatial.html#cb133-40" tabindex="-1"></a>  <span class="co"># return</span></span>
+<span id="cb133-41"><a href="tree_spatial.html#cb133-41" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">dist_rast =</span> dist_rast, <span class="at">openings_vect =</span> openings_vect))</span>
+<span id="cb133-42"><a href="tree_spatial.html#cb133-42" tabindex="-1"></a>}</span>
+<span id="cb133-43"><a href="tree_spatial.html#cb133-43" tabindex="-1"></a><span class="co"># get it</span></span>
+<span id="cb133-44"><a href="tree_spatial.html#cb133-44" tabindex="-1"></a>dist_rast_temp <span class="ot">=</span> <span class="fu">get_clump_dist_rast</span>(clump_polys_temp)</span>
+<span id="cb133-45"><a href="tree_spatial.html#cb133-45" tabindex="-1"></a>dist_rast_temp</span></code></pre></div>
+<pre><code>## $dist_rast
+## class       : SpatRaster 
+## dimensions  : 3259, 1565, 1  (nrow, ncol, nlyr)
+## resolution  : 0.2, 0.2  (x, y)
+## extent      : 610479.1, 610792.1, 4888438, 4889090  (xmin, xmax, ymin, ymax)
+## coord. ref. : NAD83 / UTM zone 13N (EPSG:26913) 
+## source(s)   : memory
+## name        :    layer 
+## min value   :  0.00000 
+## max value   : 22.80789 
+## 
+## $openings_vect
+## Simple feature collection with 223 features and 4 fields
+## Geometry type: POLYGON
+## Dimension:     XY
+## Bounding box:  xmin: 610479.1 ymin: 4888438 xmax: 610791.5 ymax: 4889090
+## Projected CRS: NAD83 / UTM zone 13N
+## First 10 features:
+##     layer                       geometry openining_area_m2                suid
+## 1       1 POLYGON ((610684.7 4889085,...              0.04 0203088082660001000
+## 1.1     2 POLYGON ((610647.7 4889069,...              9.28 0203088082660001000
+## 1.2     3 POLYGON ((610636.5 4889063,...              0.04 0203088082660001000
+## 1.3     4 POLYGON ((610728.5 4889062,...              0.04 0203088082660001000
+## 1.4     5 POLYGON ((610651.9 4889060,...              1.76 0203088082660001000
+## 1.5     6 POLYGON ((610718.1 4889056,...              0.60 0203088082660001000
+## 1.6     7 POLYGON ((610707.3 4889090,...           1330.20 0203088082660001000
+## 1.7     8 POLYGON ((610734.3 4889065,...            122.84 0203088082660001000
+## 1.8     9 POLYGON ((610707.5 4889035,...              0.12 0203088082660001000
+## 1.9    10 POLYGON ((610768.7 4889038,...              2.84 0203088082660001000
+##     tree_clump_dist_m
+## 1                   6
+## 1.1                 6
+## 1.2                 6
+## 1.3                 6
+## 1.4                 6
+## 1.5                 6
+## 1.6                 6
+## 1.7                 6
+## 1.8                 6
+## 1.9                 6</code></pre>
+<p>plot the distance raster and openings vector data we just got with overlaid tree clumps and tree points</p>
+<div class="sourceCode" id="cb135"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb135-1"><a href="tree_spatial.html#cb135-1" tabindex="-1"></a>plt_fnl_temp <span class="ot">=</span> </span>
+<span id="cb135-2"><a href="tree_spatial.html#cb135-2" tabindex="-1"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span> </span>
+<span id="cb135-3"><a href="tree_spatial.html#cb135-3" tabindex="-1"></a>    <span class="co"># distance</span></span>
+<span id="cb135-4"><a href="tree_spatial.html#cb135-4" tabindex="-1"></a>    <span class="fu">geom_tile</span>(</span>
+<span id="cb135-5"><a href="tree_spatial.html#cb135-5" tabindex="-1"></a>      <span class="at">data =</span> dist_rast_temp<span class="sc">$</span>dist_rast <span class="sc">%&gt;%</span> terra<span class="sc">::</span><span class="fu">aggregate</span>(<span class="dv">2</span>, <span class="at">cores =</span> <span class="dv">4</span>) <span class="sc">%&gt;%</span> <span class="fu">as.data.frame</span>(<span class="at">xy =</span> T) <span class="sc">%&gt;%</span> <span class="fu">rename</span>(<span class="at">f=</span><span class="dv">3</span>)</span>
+<span id="cb135-6"><a href="tree_spatial.html#cb135-6" tabindex="-1"></a>      , <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">fill =</span> f)</span>
+<span id="cb135-7"><a href="tree_spatial.html#cb135-7" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb135-8"><a href="tree_spatial.html#cb135-8" tabindex="-1"></a>    <span class="fu">scale_fill_distiller</span>(</span>
+<span id="cb135-9"><a href="tree_spatial.html#cb135-9" tabindex="-1"></a>      <span class="at">palette =</span> <span class="st">&quot;YlOrRd&quot;</span></span>
+<span id="cb135-10"><a href="tree_spatial.html#cb135-10" tabindex="-1"></a>      , <span class="at">na.value =</span> <span class="st">&quot;transparent&quot;</span></span>
+<span id="cb135-11"><a href="tree_spatial.html#cb135-11" tabindex="-1"></a>      , <span class="at">direction =</span> <span class="dv">1</span></span>
+<span id="cb135-12"><a href="tree_spatial.html#cb135-12" tabindex="-1"></a>      , <span class="at">name =</span> <span class="st">&quot;distance to</span><span class="sc">\n</span><span class="st">nearest tree (m)&quot;</span></span>
+<span id="cb135-13"><a href="tree_spatial.html#cb135-13" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb135-14"><a href="tree_spatial.html#cb135-14" tabindex="-1"></a>    <span class="co"># openings</span></span>
+<span id="cb135-15"><a href="tree_spatial.html#cb135-15" tabindex="-1"></a>    <span class="fu">geom_sf</span>(<span class="at">data =</span> dist_rast_temp<span class="sc">$</span>openings_vect, <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">color =</span> openining_area_m2), <span class="at">fill =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb135-16"><a href="tree_spatial.html#cb135-16" tabindex="-1"></a>    <span class="fu">scale_color_gradient</span>(</span>
+<span id="cb135-17"><a href="tree_spatial.html#cb135-17" tabindex="-1"></a>      <span class="at">low =</span> <span class="st">&quot;gray77&quot;</span>, <span class="at">high =</span> <span class="st">&quot;gray11&quot;</span></span>
+<span id="cb135-18"><a href="tree_spatial.html#cb135-18" tabindex="-1"></a>      , <span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">comma_format</span>(<span class="at">accuracy =</span> <span class="dv">1</span>)</span>
+<span id="cb135-19"><a href="tree_spatial.html#cb135-19" tabindex="-1"></a>      , <span class="at">name =</span> latex2exp<span class="sc">::</span><span class="fu">TeX</span>(<span class="st">&quot;opening</span><span class="sc">\n</span><span class="st">area ($</span><span class="sc">\\</span><span class="st">m^2$)&quot;</span>)</span>
+<span id="cb135-20"><a href="tree_spatial.html#cb135-20" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb135-21"><a href="tree_spatial.html#cb135-21" tabindex="-1"></a>    <span class="co"># clumps</span></span>
+<span id="cb135-22"><a href="tree_spatial.html#cb135-22" tabindex="-1"></a>    ggnewscale<span class="sc">::</span><span class="fu">new_scale_fill</span>() <span class="sc">+</span></span>
+<span id="cb135-23"><a href="tree_spatial.html#cb135-23" tabindex="-1"></a>    <span class="fu">geom_sf</span>(</span>
+<span id="cb135-24"><a href="tree_spatial.html#cb135-24" tabindex="-1"></a>      <span class="at">data =</span> clump_polys_temp</span>
+<span id="cb135-25"><a href="tree_spatial.html#cb135-25" tabindex="-1"></a>      , <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">fill =</span> clump_n_trees_grp)</span>
+<span id="cb135-26"><a href="tree_spatial.html#cb135-26" tabindex="-1"></a>      , <span class="at">color =</span> <span class="cn">NA</span></span>
+<span id="cb135-27"><a href="tree_spatial.html#cb135-27" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb135-28"><a href="tree_spatial.html#cb135-28" tabindex="-1"></a>    <span class="fu">scale_fill_viridis_d</span>(<span class="at">option=</span><span class="st">&quot;mako&quot;</span>, <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>, <span class="at">name =</span> <span class="st">&quot;clump size&quot;</span>) <span class="sc">+</span> </span>
+<span id="cb135-29"><a href="tree_spatial.html#cb135-29" tabindex="-1"></a>    <span class="co"># tree points</span></span>
+<span id="cb135-30"><a href="tree_spatial.html#cb135-30" tabindex="-1"></a>    <span class="fu">geom_sf</span>(<span class="at">data =</span> ttops_temp, <span class="at">color =</span> <span class="st">&quot;gray88&quot;</span>, <span class="at">shape =</span> <span class="st">&quot;.&quot;</span>) <span class="sc">+</span></span>
+<span id="cb135-31"><a href="tree_spatial.html#cb135-31" tabindex="-1"></a>    <span class="fu">theme_void</span>()</span></code></pre></div>
+<pre><code>## |---------|---------|---------|---------|=========================================                                          </code></pre>
+<div class="sourceCode" id="cb137"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb137-1"><a href="tree_spatial.html#cb137-1" tabindex="-1"></a><span class="co"># plot</span></span>
+<span id="cb137-2"><a href="tree_spatial.html#cb137-2" tabindex="-1"></a>plt_fnl_temp</span></code></pre></div>
+<p><img src="bhef_uas_202306_files/figure-html/unnamed-chunk-46-1.png" width="1008" /></p>
+<div class="sourceCode" id="cb138"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb138-1"><a href="tree_spatial.html#cb138-1" tabindex="-1"></a><span class="co"># save it</span></span>
+<span id="cb138-2"><a href="tree_spatial.html#cb138-2" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggsave</span>(<span class="st">&quot;../data/NSW_07.jpeg&quot;</span>, <span class="at">dpi =</span> <span class="st">&quot;print&quot;</span>, <span class="at">height =</span> <span class="dv">11</span>, <span class="at">width =</span> <span class="fl">5.8</span>, <span class="at">device =</span> <span class="st">&quot;jpeg&quot;</span>)</span></code></pre></div>
+<p>highlight the openings</p>
+<div class="sourceCode" id="cb139"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb139-1"><a href="tree_spatial.html#cb139-1" tabindex="-1"></a>plt_open_temp <span class="ot">=</span> </span>
+<span id="cb139-2"><a href="tree_spatial.html#cb139-2" tabindex="-1"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span> </span>
+<span id="cb139-3"><a href="tree_spatial.html#cb139-3" tabindex="-1"></a>      <span class="co"># clumps</span></span>
+<span id="cb139-4"><a href="tree_spatial.html#cb139-4" tabindex="-1"></a>      <span class="fu">geom_sf</span>(</span>
+<span id="cb139-5"><a href="tree_spatial.html#cb139-5" tabindex="-1"></a>        <span class="at">data =</span> clump_polys_temp</span>
+<span id="cb139-6"><a href="tree_spatial.html#cb139-6" tabindex="-1"></a>        , <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">fill =</span> clump_n_trees_grp)</span>
+<span id="cb139-7"><a href="tree_spatial.html#cb139-7" tabindex="-1"></a>        , <span class="at">color =</span> <span class="cn">NA</span></span>
+<span id="cb139-8"><a href="tree_spatial.html#cb139-8" tabindex="-1"></a>      ) <span class="sc">+</span></span>
+<span id="cb139-9"><a href="tree_spatial.html#cb139-9" tabindex="-1"></a>      <span class="fu">scale_fill_viridis_d</span>(<span class="at">option=</span><span class="st">&quot;mako&quot;</span>, <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>, <span class="at">name =</span> <span class="st">&quot;clump size&quot;</span>) <span class="sc">+</span> </span>
+<span id="cb139-10"><a href="tree_spatial.html#cb139-10" tabindex="-1"></a>      <span class="co"># openings</span></span>
+<span id="cb139-11"><a href="tree_spatial.html#cb139-11" tabindex="-1"></a>      ggnewscale<span class="sc">::</span><span class="fu">new_scale_fill</span>() <span class="sc">+</span></span>
+<span id="cb139-12"><a href="tree_spatial.html#cb139-12" tabindex="-1"></a>      <span class="fu">geom_sf</span>(<span class="at">data =</span> dist_rast_temp<span class="sc">$</span>openings_vect, <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">fill =</span> openining_area_m2), <span class="at">color =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb139-13"><a href="tree_spatial.html#cb139-13" tabindex="-1"></a>      <span class="fu">scale_fill_gradient</span>(</span>
+<span id="cb139-14"><a href="tree_spatial.html#cb139-14" tabindex="-1"></a>        <span class="at">low =</span> <span class="st">&quot;gray77&quot;</span>, <span class="at">high =</span> <span class="st">&quot;gray11&quot;</span></span>
+<span id="cb139-15"><a href="tree_spatial.html#cb139-15" tabindex="-1"></a>        , <span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">comma_format</span>(<span class="at">accuracy =</span> <span class="dv">1</span>)</span>
+<span id="cb139-16"><a href="tree_spatial.html#cb139-16" tabindex="-1"></a>        , <span class="at">name =</span> latex2exp<span class="sc">::</span><span class="fu">TeX</span>(<span class="st">&quot;opening</span><span class="sc">\n</span><span class="st">area ($</span><span class="sc">\\</span><span class="st">m^2$)&quot;</span>)</span>
+<span id="cb139-17"><a href="tree_spatial.html#cb139-17" tabindex="-1"></a>      ) <span class="sc">+</span></span>
+<span id="cb139-18"><a href="tree_spatial.html#cb139-18" tabindex="-1"></a>      <span class="co"># tree points</span></span>
+<span id="cb139-19"><a href="tree_spatial.html#cb139-19" tabindex="-1"></a>      <span class="fu">geom_sf</span>(<span class="at">data =</span> ttops_temp, <span class="at">color =</span> <span class="st">&quot;gray88&quot;</span>, <span class="at">shape =</span> <span class="st">&quot;.&quot;</span>) <span class="sc">+</span></span>
+<span id="cb139-20"><a href="tree_spatial.html#cb139-20" tabindex="-1"></a>      <span class="fu">theme_void</span>()</span>
+<span id="cb139-21"><a href="tree_spatial.html#cb139-21" tabindex="-1"></a>plt_open_temp</span></code></pre></div>
+<p><img src="bhef_uas_202306_files/figure-html/unnamed-chunk-47-1.png" width="1008" /></p>
+<div class="sourceCode" id="cb140"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb140-1"><a href="tree_spatial.html#cb140-1" tabindex="-1"></a><span class="co"># save it</span></span>
+<span id="cb140-2"><a href="tree_spatial.html#cb140-2" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggsave</span>(<span class="st">&quot;../data/NSW_08.jpeg&quot;</span>, <span class="at">dpi =</span> <span class="st">&quot;print&quot;</span>, <span class="at">height =</span> <span class="dv">11</span>, <span class="at">width =</span> <span class="fl">5.8</span>, <span class="at">device =</span> <span class="st">&quot;jpeg&quot;</span>)</span></code></pre></div>
+<p>combine them?</p>
+<div class="sourceCode" id="cb141"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb141-1"><a href="tree_spatial.html#cb141-1" tabindex="-1"></a>plt_fnl_temp <span class="sc">+</span> (plt_open_temp <span class="sc">+</span> <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;none&quot;</span>))</span></code></pre></div>
+<p><img src="bhef_uas_202306_files/figure-html/unnamed-chunk-48-1.png" width="1008" /></p>
+<div class="sourceCode" id="cb142"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb142-1"><a href="tree_spatial.html#cb142-1" tabindex="-1"></a><span class="co"># save it</span></span>
+<span id="cb142-2"><a href="tree_spatial.html#cb142-2" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggsave</span>(<span class="st">&quot;../data/NSW_09.jpeg&quot;</span>, <span class="at">dpi =</span> <span class="st">&quot;print&quot;</span>, <span class="at">height =</span> <span class="dv">11</span>, <span class="at">width =</span> <span class="dv">8</span>, <span class="at">device =</span> <span class="st">&quot;jpeg&quot;</span>)</span></code></pre></div>
+</div>
+<div id="clump-metrics" class="section level3 hasAnchor" number="9.1.7">
+<h3><span class="header-section-number">9.1.7</span> Clump Metrics<a href="tree_spatial.html#clump-metrics" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>create a function to summarize by number of tree clump grouping variable</p>
+<div class="sourceCode" id="cb143"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb143-1"><a href="tree_spatial.html#cb143-1" tabindex="-1"></a><span class="co"># create a function to summarize by number of tree clump grouping</span></span>
+<span id="cb143-2"><a href="tree_spatial.html#cb143-2" tabindex="-1"></a>get_clump_n_trees_grp_summary <span class="ot">=</span> <span class="cf">function</span>(trees, clumps){</span>
+<span id="cb143-3"><a href="tree_spatial.html#cb143-3" tabindex="-1"></a>  dta <span class="ot">=</span> trees <span class="sc">%&gt;%</span> </span>
+<span id="cb143-4"><a href="tree_spatial.html#cb143-4" tabindex="-1"></a>    sf<span class="sc">::</span><span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb143-5"><a href="tree_spatial.html#cb143-5" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">group_by</span>(suid,clump_n_trees_grp) <span class="sc">%&gt;%</span></span>
+<span id="cb143-6"><a href="tree_spatial.html#cb143-6" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
+<span id="cb143-7"><a href="tree_spatial.html#cb143-7" tabindex="-1"></a>      <span class="co"># summary metrics</span></span>
+<span id="cb143-8"><a href="tree_spatial.html#cb143-8" tabindex="-1"></a>      <span class="at">n_trees =</span> dplyr<span class="sc">::</span><span class="fu">n_distinct</span>(treeID)</span>
+<span id="cb143-9"><a href="tree_spatial.html#cb143-9" tabindex="-1"></a>      , <span class="at">mean_dbh_cm =</span> <span class="fu">mean</span>(dbh_cm, <span class="at">na.rm =</span> T)</span>
+<span id="cb143-10"><a href="tree_spatial.html#cb143-10" tabindex="-1"></a>      , <span class="at">mean_tree_height_m =</span> <span class="fu">mean</span>(tree_height_m, <span class="at">na.rm =</span> T)</span>
+<span id="cb143-11"><a href="tree_spatial.html#cb143-11" tabindex="-1"></a>      , <span class="at">loreys_height_m =</span> <span class="fu">sum</span>(basal_area_m2<span class="sc">*</span>tree_height_m, <span class="at">na.rm =</span> T) <span class="sc">/</span> <span class="fu">sum</span>(basal_area_m2, <span class="at">na.rm =</span> T)</span>
+<span id="cb143-12"><a href="tree_spatial.html#cb143-12" tabindex="-1"></a>      , <span class="at">basal_area_m2 =</span> <span class="fu">sum</span>(basal_area_m2, <span class="at">na.rm =</span> T)</span>
+<span id="cb143-13"><a href="tree_spatial.html#cb143-13" tabindex="-1"></a>      , <span class="at">sum_dbh_cm_sq =</span> <span class="fu">sum</span>(dbh_cm<span class="sc">^</span><span class="dv">2</span>, <span class="at">na.rm =</span> T)</span>
+<span id="cb143-14"><a href="tree_spatial.html#cb143-14" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span></span>
+<span id="cb143-15"><a href="tree_spatial.html#cb143-15" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">ungroup</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb143-16"><a href="tree_spatial.html#cb143-16" tabindex="-1"></a>    <span class="co"># attach clump area</span></span>
+<span id="cb143-17"><a href="tree_spatial.html#cb143-17" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">left_join</span>(</span>
+<span id="cb143-18"><a href="tree_spatial.html#cb143-18" tabindex="-1"></a>      clumps <span class="sc">%&gt;%</span> </span>
+<span id="cb143-19"><a href="tree_spatial.html#cb143-19" tabindex="-1"></a>        sf<span class="sc">::</span><span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb143-20"><a href="tree_spatial.html#cb143-20" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">group_by</span>(suid,clump_n_trees_grp) <span class="sc">%&gt;%</span></span>
+<span id="cb143-21"><a href="tree_spatial.html#cb143-21" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">summarise</span>(<span class="at">clump_area_ha =</span> <span class="fu">sum</span>(clump_area_ha))</span>
+<span id="cb143-22"><a href="tree_spatial.html#cb143-22" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
+<span id="cb143-23"><a href="tree_spatial.html#cb143-23" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb143-24"><a href="tree_spatial.html#cb143-24" tabindex="-1"></a>      <span class="at">trees_per_ha =</span> (n_trees<span class="sc">/</span>clump_area_ha)</span>
+<span id="cb143-25"><a href="tree_spatial.html#cb143-25" tabindex="-1"></a>      , <span class="at">basal_area_m2_per_ha =</span> (basal_area_m2<span class="sc">/</span>clump_area_ha)</span>
+<span id="cb143-26"><a href="tree_spatial.html#cb143-26" tabindex="-1"></a>      , <span class="at">pct_stand_basal_area =</span> basal_area_m2<span class="sc">/</span><span class="fu">sum</span>(basal_area_m2)<span class="sc">*</span><span class="dv">100</span></span>
+<span id="cb143-27"><a href="tree_spatial.html#cb143-27" tabindex="-1"></a>      , <span class="at">qmd_cm =</span> <span class="fu">sqrt</span>(sum_dbh_cm_sq<span class="sc">/</span>n_trees)</span>
+<span id="cb143-28"><a href="tree_spatial.html#cb143-28" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span></span>
+<span id="cb143-29"><a href="tree_spatial.html#cb143-29" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(sum_dbh_cm_sq)) <span class="sc">%&gt;%</span></span>
+<span id="cb143-30"><a href="tree_spatial.html#cb143-30" tabindex="-1"></a>    <span class="co"># convert to imperial units</span></span>
+<span id="cb143-31"><a href="tree_spatial.html#cb143-31" tabindex="-1"></a>    <span class="fu">calc_imperial_units_fn</span>()</span>
+<span id="cb143-32"><a href="tree_spatial.html#cb143-32" tabindex="-1"></a>  <span class="co"># return</span></span>
+<span id="cb143-33"><a href="tree_spatial.html#cb143-33" tabindex="-1"></a>  <span class="fu">return</span>(dta)</span>
+<span id="cb143-34"><a href="tree_spatial.html#cb143-34" tabindex="-1"></a>}</span>
+<span id="cb143-35"><a href="tree_spatial.html#cb143-35" tabindex="-1"></a><span class="co"># call it</span></span>
+<span id="cb143-36"><a href="tree_spatial.html#cb143-36" tabindex="-1"></a>clump_n_trees_grp_summary_temp <span class="ot">=</span> <span class="fu">get_clump_n_trees_grp_summary</span>(</span>
+<span id="cb143-37"><a href="tree_spatial.html#cb143-37" tabindex="-1"></a>  <span class="at">trees =</span> <span class="fu">get_tree_clumps</span>(<span class="at">my_suid =</span> my_suid, <span class="at">tree_clump_dist_m =</span> tree_clump_dist_m)</span>
+<span id="cb143-38"><a href="tree_spatial.html#cb143-38" tabindex="-1"></a>  , <span class="at">clumps =</span> <span class="fu">get_clump_summary</span>(</span>
+<span id="cb143-39"><a href="tree_spatial.html#cb143-39" tabindex="-1"></a>    <span class="fu">get_tree_clumps</span>(<span class="at">my_suid =</span> my_suid, <span class="at">tree_clump_dist_m =</span> tree_clump_dist_m)</span>
+<span id="cb143-40"><a href="tree_spatial.html#cb143-40" tabindex="-1"></a>  )</span>
+<span id="cb143-41"><a href="tree_spatial.html#cb143-41" tabindex="-1"></a>) </span>
+<span id="cb143-42"><a href="tree_spatial.html#cb143-42" tabindex="-1"></a><span class="co"># what?</span></span>
+<span id="cb143-43"><a href="tree_spatial.html#cb143-43" tabindex="-1"></a>clump_n_trees_grp_summary_temp <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">glimpse</span>()</span></code></pre></div>
+<pre><code>## Rows: 5
+## Columns: 20
+## $ suid                  &lt;chr&gt; &quot;0203088082660001000&quot;, &quot;0203088082660001000&quot;, &quot;0…
+## $ clump_n_trees_grp     &lt;ord&gt; Individual, 2-4 trees, 5-9 trees, 10-15 trees, &gt;…
+## $ n_trees               &lt;int&gt; 204, 376, 499, 331, 335
+## $ mean_dbh_cm           &lt;dbl&gt; 27.54022, 27.97631, 26.46714, 25.98684, 24.79742
+## $ mean_tree_height_m    &lt;dbl&gt; 13.33182, 13.46433, 12.82304, 12.65970, 12.17030
+## $ loreys_height_m       &lt;dbl&gt; 15.23428, 15.10414, 14.02235, 13.85221, 12.82826
+## $ basal_area_m2         &lt;dbl&gt; 13.18663, 24.84272, 29.04775, 18.49339, 16.70802
+## $ clump_area_ha         &lt;dbl&gt; 0.5765329, 0.9210375, 1.1692474, 0.7276327, 0.72…
+## $ trees_per_ha          &lt;dbl&gt; 353.8393, 408.2353, 426.7703, 454.8998, 464.1924
+## $ basal_area_m2_per_ha  &lt;dbl&gt; 22.87230, 26.97254, 24.84312, 25.41583, 23.15145
+## $ pct_stand_basal_area  &lt;dbl&gt; 12.89287, 24.28928, 28.40064, 18.08140, 16.33581
+## $ qmd_cm                &lt;dbl&gt; 28.68844, 29.00419, 27.22457, 26.67161, 25.19969
+## $ mean_dbh_in           &lt;dbl&gt; 10.850846, 11.022666, 10.428052, 10.238814, 9.77…
+## $ qmd_in                &lt;dbl&gt; 11.303245, 11.427649, 10.726481, 10.508616, 9.92…
+## $ mean_tree_height_ft   &lt;dbl&gt; 43.72837, 44.16300, 42.05958, 41.52383, 39.91860
+## $ loreys_height_ft      &lt;dbl&gt; 49.96845, 49.54158, 45.99330, 45.43526, 42.07670
+## $ basal_area_ft2_per_ac &lt;dbl&gt; 99.70034, 117.57329, 108.29116, 110.78759, 100.9…
+## $ trees_per_ac          &lt;dbl&gt; 143.3049, 165.3353, 172.8420, 184.2344, 187.9979
+## $ clump_area_ac         &lt;dbl&gt; 1.424613, 2.275884, 2.889210, 1.797980, 1.783280
+## $ basal_area_ft2        &lt;dbl&gt; 141.9409, 267.4070, 312.6700, 199.0628, 179.8451</code></pre>
+<p>summary table</p>
+<div class="sourceCode" id="cb145"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb145-1"><a href="tree_spatial.html#cb145-1" tabindex="-1"></a><span class="co"># table it</span></span>
+<span id="cb145-2"><a href="tree_spatial.html#cb145-2" tabindex="-1"></a>clump_n_trees_grp_summary_temp <span class="sc">%&gt;%</span> </span>
+<span id="cb145-3"><a href="tree_spatial.html#cb145-3" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(</span>
+<span id="cb145-4"><a href="tree_spatial.html#cb145-4" tabindex="-1"></a>    clump_n_trees_grp, n_trees</span>
+<span id="cb145-5"><a href="tree_spatial.html#cb145-5" tabindex="-1"></a>    , tidyselect<span class="sc">::</span><span class="fu">ends_with</span>(<span class="st">&quot;_in&quot;</span>)</span>
+<span id="cb145-6"><a href="tree_spatial.html#cb145-6" tabindex="-1"></a>    , tidyselect<span class="sc">::</span><span class="fu">ends_with</span>(<span class="st">&quot;_ft&quot;</span>)</span>
+<span id="cb145-7"><a href="tree_spatial.html#cb145-7" tabindex="-1"></a>    , trees_per_ac</span>
+<span id="cb145-8"><a href="tree_spatial.html#cb145-8" tabindex="-1"></a>    , basal_area_ft2_per_ac, pct_stand_basal_area</span>
+<span id="cb145-9"><a href="tree_spatial.html#cb145-9" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb145-10"><a href="tree_spatial.html#cb145-10" tabindex="-1"></a>  kableExtra<span class="sc">::</span><span class="fu">kbl</span>(</span>
+<span id="cb145-11"><a href="tree_spatial.html#cb145-11" tabindex="-1"></a>    <span class="at">digits =</span> <span class="dv">1</span></span>
+<span id="cb145-12"><a href="tree_spatial.html#cb145-12" tabindex="-1"></a>    , <span class="at">escape =</span> F</span>
+<span id="cb145-13"><a href="tree_spatial.html#cb145-13" tabindex="-1"></a>    , <span class="at">caption =</span> <span class="fu">paste0</span>(<span class="st">&quot;Overstory (&gt;&quot;</span>, ostory_ht_m, <span class="st">&quot; m) tree clump summary&lt;br&gt;&quot;</span>, <span class="st">&quot;stand suid: &quot;</span>, clump_n_trees_grp_summary_temp<span class="sc">$</span>suid[<span class="dv">1</span>])</span>
+<span id="cb145-14"><a href="tree_spatial.html#cb145-14" tabindex="-1"></a>    , <span class="at">col.names =</span> <span class="fu">c</span>(</span>
+<span id="cb145-15"><a href="tree_spatial.html#cb145-15" tabindex="-1"></a>      <span class="st">&quot;&quot;</span>, <span class="st">&quot;trees&quot;</span></span>
+<span id="cb145-16"><a href="tree_spatial.html#cb145-16" tabindex="-1"></a>      , <span class="st">&quot;mean&lt;br&gt;DBH (in)&quot;</span></span>
+<span id="cb145-17"><a href="tree_spatial.html#cb145-17" tabindex="-1"></a>      , <span class="st">&quot;QMD (in)&quot;</span></span>
+<span id="cb145-18"><a href="tree_spatial.html#cb145-18" tabindex="-1"></a>      , <span class="st">&quot;mean&lt;br&gt;Ht. (ft)&quot;</span></span>
+<span id="cb145-19"><a href="tree_spatial.html#cb145-19" tabindex="-1"></a>      , <span class="st">&quot;Loreys&lt;br&gt;Ht. (ft)&quot;</span></span>
+<span id="cb145-20"><a href="tree_spatial.html#cb145-20" tabindex="-1"></a>      , <span class="st">&quot;TPA&quot;</span></span>
+<span id="cb145-21"><a href="tree_spatial.html#cb145-21" tabindex="-1"></a>      , <span class="st">&quot;BA&lt;br&gt;ft&lt;sup&gt;2&lt;/sup&gt; ac&lt;sup&gt;-1&lt;/sup&gt;&quot;</span></span>
+<span id="cb145-22"><a href="tree_spatial.html#cb145-22" tabindex="-1"></a>      , <span class="st">&quot;%&lt;br&gt;stand BA&quot;</span></span>
+<span id="cb145-23"><a href="tree_spatial.html#cb145-23" tabindex="-1"></a>      )</span>
+<span id="cb145-24"><a href="tree_spatial.html#cb145-24" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb145-25"><a href="tree_spatial.html#cb145-25" tabindex="-1"></a>  kableExtra<span class="sc">::</span><span class="fu">kable_styling</span>()</span></code></pre></div>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-50">Table 9.1: </span>Overstory (&gt;9 m) tree clump summary<br>stand suid: 0203088082660001000
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+trees
+</th>
+<th style="text-align:right;">
+mean<br>DBH (in)
+</th>
+<th style="text-align:right;">
+QMD (in)
+</th>
+<th style="text-align:right;">
+mean<br>Ht. (ft)
+</th>
+<th style="text-align:right;">
+Loreys<br>Ht. (ft)
+</th>
+<th style="text-align:right;">
+TPA
+</th>
+<th style="text-align:right;">
+BA<br>ft<sup>2</sup> ac<sup>-1</sup>
+</th>
+<th style="text-align:right;">
+%<br>stand BA
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Individual
+</td>
+<td style="text-align:right;">
+204
+</td>
+<td style="text-align:right;">
+10.9
+</td>
+<td style="text-align:right;">
+11.3
+</td>
+<td style="text-align:right;">
+43.7
+</td>
+<td style="text-align:right;">
+50.0
+</td>
+<td style="text-align:right;">
+143.3
+</td>
+<td style="text-align:right;">
+99.7
+</td>
+<td style="text-align:right;">
+12.9
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2-4 trees
+</td>
+<td style="text-align:right;">
+376
+</td>
+<td style="text-align:right;">
+11.0
+</td>
+<td style="text-align:right;">
+11.4
+</td>
+<td style="text-align:right;">
+44.2
+</td>
+<td style="text-align:right;">
+49.5
+</td>
+<td style="text-align:right;">
+165.3
+</td>
+<td style="text-align:right;">
+117.6
+</td>
+<td style="text-align:right;">
+24.3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+5-9 trees
+</td>
+<td style="text-align:right;">
+499
+</td>
+<td style="text-align:right;">
+10.4
+</td>
+<td style="text-align:right;">
+10.7
+</td>
+<td style="text-align:right;">
+42.1
+</td>
+<td style="text-align:right;">
+46.0
+</td>
+<td style="text-align:right;">
+172.8
+</td>
+<td style="text-align:right;">
+108.3
+</td>
+<td style="text-align:right;">
+28.4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+10-15 trees
+</td>
+<td style="text-align:right;">
+331
+</td>
+<td style="text-align:right;">
+10.2
+</td>
+<td style="text-align:right;">
+10.5
+</td>
+<td style="text-align:right;">
+41.5
+</td>
+<td style="text-align:right;">
+45.4
+</td>
+<td style="text-align:right;">
+184.2
+</td>
+<td style="text-align:right;">
+110.8
+</td>
+<td style="text-align:right;">
+18.1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+&gt;15 trees
+</td>
+<td style="text-align:right;">
+335
+</td>
+<td style="text-align:right;">
+9.8
+</td>
+<td style="text-align:right;">
+9.9
+</td>
+<td style="text-align:right;">
+39.9
+</td>
+<td style="text-align:right;">
+42.1
+</td>
+<td style="text-align:right;">
+188.0
+</td>
+<td style="text-align:right;">
+100.9
+</td>
+<td style="text-align:right;">
+16.3
+</td>
+</tr>
+</tbody>
+</table>
+<p>plot it</p>
+<div class="sourceCode" id="cb146"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb146-1"><a href="tree_spatial.html#cb146-1" tabindex="-1"></a>clump_n_trees_grp_summary_temp <span class="sc">%&gt;%</span> </span>
+<span id="cb146-2"><a href="tree_spatial.html#cb146-2" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(</span>
+<span id="cb146-3"><a href="tree_spatial.html#cb146-3" tabindex="-1"></a>    clump_n_trees_grp, n_trees</span>
+<span id="cb146-4"><a href="tree_spatial.html#cb146-4" tabindex="-1"></a>    , tidyselect<span class="sc">::</span><span class="fu">ends_with</span>(<span class="st">&quot;_in&quot;</span>)</span>
+<span id="cb146-5"><a href="tree_spatial.html#cb146-5" tabindex="-1"></a>    , tidyselect<span class="sc">::</span><span class="fu">ends_with</span>(<span class="st">&quot;_ft&quot;</span>)</span>
+<span id="cb146-6"><a href="tree_spatial.html#cb146-6" tabindex="-1"></a>    , trees_per_ac</span>
+<span id="cb146-7"><a href="tree_spatial.html#cb146-7" tabindex="-1"></a>    , basal_area_ft2_per_ac, pct_stand_basal_area</span>
+<span id="cb146-8"><a href="tree_spatial.html#cb146-8" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb146-9"><a href="tree_spatial.html#cb146-9" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(</span>
+<span id="cb146-10"><a href="tree_spatial.html#cb146-10" tabindex="-1"></a>    <span class="at">cols =</span> <span class="sc">-</span><span class="fu">c</span>(clump_n_trees_grp)</span>
+<span id="cb146-11"><a href="tree_spatial.html#cb146-11" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb146-12"><a href="tree_spatial.html#cb146-12" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb146-13"><a href="tree_spatial.html#cb146-13" tabindex="-1"></a>    <span class="at">metric =</span> <span class="fu">factor</span>(</span>
+<span id="cb146-14"><a href="tree_spatial.html#cb146-14" tabindex="-1"></a>        name</span>
+<span id="cb146-15"><a href="tree_spatial.html#cb146-15" tabindex="-1"></a>        , <span class="at">ordered =</span> T</span>
+<span id="cb146-16"><a href="tree_spatial.html#cb146-16" tabindex="-1"></a>        , <span class="at">levels =</span> <span class="fu">c</span>(</span>
+<span id="cb146-17"><a href="tree_spatial.html#cb146-17" tabindex="-1"></a>            <span class="st">&quot;n_trees&quot;</span></span>
+<span id="cb146-18"><a href="tree_spatial.html#cb146-18" tabindex="-1"></a>            , <span class="st">&quot;mean_dbh_in&quot;</span></span>
+<span id="cb146-19"><a href="tree_spatial.html#cb146-19" tabindex="-1"></a>            , <span class="st">&quot;qmd_in&quot;</span></span>
+<span id="cb146-20"><a href="tree_spatial.html#cb146-20" tabindex="-1"></a>            , <span class="st">&quot;mean_tree_height_ft&quot;</span></span>
+<span id="cb146-21"><a href="tree_spatial.html#cb146-21" tabindex="-1"></a>            , <span class="st">&quot;loreys_height_ft&quot;</span></span>
+<span id="cb146-22"><a href="tree_spatial.html#cb146-22" tabindex="-1"></a>            , <span class="st">&quot;trees_per_ac&quot;</span></span>
+<span id="cb146-23"><a href="tree_spatial.html#cb146-23" tabindex="-1"></a>            , <span class="st">&quot;basal_area_ft2_per_ac&quot;</span></span>
+<span id="cb146-24"><a href="tree_spatial.html#cb146-24" tabindex="-1"></a>            , <span class="st">&quot;pct_stand_basal_area&quot;</span></span>
+<span id="cb146-25"><a href="tree_spatial.html#cb146-25" tabindex="-1"></a>          )</span>
+<span id="cb146-26"><a href="tree_spatial.html#cb146-26" tabindex="-1"></a>        , <span class="at">labels =</span> <span class="fu">c</span>(</span>
+<span id="cb146-27"><a href="tree_spatial.html#cb146-27" tabindex="-1"></a>            latex2exp<span class="sc">::</span><span class="fu">TeX</span>(<span class="st">&quot;Number of Trees&quot;</span>, <span class="at">output =</span> <span class="st">&quot;character&quot;</span>)</span>
+<span id="cb146-28"><a href="tree_spatial.html#cb146-28" tabindex="-1"></a>            , latex2exp<span class="sc">::</span><span class="fu">TeX</span>(<span class="st">&quot;Mean DBH (in)&quot;</span>, <span class="at">output =</span> <span class="st">&quot;character&quot;</span>)</span>
+<span id="cb146-29"><a href="tree_spatial.html#cb146-29" tabindex="-1"></a>            , latex2exp<span class="sc">::</span><span class="fu">TeX</span>(<span class="st">&quot;QMD (in)&quot;</span>, <span class="at">output =</span> <span class="st">&quot;character&quot;</span>)</span>
+<span id="cb146-30"><a href="tree_spatial.html#cb146-30" tabindex="-1"></a>            , latex2exp<span class="sc">::</span><span class="fu">TeX</span>(<span class="st">&quot;Mean Tree Height (ft)&quot;</span>, <span class="at">output =</span> <span class="st">&quot;character&quot;</span>)</span>
+<span id="cb146-31"><a href="tree_spatial.html#cb146-31" tabindex="-1"></a>            , latex2exp<span class="sc">::</span><span class="fu">TeX</span>(<span class="st">&quot;Lorey&#39;s Mean Height (ft)&quot;</span>, <span class="at">output =</span> <span class="st">&quot;character&quot;</span>)</span>
+<span id="cb146-32"><a href="tree_spatial.html#cb146-32" tabindex="-1"></a>            , latex2exp<span class="sc">::</span><span class="fu">TeX</span>(<span class="st">&quot;Trees $ac^{-1}$&quot;</span>)</span>
+<span id="cb146-33"><a href="tree_spatial.html#cb146-33" tabindex="-1"></a>            , latex2exp<span class="sc">::</span><span class="fu">TeX</span>(<span class="st">&quot;Basal Area $ft^{2} </span><span class="sc">\\</span><span class="st">cdot ac^{-1}$&quot;</span>)</span>
+<span id="cb146-34"><a href="tree_spatial.html#cb146-34" tabindex="-1"></a>            , latex2exp<span class="sc">::</span><span class="fu">TeX</span>(<span class="st">&quot;% stand BA&quot;</span>, <span class="at">output =</span> <span class="st">&quot;character&quot;</span>)</span>
+<span id="cb146-35"><a href="tree_spatial.html#cb146-35" tabindex="-1"></a>          )</span>
+<span id="cb146-36"><a href="tree_spatial.html#cb146-36" tabindex="-1"></a>      )</span>
+<span id="cb146-37"><a href="tree_spatial.html#cb146-37" tabindex="-1"></a>    , <span class="at">clump_n_trees_grp =</span> forcats<span class="sc">::</span><span class="fu">fct_rev</span>(clump_n_trees_grp)</span>
+<span id="cb146-38"><a href="tree_spatial.html#cb146-38" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb146-39"><a href="tree_spatial.html#cb146-39" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="at">mapping =</span> <span class="fu">aes</span>(</span>
+<span id="cb146-40"><a href="tree_spatial.html#cb146-40" tabindex="-1"></a>      <span class="at">x =</span> value, <span class="at">y =</span> clump_n_trees_grp</span>
+<span id="cb146-41"><a href="tree_spatial.html#cb146-41" tabindex="-1"></a>      , <span class="at">fill =</span> name, <span class="at">label =</span> scales<span class="sc">::</span><span class="fu">number</span>(value, <span class="at">accuracy =</span> <span class="fl">0.1</span>)</span>
+<span id="cb146-42"><a href="tree_spatial.html#cb146-42" tabindex="-1"></a>    )</span>
+<span id="cb146-43"><a href="tree_spatial.html#cb146-43" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb146-44"><a href="tree_spatial.html#cb146-44" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">width =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb146-45"><a href="tree_spatial.html#cb146-45" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="at">color =</span> <span class="st">&quot;black&quot;</span>, <span class="at">size =</span> <span class="fl">3.5</span>, <span class="at">hjust =</span> <span class="sc">-</span><span class="fl">0.1</span>) <span class="sc">+</span></span>
+<span id="cb146-46"><a href="tree_spatial.html#cb146-46" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="at">facets =</span> <span class="fu">vars</span>(metric), <span class="at">ncol =</span> <span class="dv">2</span>, <span class="at">scales =</span> <span class="st">&quot;free_x&quot;</span>, <span class="at">labeller =</span> label_parsed) <span class="sc">+</span></span>
+<span id="cb146-47"><a href="tree_spatial.html#cb146-47" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">option =</span> <span class="st">&quot;cividis&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.9</span>) <span class="sc">+</span></span>
+<span id="cb146-48"><a href="tree_spatial.html#cb146-48" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">expand =</span> <span class="fu">expansion</span>(<span class="at">mult =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="fl">0.1</span>))) <span class="sc">+</span></span>
+<span id="cb146-49"><a href="tree_spatial.html#cb146-49" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb146-50"><a href="tree_spatial.html#cb146-50" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;&quot;</span>, <span class="at">y =</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb146-51"><a href="tree_spatial.html#cb146-51" tabindex="-1"></a>    , <span class="at">subtitle =</span> <span class="fu">paste0</span>(</span>
+<span id="cb146-52"><a href="tree_spatial.html#cb146-52" tabindex="-1"></a>      <span class="st">&quot;Overstory (&gt;&quot;</span></span>
+<span id="cb146-53"><a href="tree_spatial.html#cb146-53" tabindex="-1"></a>      , ostory_ht_m</span>
+<span id="cb146-54"><a href="tree_spatial.html#cb146-54" tabindex="-1"></a>      , <span class="st">&quot; m) tree clump summary</span><span class="sc">\n</span><span class="st">&quot;</span></span>
+<span id="cb146-55"><a href="tree_spatial.html#cb146-55" tabindex="-1"></a>      , <span class="st">&quot;stand suid: &quot;</span></span>
+<span id="cb146-56"><a href="tree_spatial.html#cb146-56" tabindex="-1"></a>      , clump_n_trees_grp_summary_temp<span class="sc">$</span>suid[<span class="dv">1</span>])</span>
+<span id="cb146-57"><a href="tree_spatial.html#cb146-57" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb146-58"><a href="tree_spatial.html#cb146-58" tabindex="-1"></a>  <span class="fu">theme_light</span>() <span class="sc">+</span></span>
+<span id="cb146-59"><a href="tree_spatial.html#cb146-59" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb146-60"><a href="tree_spatial.html#cb146-60" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">&quot;none&quot;</span></span>
+<span id="cb146-61"><a href="tree_spatial.html#cb146-61" tabindex="-1"></a>    , <span class="at">strip.text =</span> <span class="fu">element_text</span>(<span class="at">color =</span> <span class="st">&quot;black&quot;</span>, <span class="at">size =</span> <span class="dv">10</span>)</span>
+<span id="cb146-62"><a href="tree_spatial.html#cb146-62" tabindex="-1"></a>    , <span class="at">strip.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="st">&quot;gray88&quot;</span>)</span>
+<span id="cb146-63"><a href="tree_spatial.html#cb146-63" tabindex="-1"></a>    , <span class="at">axis.text.y =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">&quot;bold&quot;</span>)</span>
+<span id="cb146-64"><a href="tree_spatial.html#cb146-64" tabindex="-1"></a>    , <span class="at">axis.ticks.y =</span> <span class="fu">element_blank</span>()</span>
+<span id="cb146-65"><a href="tree_spatial.html#cb146-65" tabindex="-1"></a>    , <span class="at">panel.grid.major.y =</span> <span class="fu">element_blank</span>()</span>
+<span id="cb146-66"><a href="tree_spatial.html#cb146-66" tabindex="-1"></a>    , <span class="at">panel.grid.minor.y =</span> <span class="fu">element_blank</span>()</span>
+<span id="cb146-67"><a href="tree_spatial.html#cb146-67" tabindex="-1"></a>  )</span></code></pre></div>
+<p><img src="bhef_uas_202306_files/figure-html/unnamed-chunk-51-1.png" width="1008" /></p>
+</div>
+</div>
+<div id="ico-implementation" class="section level2 hasAnchor" number="9.2">
+<h2><span class="header-section-number">9.2</span> ICO Implementation<a href="tree_spatial.html#ico-implementation" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p><a href="https://scholarworks.umt.edu/ico/3">Churchill et al. (2016)</a> describe the full process for implementing the ICO approach in <em><a href="https://scholarworks.umt.edu/ico/3">The ICO Approach to Quantifying and Restoring Forest Spatial Pattern: Implementation Guide</a></em> in which the authors lay out the prescription development process:</p>
+<ol style="list-style-type: decimal">
+<li>Identify skips and other special treatment areas</li>
+<li>Consider the need for openings</li>
+<li>Determine the stand average density target</li>
+<li>Determine the appropriate distance to define clumps</li>
+<li>Obtain targets for clump proportions</li>
+<li>Select target clump proportions for your stand</li>
+<li>Generate clump targets for the whole unit</li>
+<li>Combine clump and opening targets with leave tree criteria into marking guidelines</li>
+</ol>
+<p>The objective here is to: 1) provide the manager with the current conditions (completed above); 2) take the “targets” as set by the manager (steps 3, 5, 6, 7); 3) create the prescription with the leave tree marking.</p>
+<p>We’ll focus on the minimum required metrics needed to implement this prescription development process.</p>
+<div id="determine-the-stand-average-density-target" class="section level3 hasAnchor" number="9.2.1">
+<h3><span class="header-section-number">9.2.1</span> 3. Determine the stand average density target<a href="tree_spatial.html#determine-the-stand-average-density-target" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Step 3 in <a href="https://scholarworks.umt.edu/ico/3">Churchill et al. (2016)</a>:</p>
+<blockquote>
+<p>An average BA, TPA, or SDI target for the stand should be selected that is appropriate for the species, structure, site conditions, and management objectives. Expected mortality from prescribed fire should be factored in. Stand average targets can come from historical reference stands, plant association based stocking guides, density management tools, or a combination of both (see Franklin et al. (2013) for a full discussion of setting density targets). In dry forests, the number and size of old trees must be accounted in setting the density target. To use the ICO method, the target must be converted to TPA (see Table 1). A lower diameter cutoff also needs to be specified for the TPA target. This should be the lower limit in the contract or cutting guidelines given to the marking crew or contractor. (p.11)</p>
+</blockquote>
+<p>this is what Table 1 looks like with TPA values are derived from the formula:</p>
+<p><span class="math display">\[
+TPA = \frac{BA}{QMD^{2} \times 0.005454}
+\]</span></p>
+<div class="sourceCode" id="cb147"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb147-1"><a href="tree_spatial.html#cb147-1" tabindex="-1"></a>tidyr<span class="sc">::</span><span class="fu">crossing</span>(</span>
+<span id="cb147-2"><a href="tree_spatial.html#cb147-2" tabindex="-1"></a>    <span class="at">ba =</span> <span class="fu">seq</span>(<span class="dv">40</span>,<span class="dv">200</span>,<span class="dv">20</span>)</span>
+<span id="cb147-3"><a href="tree_spatial.html#cb147-3" tabindex="-1"></a>    , <span class="at">qmd =</span> <span class="fu">seq</span>(<span class="dv">8</span>,<span class="dv">20</span>,<span class="dv">2</span>)</span>
+<span id="cb147-4"><a href="tree_spatial.html#cb147-4" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb147-5"><a href="tree_spatial.html#cb147-5" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb147-6"><a href="tree_spatial.html#cb147-6" tabindex="-1"></a>    <span class="at">tpa =</span> <span class="fu">round</span>( ba<span class="sc">/</span>((qmd<span class="sc">^</span><span class="dv">2</span>)<span class="sc">*</span><span class="fl">0.005454</span>) )</span>
+<span id="cb147-7"><a href="tree_spatial.html#cb147-7" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb147-8"><a href="tree_spatial.html#cb147-8" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_wider</span>(<span class="at">names_from =</span> ba, <span class="at">values_from =</span> tpa) <span class="sc">%&gt;%</span> </span>
+<span id="cb147-9"><a href="tree_spatial.html#cb147-9" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">l =</span> <span class="st">&quot;QMD (in)&quot;</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb147-10"><a href="tree_spatial.html#cb147-10" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">relocate</span>(l) <span class="sc">%&gt;%</span> </span>
+<span id="cb147-11"><a href="tree_spatial.html#cb147-11" tabindex="-1"></a>  kableExtra<span class="sc">::</span><span class="fu">kbl</span>(</span>
+<span id="cb147-12"><a href="tree_spatial.html#cb147-12" tabindex="-1"></a>    <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">&quot;.&quot;</span>,<span class="st">&quot;&quot;</span>, <span class="fu">seq</span>(<span class="dv">40</span>,<span class="dv">200</span>,<span class="dv">20</span>))</span>
+<span id="cb147-13"><a href="tree_spatial.html#cb147-13" tabindex="-1"></a>    , <span class="at">escape =</span> F</span>
+<span id="cb147-14"><a href="tree_spatial.html#cb147-14" tabindex="-1"></a>    , <span class="at">caption =</span> <span class="st">&quot;Basal Area and QMD to TPA conversion chart&quot;</span></span>
+<span id="cb147-15"><a href="tree_spatial.html#cb147-15" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb147-16"><a href="tree_spatial.html#cb147-16" tabindex="-1"></a>  kableExtra<span class="sc">::</span><span class="fu">add_header_above</span>(</span>
+<span id="cb147-17"><a href="tree_spatial.html#cb147-17" tabindex="-1"></a>    <span class="fu">c</span>(<span class="st">&quot;&quot;</span>,<span class="st">&quot;&quot;</span>, <span class="st">&quot;Basal Area (ft2/ac)&quot;</span><span class="ot">=</span><span class="fu">length</span>(<span class="fu">seq</span>(<span class="dv">40</span>,<span class="dv">200</span>,<span class="dv">20</span>)))</span>
+<span id="cb147-18"><a href="tree_spatial.html#cb147-18" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb147-19"><a href="tree_spatial.html#cb147-19" tabindex="-1"></a>  kableExtra<span class="sc">::</span><span class="fu">kable_styling</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb147-20"><a href="tree_spatial.html#cb147-20" tabindex="-1"></a>  kableExtra<span class="sc">::</span><span class="fu">column_spec</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, <span class="at">bold =</span> T) <span class="sc">%&gt;%</span></span>
+<span id="cb147-21"><a href="tree_spatial.html#cb147-21" tabindex="-1"></a>  kableExtra<span class="sc">::</span><span class="fu">collapse_rows</span>(<span class="at">columns =</span> <span class="dv">1</span>, <span class="at">valign =</span> <span class="st">&quot;middle&quot;</span>)</span></code></pre></div>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-52">Table 9.2: </span>Basal Area and QMD to TPA conversion chart
+</caption>
+<thead>
+<tr>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="9">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Basal Area (ft2/ac)
+</div>
+</th>
+</tr>
+<tr>
+<th style="text-align:left;">
+.
+</th>
+<th style="text-align:right;">
+</th>
+<th style="text-align:right;">
+40
+</th>
+<th style="text-align:right;">
+60
+</th>
+<th style="text-align:right;">
+80
+</th>
+<th style="text-align:right;">
+100
+</th>
+<th style="text-align:right;">
+120
+</th>
+<th style="text-align:right;">
+140
+</th>
+<th style="text-align:right;">
+160
+</th>
+<th style="text-align:right;">
+180
+</th>
+<th style="text-align:right;">
+200
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;font-weight: bold;vertical-align: middle !important;" rowspan="7">
+QMD (in)
+</td>
+<td style="text-align:right;font-weight: bold;">
+8
+</td>
+<td style="text-align:right;">
+115
+</td>
+<td style="text-align:right;">
+172
+</td>
+<td style="text-align:right;">
+229
+</td>
+<td style="text-align:right;">
+286
+</td>
+<td style="text-align:right;">
+344
+</td>
+<td style="text-align:right;">
+401
+</td>
+<td style="text-align:right;">
+458
+</td>
+<td style="text-align:right;">
+516
+</td>
+<td style="text-align:right;">
+573
+</td>
+</tr>
+<tr>
+<td style="text-align:right;font-weight: bold;">
+10
+</td>
+<td style="text-align:right;">
+73
+</td>
+<td style="text-align:right;">
+110
+</td>
+<td style="text-align:right;">
+147
+</td>
+<td style="text-align:right;">
+183
+</td>
+<td style="text-align:right;">
+220
+</td>
+<td style="text-align:right;">
+257
+</td>
+<td style="text-align:right;">
+293
+</td>
+<td style="text-align:right;">
+330
+</td>
+<td style="text-align:right;">
+367
+</td>
+</tr>
+<tr>
+<td style="text-align:right;font-weight: bold;">
+12
+</td>
+<td style="text-align:right;">
+51
+</td>
+<td style="text-align:right;">
+76
+</td>
+<td style="text-align:right;">
+102
+</td>
+<td style="text-align:right;">
+127
+</td>
+<td style="text-align:right;">
+153
+</td>
+<td style="text-align:right;">
+178
+</td>
+<td style="text-align:right;">
+204
+</td>
+<td style="text-align:right;">
+229
+</td>
+<td style="text-align:right;">
+255
+</td>
+</tr>
+<tr>
+<td style="text-align:right;font-weight: bold;">
+14
+</td>
+<td style="text-align:right;">
+37
+</td>
+<td style="text-align:right;">
+56
+</td>
+<td style="text-align:right;">
+75
+</td>
+<td style="text-align:right;">
+94
+</td>
+<td style="text-align:right;">
+112
+</td>
+<td style="text-align:right;">
+131
+</td>
+<td style="text-align:right;">
+150
+</td>
+<td style="text-align:right;">
+168
+</td>
+<td style="text-align:right;">
+187
+</td>
+</tr>
+<tr>
+<td style="text-align:right;font-weight: bold;">
+16
+</td>
+<td style="text-align:right;">
+29
+</td>
+<td style="text-align:right;">
+43
+</td>
+<td style="text-align:right;">
+57
+</td>
+<td style="text-align:right;">
+72
+</td>
+<td style="text-align:right;">
+86
+</td>
+<td style="text-align:right;">
+100
+</td>
+<td style="text-align:right;">
+115
+</td>
+<td style="text-align:right;">
+129
+</td>
+<td style="text-align:right;">
+143
+</td>
+</tr>
+<tr>
+<td style="text-align:right;font-weight: bold;">
+18
+</td>
+<td style="text-align:right;">
+23
+</td>
+<td style="text-align:right;">
+34
+</td>
+<td style="text-align:right;">
+45
+</td>
+<td style="text-align:right;">
+57
+</td>
+<td style="text-align:right;">
+68
+</td>
+<td style="text-align:right;">
+79
+</td>
+<td style="text-align:right;">
+91
+</td>
+<td style="text-align:right;">
+102
+</td>
+<td style="text-align:right;">
+113
+</td>
+</tr>
+<tr>
+<td style="text-align:right;font-weight: bold;">
+20
+</td>
+<td style="text-align:right;">
+18
+</td>
+<td style="text-align:right;">
+28
+</td>
+<td style="text-align:right;">
+37
+</td>
+<td style="text-align:right;">
+46
+</td>
+<td style="text-align:right;">
+55
+</td>
+<td style="text-align:right;">
+64
+</td>
+<td style="text-align:right;">
+73
+</td>
+<td style="text-align:right;">
+83
+</td>
+<td style="text-align:right;">
+92
+</td>
+</tr>
+</tbody>
+</table>
 
+</div>
+</div>
 </div>
             </section>
 

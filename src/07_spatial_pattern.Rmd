@@ -1,17 +1,22 @@
 # UAS Tree Spatial Arrangement{#tree_spatial}
 
+## Example Tree Group Workflow
+
 For now we'll just make a visual overview of the UAS-SfM forest inventory process to present at the 2024 National Silvicultural Workshop.
 
 ```{r}
 # focus on one harvest unit
 my_suid = harvests$suid[6]
 # ht for overstory
-ostory_ht_m_temp = 9
+ostory_ht_m = 9
+# maximum distance between trees for determining tree clumps
+  # stems within 6 m of one another were considered to have the potential for developing interlocking crowns
+tree_clump_dist_m = 6
 # where is this
 mapview::mapview(harvests %>% dplyr::filter(suid==my_suid), layer.name = "BHEF", label = FALSE, legend = FALSE, popup = FALSE)
 ```
 
-orthomosaic from UAS
+### Orthomosaic from UAS
 
 ```{r}
 ######################################################################################
@@ -126,7 +131,9 @@ ggplot2::ggsave("../data/NSW_02.jpeg", dpi = "print", height = 11, width = 5.8, 
 
 ```
 
-ITD
+### ITD
+
+individual trees detected from `lidR::locate_trees()`
 
 ```{r, include=FALSE,eval=FALSE}
 ortho_plt_fn(my_suid) + plt_chm_temp + 
@@ -159,7 +166,6 @@ ggplot2::ggsave("../data/NSW_03.jpeg", dpi = "print", height = 11, width = 5.8, 
 
 ```
 
-
 overstory/understory
 
 ```{r}
@@ -168,7 +174,7 @@ plt_ttops_temp = ortho_plt_fn(my_suid) +
     geom_sf(
       data = treetops_sf_with_dbh %>%
         dplyr::mutate(
-          ostory = ifelse(tree_height_m>=ostory_ht_m_temp,"overstory","understory")
+          ostory = ifelse(tree_height_m>=ostory_ht_m,"overstory","understory")
           , ostory_sz = ifelse(tree_height_m>=9,0.51,0.5)
         ) %>% 
         sf::st_intersection(harvests %>% dplyr::filter(suid==my_suid))
@@ -188,13 +194,24 @@ ggplot2::ggsave("../data/NSW_04.jpeg", dpi = "print", height = 11, width = 5.8, 
 
 ```
 
-spatial pattern
+### Tree Groups
+
+Identify tree groups using `dbscan::dbscan()` as outlined by [Hanna et al. (2024)](https://scholar.google.com/scholar?oi=bibs&hl=en&cluster=8254459212692276263): 
+
+>To evaluate the ability of UAS-extracted trees to characterize horizontal and vertical heterogeneity tree arrangement, clusters of trees were identifed within the stem-mapped and UAS trees. A cluster of trees was defned as two or more trees with the potential for interlocking crowns. Overstory trees on the stem maps generally had a crown radius of ~3.0 m, so stems within 6 m of one another were considered to have the potential for developing interlocking crowns. Density-based spatial clustering of applications with noise (DBSCAN) from the fpr package (Hahsler et al., 2019) in R was used to assign trees to unique clusters, including individual trees that were assigned by themselves if they did not have the potential to develop interlocking crowns (>6 m from another tree). (p. 529)
+
+>To analyze the efect of tree aggregation on tree attributes, the identifed trees and clusters were designated as an "individual" or as a cluster consisting of 2-4, 5-9, 10-15, and >15 trees. We then calculated the number of clusters, the percent of stand basal area, the height coefcient of variation, and the canopy area within the cluster size classes for each site. (p. 529-530)
+
+With repect to clump size groupings, [Churchill et al. (2016)](https://scholarworks.umt.edu/ico/3) note that:
+
+>Proportions for clump sizes should be lumped into four or five bins for operational simplicity. We use 4 or 5 bins (Fig 5): individual trees, small clumps (2-4 trees), medium clumps (5-9 trees), and large clumps (10-20+ trees). Note that when instructed to leave a large clump (e.g. 10-20 trees), marking crews often have difficulty leaving the upper end of the size range (e.g. an 18, 19, or 20 tree clump). Thus adding a fifth bin for “super clumps” may be necessary (e.g. 15-20 trees or 20-25+ trees), especially if the upper size range of clumps is desired. (p. 12-13)
 
 ```{r}
+# filter trees spatially based on unit id
 ttops_temp = treetops_sf_with_dbh %>%
-  dplyr::filter(tree_height_m>=ostory_ht_m_temp) %>% 
+  dplyr::filter(tree_height_m>=ostory_ht_m) %>% 
   dplyr::mutate(
-    ostory = ifelse(tree_height_m>=ostory_ht_m_temp,"overstory","understory")
+    ostory = ifelse(tree_height_m>=ostory_ht_m,"overstory","understory")
     , X = sf::st_coordinates(.)[,1] %>% as.numeric()
     , Y = sf::st_coordinates(.)[,2] %>% as.numeric()
   ) %>% 
@@ -202,36 +219,36 @@ ttops_temp = treetops_sf_with_dbh %>%
 #############################################################################
 ##### Identify clusters in each stem map plot                           #####
 #############################################################################
-### Place trees into clusters using and inter-tree distance of 6 m
-my_dbscan =  ttops_temp %>% 
+### Place trees into clusters using an inter-tree distance of 6 m
+my_dbscan_temp =  ttops_temp %>% 
   sf::st_drop_geometry() %>% 
   dplyr::select(X,Y) %>% 
-  dbscan::dbscan(eps = 6, MinPts = 2)
+  dbscan::dbscan(eps = tree_clump_dist_m, minPts = 2)
 
-# my_dbscan %>% str()
+# my_dbscan_temp %>% str()
 
 ### append cluster ID to trees
-ttops_temp$cluster = my_dbscan$cluster
+ttops_temp$dbscan_cluster = my_dbscan_temp$cluster
 # ttops_temp$cluster %>% summary()
 # ttops_temp %>% sf::st_drop_geometry() %>% dplyr::count(cluster) %>% dplyr::arrange(desc(n)) %>% dplyr::slice_head(n=11)
 
 ### cluster metrics
 ttops_temp = ttops_temp %>% 
-  dplyr::group_by(cluster) %>% 
+  dplyr::group_by(dbscan_cluster) %>% 
   dplyr::mutate(
-    # unique cluster for individuals
-    cluster_unq = dplyr::case_when(
-      cluster == 0 ~ max(my_dbscan$cluster)+dplyr::row_number()
-      , T ~ cluster
+    # unique dbscan_cluster for individuals
+    clump_id = dplyr::case_when(
+      dbscan_cluster == 0 ~ max(my_dbscan_temp$cluster)+dplyr::row_number()
+      , T ~ dbscan_cluster
     ) %>% 
     factor()
   ) %>% 
-  dplyr::group_by(cluster_unq) %>% 
+  dplyr::group_by(clump_id) %>% 
   dplyr::mutate(
-    cluster = factor(cluster)
-    , cluster_n_trees = dplyr::n()
-    , cluster_grp = cut(
-        cluster_n_trees
+    dbscan_cluster = factor(dbscan_cluster)
+    , clump_n_trees = dplyr::n()
+    , clump_n_trees_grp = cut(
+        clump_n_trees
         ,breaks = c(0,1,4,9,15,Inf)
         , labels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
       ) %>% 
@@ -241,20 +258,45 @@ ttops_temp = ttops_temp %>%
       )
   ) %>% 
   dplyr::ungroup()
-# ttops_temp %>% dplyr::glimpse()
+# what?
+ttops_temp %>% dplyr::glimpse()
 ```
 
-plot overstory tree clusters
+plot overstory tree clumps
+
+```{r, include=FALSE, eval=FALSE}
+c(
+  viridis::turbo(length(unique(ttops_temp$dbscan_cluster))/2 %>% round())
+  , viridis::plasma(length(unique(ttops_temp$dbscan_cluster))/2 %>% round(), end = 0.95)
+  , viridis::viridis(length(unique(ttops_temp$dbscan_cluster))/2 %>% round(), end = 0.9)
+  , viridis::cividis(length(unique(ttops_temp$dbscan_cluster))/2 %>% round(), end = 0.9)
+) %>%
+  sample() %>%
+  .[1:length(unique(ttops_temp$dbscan_cluster))-1] %>% 
+  scales::show_col(labels = F)
+```
 
 ```{r}
 plt_grps_temp = ortho_plt_fn(my_suid) +
     # treetops
     geom_sf(
       data = ttops_temp
-      , mapping = aes(color = cluster)
+      , mapping = aes(color = dbscan_cluster)
       , size = 1
     ) +
-    scale_color_manual(values = c("white",viridis::turbo(length(unique(ttops_temp$cluster))-1) %>% sample())) +
+    scale_color_manual(values = c(
+      "white"
+      , # get random list of colors from viridis and avoid whites
+        c(
+          viridis::turbo(length(unique(ttops_temp$dbscan_cluster))/2 %>% round())
+          , viridis::plasma(length(unique(ttops_temp$dbscan_cluster))/2 %>% round(), end = 0.95)
+          , viridis::viridis(length(unique(ttops_temp$dbscan_cluster))/2 %>% round(), end = 0.9)
+          , viridis::cividis(length(unique(ttops_temp$dbscan_cluster))/2 %>% round(), end = 0.9)
+        ) %>% 
+          sample() %>% 
+          .[1:length(unique(ttops_temp$dbscan_cluster))-1]
+      )
+    ) +
     # scale_color_viridis_d("turbo") +
     labs(subtitle = "\n overstory tree groups\n(individual trees in white)") +
     theme(
@@ -270,14 +312,14 @@ ggplot2::ggsave("../data/NSW_05.jpeg", dpi = "print", height = 11, width = 5.8, 
 
 ```
 
-and plot overstory tree clusters by number of trees
+and plot overstory tree clumps by number of trees
 
 ```{r}
 plt_grps_temp = ortho_plt_fn(my_suid) +
     # treetops
     geom_sf(
       data = ttops_temp
-      , mapping = aes(color = cluster_grp)
+      , mapping = aes(color = clump_n_trees_grp)
       , size = 1
     ) +
     scale_color_viridis_d(option="mako", direction = -1) + 
@@ -293,37 +335,555 @@ ggplot2::ggsave("../data/NSW_06.jpeg", dpi = "print", height = 11, width = 5.8, 
 
 ```
 
-```{r, include=FALSE,eval=FALSE}
+### Within Clump Distance
 
-dplyr::group_by(cluster) %>% 
-dplyr::mutate(
-  dist = map_dbl(1:nrow(d_sf), function(x){
-    x <- d_sf[x,]
-    y <- centers_sf[centers_sf$g == x$g,]
-    st_distance(x, y)
-  })
-)
+Determine nearest neighbor distance for the stand and within clusters. Some combination of these metrics has been used to describe relative aggregation. (*source?*)
 
-for(i in unique(tall.trees$stand)) {
-  stand.trees <- subset(tall.trees, stand == i)
-  stand.trees$NN_m <- nndist(stand.trees$X, stand.trees$Y, k=1)
-  
-  temp.trees <- rbind(temp.trees, stand.trees)
-}
+Calculate the distance to the nearest tree within each clump
 
-tall.trees <- temp.trees
-
-### Create boxplots of distance to nearest tree within different clump sizes
-ggplot(data = tall.trees, aes(y=NN_m, x = clump.size)) +
-  geom_boxplot() +
-  labs(x = "Clump Size", 
-       y = "Distance to Nearest Neighbor in Clump (m)",
-       title = paste0("Histogram of distance to nearest clump neighbor ", "\n" ,min_height," m height threshold")) +
-  facet_wrap(vars(stand)) +
-  theme_bw()
-
-### Save plots out using stem map plot name to the Figures folder
-ggsave(paste0("Figures/Distance_to_nearest_clump_neighbor_", min_height,"m_height_threshold.tiff"), width = 4, height = 3, dpi = 300)
+```{r}
+ttops_temp =
+  ttops_temp %>% 
+  dplyr::group_by(clump_id) %>%
+  tidyr::nest() %>% 
+  dplyr::mutate(
+    distance_clump_nn_m = purrr::map(data, function(x){
+      # get index of nearest neighbor
+      i = sf::st_nearest_feature(x)
+      # get dist
+      d = sf::st_distance(x, x[i,], by_element=TRUE) %>% as.numeric()
+      return(d)
+    })
+  ) %>% 
+  tidyr::unnest(cols = c(data, distance_clump_nn_m)) %>% 
+  sf::st_set_geometry("geom") %>% # set it cuz it got lost 
+  dplyr::ungroup()
+  # ggplot() + geom_point(aes(x=X,y=Y,color = distance_clump_nn_m)) + theme_light()
 ```
 
+plot it
+
+```{r}
+ortho_plt_fn(my_suid) +
+    # treetops
+    geom_sf(
+      data = ttops_temp
+      , mapping = aes(color = distance_clump_nn_m)
+      , size = 1
+    ) +
+    scale_color_viridis_c(option="viridis", na.value = "white") + 
+    labs(color = "within clump\nN.N. dist. (m)")
+```
+
+#### Create function to get tree list with clumps
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(list = ls()[grep("_temp",ls())])
+gc()
+```
+
+```{r}
+# create function to pass a unit id and return list of trees with clump groupings
+get_tree_clumps = function(my_suid, tree_clump_dist_m=6){
+  ttops_temp = treetops_sf_with_dbh %>%
+    dplyr::filter(tree_height_m>=ostory_ht_m) %>% 
+    dplyr::mutate(
+      ostory = ifelse(tree_height_m>=ostory_ht_m,"overstory","understory")
+      , X = sf::st_coordinates(.)[,1] %>% as.numeric()
+      , Y = sf::st_coordinates(.)[,2] %>% as.numeric()
+    ) %>% 
+    sf::st_intersection(harvests %>% dplyr::filter(suid==my_suid) %>% dplyr::select(suid))
+  #############################################################################
+  ##### Identify clusters in each stem map plot                           #####
+  #############################################################################
+  ### Place trees into clusters using an inter-tree distance of 6 m
+  my_dbscan_temp =  ttops_temp %>% 
+    sf::st_drop_geometry() %>% 
+    dplyr::select(X,Y) %>% 
+    dbscan::dbscan(eps = tree_clump_dist_m, minPts = 2)
+  
+  # my_dbscan_temp %>% str()
+  
+  ### append cluster ID to trees
+  ttops_temp$dbscan_cluster = my_dbscan_temp$cluster
+  # ttops_temp$cluster %>% summary()
+  # ttops_temp %>% sf::st_drop_geometry() %>% dplyr::count(cluster) %>% dplyr::arrange(desc(n)) %>% dplyr::slice_head(n=11)
+  
+  ### cluster metrics
+  ttops_temp = ttops_temp %>% 
+    dplyr::group_by(dbscan_cluster) %>% 
+    dplyr::mutate(
+      # unique dbscan_cluster for individuals
+      clump_id = dplyr::case_when(
+        dbscan_cluster == 0 ~ max(my_dbscan_temp$cluster)+dplyr::row_number()
+        , T ~ dbscan_cluster
+      ) %>% 
+      factor()
+    ) %>% 
+    dplyr::group_by(clump_id) %>% 
+    dplyr::mutate(
+      dbscan_cluster = factor(dbscan_cluster)
+      , clump_n_trees = dplyr::n()
+      , clump_n_trees_grp = cut(
+          clump_n_trees
+          ,breaks = c(0,1,4,9,15,Inf)
+          , labels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+        ) %>% 
+        factor(
+          ordered = T
+          , levels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+        )
+    ) %>% 
+    dplyr::ungroup()
+  # add distance to nearest within clump
+  ttops_temp =
+    ttops_temp %>% 
+    dplyr::group_by(clump_id) %>%
+    tidyr::nest() %>% 
+    dplyr::mutate(
+      distance_clump_nn_m = purrr::map(data, function(x){
+        # get index of nearest neighbor
+        i = sf::st_nearest_feature(x)
+        # get dist
+        d = sf::st_distance(x, x[i,], by_element=TRUE) %>% as.numeric()
+        return(d)
+      })
+    ) %>% 
+    tidyr::unnest(cols = c(data, distance_clump_nn_m)) %>% 
+    sf::st_set_geometry("geom") %>% # set it cuz it got lost 
+    dplyr::ungroup() %>% 
+    dplyr::mutate(tree_clump_dist_m = tree_clump_dist_m)
+  # return
+  return(ttops_temp)
+}
+# call it
+ttops_temp = get_tree_clumps(my_suid = my_suid, tree_clump_dist_m = tree_clump_dist_m)
+```
+
+### Clump Polygons and Metrics
+
+[Churchill et al. (2016)](https://scholarworks.umt.edu/ico/3) provide instructions for implementing the clump identification (Plotkin et al. 2002) in ArcGIS:
+
+>Use the Buffer tool (in the Proximity toolset within the Analysis toolbox) to create a buffer of distance d/2, one half the inter-tree distance, around each point. This quantity d/2 is meant to approximate the crown radius of a "typical" overstory tree. Set the Dissolve Type option to ALL, which dissolves overlapping buffers, creating a reduced set of spatially non-overlapping polygons stored as a multipart polygon feature...[Sanchez Meador et al. (2011)](https://scholar.google.com/scholar?cluster=15721451396848616769&oi=gsb&hl=en&as_sdt=0,6) provide some useful examples of how clump attributes can be summarized...The method described here can be modified to use measured or modeled crown radii for each tree in place of d/2 (p.36)
+
+```{r}
+# create function to pass a return from get_tree_clumps() and create clump polygons with summary stats
+get_clump_summary = function(dta){
+  # get tree_clump_dist_m
+  tree_clump_dist_m = min(dta$tree_clump_dist_m, na.rm = T)
+  # create clump polys and summary
+  clump_polys_temp = 
+    dta %>% 
+      dplyr::ungroup() %>% 
+      sf::st_set_geometry("geometry") %>% 
+      sf::st_buffer(tree_clump_dist_m/2) %>% 
+      dplyr::group_by(suid, clump_id, dbscan_cluster, clump_n_trees_grp) %>%
+      dplyr::summarise(
+        # union buffered tree points
+        geometry = sf::st_union(geometry)
+        # summary metrics
+        , n_trees = dplyr::n_distinct(treeID)
+        , mean_dbh_cm = mean(dbh_cm, na.rm = T)
+        , mean_tree_height_m = mean(tree_height_m, na.rm = T)
+        , loreys_height_m = sum(basal_area_m2*tree_height_m, na.rm = T) / sum(basal_area_m2, na.rm = T)
+        , basal_area_m2 = sum(basal_area_m2, na.rm = T)
+        , sum_dbh_cm_sq = sum(dbh_cm^2, na.rm = T)
+      ) %>%
+      dplyr::ungroup() %>% 
+      sf::st_make_valid() %>% 
+      dplyr::mutate(
+        clump_area_ha = sf::st_area(geometry) %>% as.numeric() %>% `/`(10000)
+        , trees_per_ha = (n_trees/clump_area_ha)
+        , basal_area_m2_per_ha = (basal_area_m2/clump_area_ha)
+        , pct_stand_basal_area = basal_area_m2/sum(basal_area_m2)
+        , qmd_cm = sqrt(sum_dbh_cm_sq/n_trees)
+      ) %>%
+      dplyr::select(-c(sum_dbh_cm_sq)) %>%
+      # convert to imperial units
+      calc_imperial_units_fn() %>% 
+      dplyr::mutate(tree_clump_dist_m = tree_clump_dist_m)
+  # return
+  return(clump_polys_temp)
+}
+# get it
+# clump_polys_temp = get_clump_summary(
+#   dta = get_tree_clumps(my_suid = my_suid, tree_clump_dist_m = tree_clump_dist_m)
+# )
+clump_polys_temp = get_clump_summary(ttops_temp)
+# what?
+clump_polys_temp %>% dplyr::glimpse()
+# do these numbers match
+identical(
+  # clump polys
+  nrow(clump_polys_temp)
+  # clumps in tree list data
+  , ttops_temp %>% dplyr::distinct(clump_id) %>% nrow()
+)
+```
+
+plot it
+
+```{r}
+ortho_plt_fn(my_suid) +
+  # clumps
+  ggnewscale::new_scale_fill() +
+  geom_sf(
+    data = clump_polys_temp
+    , mapping = aes(fill = dbscan_cluster)
+    , color = NA, alpha = 0.9
+  ) +
+  scale_fill_manual(values = c(
+    "white"
+    , # get random list of colors from viridis and avoid whites
+      c(
+        viridis::turbo(length(unique(ttops_temp$dbscan_cluster))/2 %>% round())
+        , viridis::plasma(length(unique(ttops_temp$dbscan_cluster))/2 %>% round(), end = 0.95)
+        , viridis::viridis(length(unique(ttops_temp$dbscan_cluster))/2 %>% round(), end = 0.9)
+        , viridis::cividis(length(unique(ttops_temp$dbscan_cluster))/2 %>% round(), end = 0.9)
+      ) %>% 
+        sample() %>% 
+        .[1:length(unique(ttops_temp$dbscan_cluster))-1]
+    )
+  ) +
+  labs(subtitle = "\n overstory tree group polygons\n(individual trees in white)") +
+  theme(
+    legend.position = "none"
+    , plot.subtitle = element_text(size = 9.5, hjust = 0.5, face = "bold")
+  )
+```
+
+### Clump Spacing
+
+See [Churchill et al. (2016)](https://scholarworks.umt.edu/ico/3) Figure 4 (p.10) and [Matonis and Binkley (2018)](https://scholar.google.com/scholar?cluster=14613232085713826018&hl=en&as_sdt=0,6) who "calculated coverage of mosaic-meadows (percentage of stand > 6 m from overstory trees)" (p. 124)
+
+Since we already buffered the tree points to approximate the crown radius, we'll continue to use our $d/2$ where $d$ is maximum distance between trees for determining tree clumps and is meant to approximate the crown radius of a "typical" overstory tree
+
+```{r}
+# create function to pass a return from get_clump_summary() and get a distance raster
+get_clump_dist_rast = function(dta){
+  # get tree_clump_dist_m
+  tree_clump_dist_m = min(dta$tree_clump_dist_m, na.rm = T)
+  # suid
+  my_suid = dta$suid[1]
+  # rasterize the clump polygons and then calculate distance between clumps as raster
+  dist_rast = 
+    terra::rasterize(
+        x = clump_polys_temp %>% terra::vect()
+        , y = clump_polys_temp %>% 
+          terra::vect() %>% 
+          terra::rast(res = 0.2)
+      ) %>% 
+      terra::distance() %>% 
+      # crop it to stand extent
+      terra::crop(
+        harvests %>% dplyr::filter(suid==my_suid) %>% 
+        terra::vect()
+      ) %>% 
+      terra::mask(
+        harvests %>% dplyr::filter(suid==my_suid) %>% 
+        terra::vect()
+      )
+  ######### part 2
+  # now create openings vector data
+  openings_vect = 
+    dist_rast %>% 
+      terra::classify(rcl = c(tree_clump_dist_m/2,Inf), others = NA, include.lowest = T) %>% 
+      terra::as.polygons(na.rm = T) %>% 
+      sf::st_as_sf() %>% 
+      sf::st_cast("POLYGON") %>% 
+      dplyr::mutate(layer = dplyr::row_number()) %>% 
+      dplyr::mutate(
+        openining_area_m2 = sf::st_area(geometry) %>% as.numeric()
+        , suid = my_suid
+        , tree_clump_dist_m = tree_clump_dist_m
+      )
+  
+  # return
+  return(list(dist_rast = dist_rast, openings_vect = openings_vect))
+}
+# get it
+dist_rast_temp = get_clump_dist_rast(clump_polys_temp)
+dist_rast_temp
+```
+
+plot the distance raster and openings vector data we just got with overlaid tree clumps and tree points
+
+```{r}
+plt_fnl_temp = 
+  ggplot() + 
+    # distance
+    geom_tile(
+      data = dist_rast_temp$dist_rast %>% terra::aggregate(2, cores = 4) %>% as.data.frame(xy = T) %>% rename(f=3)
+      , mapping = aes(x=x, y=y, fill = f)
+    ) +
+    scale_fill_distiller(
+      palette = "YlOrRd"
+      , na.value = "transparent"
+      , direction = 1
+      , name = "distance to\nnearest tree (m)"
+    ) +
+    # openings
+    geom_sf(data = dist_rast_temp$openings_vect, mapping = aes(color = openining_area_m2), fill = NA) +
+    scale_color_gradient(
+      low = "gray77", high = "gray11"
+      , labels = scales::comma_format(accuracy = 1)
+      , name = latex2exp::TeX("opening\narea ($\\m^2$)")
+    ) +
+    # clumps
+    ggnewscale::new_scale_fill() +
+    geom_sf(
+      data = clump_polys_temp
+      , mapping = aes(fill = clump_n_trees_grp)
+      , color = NA
+    ) +
+    scale_fill_viridis_d(option="mako", direction = -1, name = "clump size") + 
+    # tree points
+    geom_sf(data = ttops_temp, color = "gray88", shape = ".") +
+    theme_void()
+# plot
+plt_fnl_temp
+# save it
+ggplot2::ggsave("../data/NSW_07.jpeg", dpi = "print", height = 11, width = 5.8, device = "jpeg")
+```
+
+highlight the openings
+
+```{r}
+plt_open_temp = 
+  ggplot() + 
+      # clumps
+      geom_sf(
+        data = clump_polys_temp
+        , mapping = aes(fill = clump_n_trees_grp)
+        , color = NA
+      ) +
+      scale_fill_viridis_d(option="mako", direction = -1, name = "clump size") + 
+      # openings
+      ggnewscale::new_scale_fill() +
+      geom_sf(data = dist_rast_temp$openings_vect, mapping = aes(fill = openining_area_m2), color = NA) +
+      scale_fill_gradient(
+        low = "gray77", high = "gray11"
+        , labels = scales::comma_format(accuracy = 1)
+        , name = latex2exp::TeX("opening\narea ($\\m^2$)")
+      ) +
+      # tree points
+      geom_sf(data = ttops_temp, color = "gray88", shape = ".") +
+      theme_void()
+plt_open_temp
+# save it
+ggplot2::ggsave("../data/NSW_08.jpeg", dpi = "print", height = 11, width = 5.8, device = "jpeg")
+```
+
+combine them?
+
+```{r}
+plt_fnl_temp + (plt_open_temp + theme(legend.position = "none"))
+# save it
+ggplot2::ggsave("../data/NSW_09.jpeg", dpi = "print", height = 11, width = 8, device = "jpeg")
+```
+
+### Clump Metrics
+
+create a function to summarize by number of tree clump grouping variable
+
+```{r}
+# create a function to summarize by number of tree clump grouping
+get_clump_n_trees_grp_summary = function(trees, clumps){
+  dta = trees %>% 
+    sf::st_drop_geometry() %>% 
+    dplyr::group_by(suid,clump_n_trees_grp) %>%
+    dplyr::summarise(
+      # summary metrics
+      n_trees = dplyr::n_distinct(treeID)
+      , mean_dbh_cm = mean(dbh_cm, na.rm = T)
+      , mean_tree_height_m = mean(tree_height_m, na.rm = T)
+      , loreys_height_m = sum(basal_area_m2*tree_height_m, na.rm = T) / sum(basal_area_m2, na.rm = T)
+      , basal_area_m2 = sum(basal_area_m2, na.rm = T)
+      , sum_dbh_cm_sq = sum(dbh_cm^2, na.rm = T)
+    ) %>%
+    dplyr::ungroup() %>% 
+    # attach clump area
+    dplyr::left_join(
+      clumps %>% 
+        sf::st_drop_geometry() %>% 
+        dplyr::group_by(suid,clump_n_trees_grp) %>%
+        dplyr::summarise(clump_area_ha = sum(clump_area_ha))
+    ) %>% 
+    dplyr::mutate(
+      trees_per_ha = (n_trees/clump_area_ha)
+      , basal_area_m2_per_ha = (basal_area_m2/clump_area_ha)
+      , pct_stand_basal_area = basal_area_m2/sum(basal_area_m2)*100
+      , qmd_cm = sqrt(sum_dbh_cm_sq/n_trees)
+    ) %>%
+    dplyr::select(-c(sum_dbh_cm_sq)) %>%
+    # convert to imperial units
+    calc_imperial_units_fn()
+  # return
+  return(dta)
+}
+# call it
+clump_n_trees_grp_summary_temp = get_clump_n_trees_grp_summary(
+  trees = get_tree_clumps(my_suid = my_suid, tree_clump_dist_m = tree_clump_dist_m)
+  , clumps = get_clump_summary(
+    get_tree_clumps(my_suid = my_suid, tree_clump_dist_m = tree_clump_dist_m)
+  )
+) 
+# what?
+clump_n_trees_grp_summary_temp %>% dplyr::glimpse()
+```
+
+summary table
+
+```{r}
+# table it
+clump_n_trees_grp_summary_temp %>% 
+  dplyr::select(
+    clump_n_trees_grp, n_trees
+    , tidyselect::ends_with("_in")
+    , tidyselect::ends_with("_ft")
+    , trees_per_ac
+    , basal_area_ft2_per_ac, pct_stand_basal_area
+  ) %>% 
+  kableExtra::kbl(
+    digits = 1
+    , escape = F
+    , caption = paste0("Overstory (>", ostory_ht_m, " m) tree clump summary<br>", "stand suid: ", clump_n_trees_grp_summary_temp$suid[1])
+    , col.names = c(
+      "", "trees"
+      , "mean<br>DBH (in)"
+      , "QMD (in)"
+      , "mean<br>Ht. (ft)"
+      , "Loreys<br>Ht. (ft)"
+      , "TPA"
+      , "BA<br>ft<sup>2</sup> ac<sup>-1</sup>"
+      , "%<br>stand BA"
+      )
+  ) %>% 
+  kableExtra::kable_styling()
+```
+
+plot it
+
+```{r}
+clump_n_trees_grp_summary_temp %>% 
+  dplyr::select(
+    clump_n_trees_grp, n_trees
+    , tidyselect::ends_with("_in")
+    , tidyselect::ends_with("_ft")
+    , trees_per_ac
+    , basal_area_ft2_per_ac, pct_stand_basal_area
+  ) %>% 
+  tidyr::pivot_longer(
+    cols = -c(clump_n_trees_grp)
+  ) %>% 
+  dplyr::mutate(
+    metric = factor(
+        name
+        , ordered = T
+        , levels = c(
+            "n_trees"
+            , "mean_dbh_in"
+            , "qmd_in"
+            , "mean_tree_height_ft"
+            , "loreys_height_ft"
+            , "trees_per_ac"
+            , "basal_area_ft2_per_ac"
+            , "pct_stand_basal_area"
+          )
+        , labels = c(
+            latex2exp::TeX("Number of Trees", output = "character")
+            , latex2exp::TeX("Mean DBH (in)", output = "character")
+            , latex2exp::TeX("QMD (in)", output = "character")
+            , latex2exp::TeX("Mean Tree Height (ft)", output = "character")
+            , latex2exp::TeX("Lorey's Mean Height (ft)", output = "character")
+            , latex2exp::TeX("Trees $ac^{-1}$")
+            , latex2exp::TeX("Basal Area $ft^{2} \\cdot ac^{-1}$")
+            , latex2exp::TeX("% stand BA", output = "character")
+          )
+      )
+    , clump_n_trees_grp = forcats::fct_rev(clump_n_trees_grp)
+  ) %>% 
+  ggplot(mapping = aes(
+      x = value, y = clump_n_trees_grp
+      , fill = name, label = scales::number(value, accuracy = 0.1)
+    )
+  ) +
+  geom_col(width = 0.7) +
+  geom_text(color = "black", size = 3.5, hjust = -0.1) +
+  facet_wrap(facets = vars(metric), ncol = 2, scales = "free_x", labeller = label_parsed) +
+  scale_fill_viridis_d(option = "cividis", alpha = 0.9) +
+  scale_x_continuous(expand = expansion(mult = c(0,0.1))) +
+  labs(
+    x = "", y = ""
+    , subtitle = paste0(
+      "Overstory (>"
+      , ostory_ht_m
+      , " m) tree clump summary\n"
+      , "stand suid: "
+      , clump_n_trees_grp_summary_temp$suid[1])
+  ) +
+  theme_light() +
+  theme(
+    legend.position = "none"
+    , strip.text = element_text(color = "black", size = 10)
+    , strip.background = element_rect(fill = "gray88")
+    , axis.text.y = element_text(face = "bold")
+    , axis.ticks.y = element_blank()
+    , panel.grid.major.y = element_blank()
+    , panel.grid.minor.y = element_blank()
+  )
+```
+
+## ICO Implementation
+
+[Churchill et al. (2016)](https://scholarworks.umt.edu/ico/3) describe the full process for implementing the ICO approach in *[The ICO Approach to Quantifying and Restoring Forest Spatial Pattern: Implementation Guide](https://scholarworks.umt.edu/ico/3)* in which the authors lay out the prescription development process:
+
+1. Identify skips and other special treatment areas
+2. Consider the need for openings
+3. Determine the stand average density target
+4. Determine the appropriate distance to define clumps
+5. Obtain targets for clump proportions
+6. Select target clump proportions for your stand
+7. Generate clump targets for the whole unit
+8. Combine clump and opening targets with leave tree criteria into marking guidelines
+
+The objective here is to: 1) provide the manager with the current conditions (completed above); 2) take the "targets" as set by the manager (steps 3, 5, 6, 7); 3) create the prescription with the leave tree marking.
+
+We'll focus on the minimum required metrics needed to implement this prescription development process.
+
+### 3. Determine the stand average density target
+
+Step 3 in [Churchill et al. (2016)](https://scholarworks.umt.edu/ico/3): 
+
+>An average BA, TPA, or SDI target for the stand should be selected that is appropriate for the species, structure, site conditions, and management objectives. Expected mortality from prescribed fire should be factored in. Stand average targets can come from historical reference stands, plant association based stocking guides, density management tools, or a combination of both (see Franklin et al. (2013) for a full discussion of setting density targets). In dry forests, the number and size of old trees must be accounted in setting the density target. To use the ICO method, the target must be converted to TPA (see Table 1). A lower diameter cutoff also needs to be specified for the TPA target. This should be the lower limit in the contract or cutting guidelines given to the marking crew or contractor. (p.11)
+
+this is what Table 1 looks like with TPA values are derived from the formula: 
+
+$$
+TPA = \frac{BA}{QMD^{2} \times 0.005454}
+$$
+
+```{r}
+tidyr::crossing(
+    ba = seq(40,200,20)
+    , qmd = seq(8,20,2)
+  ) %>% 
+  dplyr::mutate(
+    tpa = round( ba/((qmd^2)*0.005454) )
+  ) %>% 
+  tidyr::pivot_wider(names_from = ba, values_from = tpa) %>% 
+  dplyr::mutate(l = "QMD (in)") %>% 
+  dplyr::relocate(l) %>% 
+  kableExtra::kbl(
+    col.names = c(".","", seq(40,200,20))
+    , escape = F
+    , caption = "Basal Area and QMD to TPA conversion chart"
+  ) %>% 
+  kableExtra::add_header_above(
+    c("","", "Basal Area (ft2/ac)"=length(seq(40,200,20)))
+  ) %>%
+  kableExtra::kable_styling() %>% 
+  kableExtra::column_spec(1:2, bold = T) %>%
+  kableExtra::collapse_rows(columns = 1, valign = "middle")
+```
 

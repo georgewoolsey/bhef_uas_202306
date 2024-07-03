@@ -662,7 +662,7 @@ field_regen_plt_temp = field_regen_plt_diam %>%
   sf::st_set_geometry("geometry")
 ```
 
-Aggregate to plot level by combining the `plot_direction_id` column (e.g. `r field_regen_plt_temp$plot_direction_id %>% unique() %>% paste0(collapse = ", ")`). Buffer the plot points and combine the plot geometry together via `sf::st_bbox` to create and estimated bounding box of the area sampled in the regeneration field sampling. This area will be used to find the UAS detected trees within the bounding box to compare TPA estimates.
+Aggregate to plot level by combining the `plot_direction_id` column (e.g. `r field_regen_plt_temp$plot_direction_id %>% unique() %>% paste0(collapse = ", ")`). Buffer the plot points and combine the plot geometry together via `sf::st_bbox` to create an estimated bounding box of the area sampled in the regeneration field sampling. This area will be used to find the UAS detected trees within the bounding box to compare TPA estimates.
 
 ```{r uas-fld-plt-area-agg}
 field_regen_plt_bbox_temp = field_regen_plt_temp %>% 
