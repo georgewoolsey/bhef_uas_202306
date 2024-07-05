@@ -2,8 +2,10 @@ tab:fld-dta-tp-data
 tab:fld-dta-sum-rmse
 tab:uas-fld-regentab
 tab:regen-dta-sum-rmse
-tab:unnamed-chunk-50
 tab:unnamed-chunk-52
+tab:unnamed-chunk-54
+tab:unnamed-chunk-55
+tab:unnamed-chunk-60
 introduction
 objective
 data_prep
@@ -92,3 +94,5 @@ clump-spacing
 clump-metrics
 ico-implementation
 determine-the-stand-average-density-target
+current-stand-conditions
+obtain-targets-for-clump-proportions
