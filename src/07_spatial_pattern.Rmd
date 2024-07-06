@@ -1403,42 +1403,139 @@ ggplot() +
     guides(color = guide_legend(override.aes = list(size = 5)))
 ```
 
+**!!!! needs fix since non-connected trees are kept in a clump**
 
-```{r, include=FALSE, eval=FALSE}
+let's try another way:
+
+```{r, include=F, eval=F}
+clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees") %>% mapview()
 # data for passing to function with nest()
+id_temp = 45
+
 x = ttops_temp %>% 
   dplyr::filter(clump_n_trees_grp == ">15 trees") %>%
-  dplyr::filter(clump_id == 3) 
+  dplyr::filter(clump_id == id_temp) #45 
 
-# get next size group n tree target
-ntree_target_temp = target_data_temp %>% 
-  dplyr::mutate(l = dplyr::lag(mean_clump_n_trees)) %>% 
-  dplyr::filter(clump_n_trees_grp == ">15 trees") %>%
-  dplyr::pull(l) %>% 
-  dplyr::coalesce(0)
-# join to gridded area based on the tree clump distance
-grid = x %>% 
-  sf::st_bbox() %>% 
-  sf::st_make_grid(
-    cellsize = round(tree_clump_dist_m/2,0)
-  ) %>% 
-  sf::st_as_sf() %>% 
-  dplyr::mutate(
-    grid_n = dplyr::row_number()
-  )
-x = x %>% sf::st_join(grid) 
-# start with biggest tree keep adding cells until desired n trees reached
-  x %>% 
-    dplyr::mutate(
-      sorter = grid_n %>% 
-        # get the biggest tree grid_id
-        `-`(x %>% dplyr::arrange(desc(dbh_cm), desc(tree_height_m)) %>% dplyr::pull(grid_n) %>% .[1]) %>% 
-        abs()
-    ) %>% 
-    dplyr::arrange(sorter, desc(dbh_cm), desc(tree_height_m)) %>% 
-    dplyr::mutate(
-      is_keep_tree = (dplyr::row_number() <= ntree_target_temp) %>% as.numeric()
-    ) %>% 
+# ggplot(x) + geom_sf(aes(color = dbh_cm)) + 
+#   geom_sf(data = clump_polys_temp %>% dplyr::filter(clump_id==id_temp), fill = NA) + 
+#   theme_void()
+
+      # get next size group n tree target
+      ntree_target_temp = target_data_temp %>%
+        dplyr::mutate(l = dplyr::lag(mean_clump_n_trees)) %>%
+        dplyr::filter(clump_n_trees_grp == x$clump_n_trees_grp[1]) %>%
+        dplyr::pull(l) %>%
+        dplyr::coalesce(0)
+      
+      # # join to gridded area based on the tree clump distance
+      # x %>%
+      #   sf::st_bbox() %>%
+      #   sf::st_make_grid(
+      #     cellsize = round(tree_clump_dist_m/2,0)
+      #   )
+      # grid = x %>%
+      #   sf::st_bbox() %>%
+      #   sf::st_make_grid(
+      #     cellsize = round(tree_clump_dist_m/2,0)
+      #   ) %>%
+      #   sf::st_as_sf() %>%
+      #   dplyr::mutate(
+      #     grid_n = dplyr::row_number()
+      #   )
+      # ggplot() + 
+      #   geom_sf(data = x, aes(color = dbh_cm)) + 
+      #   geom_sf(data = clump_polys_temp %>% dplyr::filter(clump_id==45), fill = NA) + 
+      #   # geom_sf(data = grid, fill = NA, color = "red") + 
+      #   geom_sf(data = grid, aes(fill = grid_n), color = "red") + 
+      #   geom_sf_text(data = grid, aes(label = grid_n), color = "white") + 
+      #   theme_void()
+      
+      
+      # make a grid
+      grid = x %>%
+        sf::st_bbox() %>% 
+        sf::st_as_sfc() %>% 
+        terra::vect() %>% 
+        terra::rast(res = round(tree_clump_dist_m/2,0))
+      values(grid) = 1:terra::ncell(grid)
+      
+      # how many trees versus target?
+      sections_temp = dplyr::case_when(
+        # if can only divide into 2 sections:
+        nrow(x)/ntree_target_temp < 2 ~ 1
+        # otherwise 
+        , T ~ 2 * round((nrow(x)/ntree_target_temp)/2) # nearest even number
+      )
+      # divide columns every x col
+      col_divide_temp = dplyr::case_when(
+        terra::ncol(grid) >= terra::nrow(grid) ~ ceiling(terra::ncol(grid)/max(sections_temp/2,2))
+        , sections_temp == 2 ~ terra::ncol(grid)+1
+        , T ~ ceiling(terra::ncol(grid)/2)
+      )
+      # divide rows every x col
+      row_divide_temp = dplyr::case_when(
+        terra::ncol(grid) < terra::nrow(grid) ~ ceiling(terra::nrow(grid)/max(sections_temp/2,2))
+        , sections_temp == 2 ~ terra::nrow(grid)+1
+        , T ~ ceiling(terra::nrow(grid)/2)
+      )
+      # take a cell number and return 0/1 for cut
+      cut_raster_cells = function(c){
+        # if terra::ncol(grid) >= terra::nrow(grid)
+        !(terra::ncol(grid) >= terra::nrow(grid) &
+          terra::rowFromCell(grid, c)==terra::nrow(grid) # not the last row
+        ) &
+        # if terra::ncol(grid) < terra::nrow(grid)
+        !(terra::ncol(grid) < terra::nrow(grid) &
+          terra::colFromCell(grid, c)==terra::ncol(grid) # not the last col
+        ) &
+        # get row number
+        terra::rowFromCell(grid, c)%%row_divide_temp==0 |
+        # get col number
+        terra::colFromCell(grid, c)%%col_divide_temp==0
+      }
+      
+      values(grid)=cut_raster_cells(1:terra::ncell(grid))
+      
+      ggplot() + 
+        geom_tile(
+          data = grid %>% as.data.frame(xy=T) %>% dplyr::rename(f=3)
+          , mapping = aes(x=x,y=y,fill=f)
+        ) +
+        geom_sf(data = x, aes(color = dbh_cm)) + 
+        geom_sf(data = clump_polys_temp %>% dplyr::filter(clump_id==id_temp), fill = NA) + 
+        scale_fill_viridis_d(option = "rocket", begin = 0.7, name = "cut path") +
+        scale_color_viridis_c(option = "mako", direction = -1, end = 0.8, name = "DBH (cm)") +
+        theme_void()
+```
+
+
+```{r, include=F, eval=F}
+xxxxx
+      
+      x_grid = x %>% 
+        sf::st_join(grid) %>% 
+        dplyr::group_by(treeID) %>% 
+        dplyr::filter(dplyr::row_number()==1) %>% 
+        dplyr::ungroup()
+      # get the biggest tree grid_n
+      big_grid = x_grid %>% dplyr::arrange(desc(dbh_cm), desc(tree_height_m)) %>% dplyr::pull(grid_n) %>% .[1]
+      # start with biggest tree keep adding cells until desired n trees reached
+      x_grid = x_grid %>%
+        dplyr::mutate(
+          sorter = abs(grid_n-big_grid)
+        ) %>%
+        dplyr::arrange(sorter, desc(dbh_cm), desc(tree_height_m)) %>%
+        dplyr::mutate(
+          is_keep_tree = (dplyr::row_number() <= ntree_target_temp) %>% as.numeric()
+        )
+      # join to original data and pull
+      d = x %>%
+        sf::st_drop_geometry() %>%
+        dplyr::left_join(
+          x_grid %>% sf::st_drop_geometry() %>% dplyr::select(treeID, is_keep_tree) #is_keep_tree
+          , by = dplyr::join_by("treeID")
+        ) %>%
+        dplyr::pull(is_keep_tree)
   
 ggplot() + 
   geom_sf(aes(color = as.factor(is_keep_tree))) +
