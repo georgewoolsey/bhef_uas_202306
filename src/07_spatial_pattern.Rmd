@@ -813,7 +813,7 @@ get_clump_n_trees_grp_summary = function(trees, clumps){
       clumps %>% 
         sf::st_drop_geometry() %>% 
         dplyr::group_by(suid,clump_n_trees_grp) %>%
-        dplyr::summarise(clump_area_ha = sum(clump_area_ha))
+        dplyr::summarise(clump_area_ha = sum(clump_area_ha), stand_n_clumps = dplyr::n())
     ) %>% 
     dplyr::mutate(
       trees_per_ha = (n_trees/clump_area_ha) # (n_trees/stand_area_ha) ... this was not right
@@ -1090,6 +1090,8 @@ Table 2 is:
 knitr::include_graphics("https://i.ibb.co/N1hpzLj/churchilletal2016-table2.jpg")
 ```
 
+### 6. Select target clump proportions for your stand
+
 *Now set the desired BA, QMD, and proportion of trees in each clump size:*
 
 ```{r}
@@ -1114,7 +1116,7 @@ knitr::include_graphics("https://i.ibb.co/N1hpzLj/churchilletal2016-table2.jpg")
 ########################################################################################
 ```
 
-Check set up
+Check set up and define data with targets
 
 ```{r, warning=TRUE}
 get_target_check_prescription = function(
@@ -1175,10 +1177,11 @@ get_target_check_prescription = function(
       dplyr::left_join(
         clump_n_trees_grp_summary_dta %>% 
           dplyr::ungroup() %>% 
-          dplyr::select(clump_n_trees_grp, pct_stand_n_trees)
+          dplyr::select(clump_n_trees_grp, pct_stand_n_trees, stand_n_clumps)
       ) %>% 
       dplyr::mutate(
         pct_stand_n_trees = dplyr::coalesce(pct_stand_n_trees,0)
+        , stand_n_clumps = dplyr::coalesce(stand_n_clumps,0)
       ) %>% 
       # add targets
       dplyr::bind_cols(
@@ -1224,7 +1227,6 @@ get_target_check_prescription = function(
             )
         )
       ) %>% 
-      dplyr::select(-tidyselect::starts_with("largest_w_trees")) %>% 
       # add other targets
       dplyr::rename(pct_stand_n_trees_current = pct_stand_n_trees) %>% 
       dplyr::mutate(
@@ -1234,8 +1236,10 @@ get_target_check_prescription = function(
         , trees_per_acre_target = stand_trees_per_ac_target*pct_stand_n_trees_target
         , clumps_per_acre_current = trees_per_acre_current/mean_clump_n_trees
         , clumps_per_acre_target = trees_per_acre_target/mean_clump_n_trees
+        , stand_n_clumps_current = stand_n_clumps
         , stand_n_clumps_target = (clumps_per_acre_target*stand_area_ac) %>% round(0)
-      )
+      ) %>% 
+      dplyr::select(-c(tidyselect::starts_with("largest_w_trees"), stand_n_clumps))
   # ????  
   # target_data %>% glimpse()
   
@@ -1296,3 +1300,154 @@ target_data_temp %>%
     c(" "=1,"% Trees"=2, "TPA"=2)
   )
 ```
+
+### 8. Combine clump and opening targets with leave tree criteria into marking guidelines
+
+Use our UAS tree list to generate the prescription:
+
+* start with the largest clump size currently with trees
+* cut trees to the next largest clup size until desired # clumps is reached
+* repeat with each successive clump size through to individual tree selection
+* if possible, cut in same clump until desired proportions are reached to minimize machine time
+
+```{r}
+# use target data to get cut trees by clump size group
+# !!!! need this first:
+  # target_data_temp = get_target_check_prescription(
+  #   clump_n_trees_grp_summary_temp
+  #   , target_ba = target_ba
+  #   , target_qmd = target_qmd
+  #   , target_pcts = target_pcts
+  # )
+cut_grp_ex_temp = ttops_temp %>%
+  dplyr::filter(clump_n_trees_grp == ">15 trees") %>%
+  dplyr::group_by(clump_id) %>%
+  tidyr::nest() %>%
+  dplyr::mutate(
+    is_keep_tree = purrr::map(data, function(x, tgt = target_data_temp){
+      # get next size group n tree target
+      ntree_target_temp = tgt %>%
+        dplyr::mutate(l = dplyr::lag(mean_clump_n_trees)) %>%
+        dplyr::filter(clump_n_trees_grp == x$clump_n_trees_grp[1]) %>%
+        dplyr::pull(l) %>%
+        dplyr::coalesce(0)
+      # join to gridded area based on the tree clump distance
+      grid = x %>%
+        sf::st_bbox() %>%
+        sf::st_make_grid(
+          cellsize = round(tree_clump_dist_m/2,0)
+        ) %>%
+        sf::st_as_sf() %>%
+        dplyr::mutate(
+          grid_n = dplyr::row_number()
+        )
+      x_grid = x %>% 
+        sf::st_join(grid) %>% 
+        dplyr::group_by(treeID) %>% 
+        dplyr::filter(dplyr::row_number()==1) %>% 
+        dplyr::ungroup()
+      # get the biggest tree grid_n
+      big_grid = x_grid %>% dplyr::arrange(desc(dbh_cm), desc(tree_height_m)) %>% dplyr::pull(grid_n) %>% .[1]
+      # start with biggest tree keep adding cells until desired n trees reached
+      x_grid = x_grid %>%
+        dplyr::mutate(
+          sorter = abs(grid_n-big_grid)
+        ) %>%
+        dplyr::arrange(sorter, desc(dbh_cm), desc(tree_height_m)) %>%
+        dplyr::mutate(
+          is_keep_tree = (dplyr::row_number() <= ntree_target_temp) %>% as.numeric()
+        )
+      # join to original data and pull
+      d = x %>%
+        sf::st_drop_geometry() %>%
+        dplyr::left_join(
+          x_grid %>% sf::st_drop_geometry() %>% dplyr::select(treeID, is_keep_tree) #is_keep_tree
+          , by = dplyr::join_by("treeID")
+        ) %>%
+        dplyr::pull(is_keep_tree)
+      # return
+      return(d)
+    })
+  ) %>%
+  tidyr::unnest(cols = c(data, is_keep_tree)) %>%
+  sf::st_set_geometry("geom") %>% # set it cuz it got lost
+  dplyr::ungroup()
+# what?
+cut_grp_ex_temp %>% dplyr::glimpse()
+```
+
+# plot it
+
+```{r}
+ggplot() + 
+    geom_sf(data = harvests %>% dplyr::filter(suid == my_suid), fill = NA, color = "black") +
+    geom_sf(
+      data = clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees")
+      , mapping = aes(fill = clump_id)
+      , color = NA
+      , show.legend = F
+    ) +
+    scale_fill_manual(
+      values = 
+        viridis::mako(
+          clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees") %>% 
+          dplyr::pull(clump_id) %>% 
+          unique() %>% length()
+        ) %>% sample()
+    ) + 
+    # tree points
+    geom_sf(data = cut_grp_ex_temp, mapping = aes(color = as.factor(is_keep_tree)), size = 0.5) +
+    scale_color_manual(values = c("firebrick", "gold")) +
+    labs(color = "is keep tree?") +
+    theme_void() + 
+    guides(color = guide_legend(override.aes = list(size = 5)))
+```
+
+
+```{r, include=FALSE, eval=FALSE}
+# data for passing to function with nest()
+x = ttops_temp %>% 
+  dplyr::filter(clump_n_trees_grp == ">15 trees") %>%
+  dplyr::filter(clump_id == 3) 
+
+# get next size group n tree target
+ntree_target_temp = target_data_temp %>% 
+  dplyr::mutate(l = dplyr::lag(mean_clump_n_trees)) %>% 
+  dplyr::filter(clump_n_trees_grp == ">15 trees") %>%
+  dplyr::pull(l) %>% 
+  dplyr::coalesce(0)
+# join to gridded area based on the tree clump distance
+grid = x %>% 
+  sf::st_bbox() %>% 
+  sf::st_make_grid(
+    cellsize = round(tree_clump_dist_m/2,0)
+  ) %>% 
+  sf::st_as_sf() %>% 
+  dplyr::mutate(
+    grid_n = dplyr::row_number()
+  )
+x = x %>% sf::st_join(grid) 
+# start with biggest tree keep adding cells until desired n trees reached
+  x %>% 
+    dplyr::mutate(
+      sorter = grid_n %>% 
+        # get the biggest tree grid_id
+        `-`(x %>% dplyr::arrange(desc(dbh_cm), desc(tree_height_m)) %>% dplyr::pull(grid_n) %>% .[1]) %>% 
+        abs()
+    ) %>% 
+    dplyr::arrange(sorter, desc(dbh_cm), desc(tree_height_m)) %>% 
+    dplyr::mutate(
+      is_keep_tree = (dplyr::row_number() <= ntree_target_temp) %>% as.numeric()
+    ) %>% 
+  
+ggplot() + 
+  geom_sf(aes(color = as.factor(is_keep_tree))) +
+  geom_sf(data = grid, fill = NA, color = "red") +
+  theme_void()
+  
+ggplot(xxx %>% dplyr::filter(clump_id==3)) + 
+  geom_sf(aes(color = as.factor(is_keep_tree))) +
+  geom_sf(data = grid, fill = NA, color = "red") +
+  theme_void()
+```
+
