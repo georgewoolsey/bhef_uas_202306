@@ -1376,7 +1376,7 @@ cut_grp_ex_temp = ttops_temp %>%
 cut_grp_ex_temp %>% dplyr::glimpse()
 ```
 
-# plot it
+plot it
 
 ```{r}
 ggplot() + 
@@ -1403,12 +1403,12 @@ ggplot() +
     guides(color = guide_legend(override.aes = list(size = 5)))
 ```
 
-**!!!! needs fix since non-connected trees are kept in a clump**
+**!!!! needs fix since not splitting up the clump into the next smaller clump size**
 
 let's try another way:
 
-```{r, include=F, eval=F}
-clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees") %>% mapview()
+```{r, include=T, eval=T}
+# clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees") %>% mapview()
 # data for passing to function with nest()
 id_temp = 45
 

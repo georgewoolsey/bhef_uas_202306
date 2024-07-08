@@ -98,4 +98,3 @@ current-stand-conditions
 obtain-targets-for-clump-proportions
 select-target-clump-proportions-for-your-stand
 combine-clump-and-opening-targets-with-leave-tree-criteria-into-marking-guidelines
-plot-it
