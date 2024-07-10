@@ -32,6 +32,7 @@ library(pdftools) # combine pdf files
 library(brms) # bayesian modelling using STAN engine
 library(Metrics) # mape, mae, rmse, etc
 # forest patches
+# install.packages("pak")
 # pak::pkg_install("mhahsler/dbscan", upgrade = T)
 library(dbscan)
 

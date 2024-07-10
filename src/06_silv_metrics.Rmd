@@ -1207,7 +1207,7 @@ harvests$suid %>%
   print()
 ```
 
-```{r pdf-comb, results='hide'}
+```{r pdf-comb, results='hide', eval=FALSE}
 # combine all pdfs together
 # combine with pdftools
 pdftools::pdf_combine(
