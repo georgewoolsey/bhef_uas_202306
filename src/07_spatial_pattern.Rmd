@@ -517,6 +517,7 @@ get_tree_clumps = function(
     dplyr::ungroup() %>% 
     dplyr::mutate(
       tree_clump_dist_m = tree_clump_dist_m
+      , clump_id_duplicate = clump_id # can use this even after nesting data by clump_id
       # , ostory_ht_m = ifelse(is.na(ostory_ht_m), as.numeric(NA), as.numeric(ostory_ht_m))
       # , ostory_dbh_cm = ifelse(is.na(ostory_dbh_cm), as.numeric(NA), as.numeric(ostory_dbh_cm))
     )
@@ -1319,9 +1320,11 @@ example clump
 ```{r}
 ###### !!!!!!!!!!!!!!!!! CUT BY NARROW AREAS?
 # just one clump example
-id_temp = ttops_temp %>% 
+id_temp = # 113
+  clump_polys_temp %>% 
   dplyr::filter(clump_n_trees_grp == ">15 trees") %>% 
-  dplyr::arrange(desc(clump_n_trees)) %>% 
+  dplyr::slice_sample(prop = .3) %>% 
+  dplyr::arrange(desc(n_trees)) %>% 
   dplyr::pull(clump_id) %>% 
   .[1]
 # data for passing to function with nest()
@@ -1426,67 +1429,130 @@ now draw the lines perpendicular to this furthest line which represent potential
     ) %>% 
     sf::st_cast("POINT")
 
-# 2) get angle of f line 
-  # st_ends_heading(f_line_temp)["head"]
-    # angle_fn_temp = function(stcoord1, stcoord2){
-    #   # a = 90 - 180 * atan(
-    #   #   (stcoord2["Y"]-stcoord1["Y"]) / # RISE
-    #   #     (stcoord2["X"]-stcoord1["X"]) # RUN
-    #   # ) / pi
-    #   # alternative?
-    #   a = atan(
-    #     (stcoord2["Y"]-stcoord1["Y"]) / # RISE
-    #       (stcoord2["X"]-stcoord1["X"]) # RUN
-    #   )
-    #   if(a<0){a = a + pi * 2} # make negative angles positive by adding 360 degrees
-    #   a = a * ( 180 / pi ) # convert angle from radians to degrees
-    #   ## return
-    #   return(a-180)
-    # }
-    # angle_fn_temp(sf::st_coordinates(f_pts_temp)[1,], sf::st_coordinates(f_pts_temp)[2,])
-
-# 3) make a line perpendicular to our farthest line based on a point on the f line
-perp_line = function(stcoord1, angle, dist_m, crs = sf::st_crs(x)){
-  # get new coordinate 1
-  y1 = (dist_m/2) * cos(90 + angle)
-  x1 = (dist_m/2) * sin(90 + angle)
-  stcoord3 = ( stcoord1 + c(x1, y1) ) %>% 
-    sf::st_point() %>% 
-    sf::st_sfc()
-  sf::st_crs(stcoord3) = crs
-  # get new coordinate 2
-  y1 = -(dist_m/2) * cos(90 + angle)
-  x1 = -(dist_m/2) * sin(90 + angle)
-  stcoord4 = ( stcoord1 + c(x1, y1) ) %>% 
-    sf::st_point() %>% 
-    sf::st_sfc()
-  sf::st_crs(stcoord4) = crs
-  # draw a line
-  l = sf::st_union(stcoord3,stcoord4) %>% 
-    sf::st_cast("LINESTRING") %>% 
-    sf::st_as_sf()
-  return(l)
+### https://stackoverflow.com/questions/56771058/perpendicular-lines-at-regular-intervals-along-lines-with-multiple-nodes
+# Function to calculate Euclidean distance between 2 points
+euclidean_distance = function(p1,p2) {
+    return(sqrt((p2[1] - p1[1])^2 + (p2[2] - p1[2])^2))
 }
+# euclidean_distance(
+#   sf::st_coordinates(f_pts_temp)[1,], sf::st_coordinates(f_pts_temp)[2,] # end points on f line
+# )
+
+# Function to calculate 2 points on a line perpendicular to another defined by 2 points p1,p2
+# For point at interval, which can be a proportion of the segment length, or a constant
+get_perp_line = function(interval=0.5, my_line, proportion=TRUE) {
+    # get end points of line
+    p1 = my_line %>% sf::st_cast("POINT") %>% sf::st_coordinates() %>% .[1,]
+    p2 = my_line %>% sf::st_cast("POINT") %>% sf::st_coordinates() %>% .[2,]
+    # get length of line to return equal length line
+    line_len = sf::st_length(my_line) %>% as.numeric() %>% `/`(2)      
+    # get crs of line
+    my_crs = sf::st_crs(my_line)
+    
+    # Calculate x and y distances
+    x_len <- p2[1] - p1[1]
+    y_len <- p2[2] - p1[2]
+
+    # If proportion calculate reference point from tot_length
+    if (proportion) {
+        point <- c(p1[1]+x_len*interval,p1[2]+y_len*interval)
+    }
+    # Else use the constant value
+    else {
+        tot_len <- euclidean_distance(p1,p2)
+        point <- c(p1[1]+x_len/tot_len*interval,p1[2]+y_len/tot_len*interval)
+    }    
+
+    # Calculate the x and y distances from reference point to point on line line_len distance away    
+    ref_len <- euclidean_distance(point,p2)
+    xn_len <- (line_len / ref_len) * (p2[1] - point[1])
+    yn_len <- (line_len / ref_len) * (p2[2] - point[2])
+
+    # Invert the x and y lengths and add/subtract from the refrence point
+    # ref_points <- rbind(point,c(point[1] + yn_len,point[2] - xn_len),c(point[1] - yn_len,point[2] + xn_len))
+    ref_points <- rbind(c(point[1] + yn_len,point[2] - xn_len),c(point[1] - yn_len,point[2] + xn_len))
+
+    # use the reference points to return a line
+    return(
+      ref_points %>% 
+        dplyr::as_tibble() %>% 
+        dplyr::rename_with(tolower) %>% 
+        sf::st_as_sf(coords = c("x", "y"), crs = my_crs, remove = F) %>%
+        dplyr::summarise(n=dplyr::n()) %>%
+        sf::st_cast("LINESTRING") %>%
+        dplyr::ungroup() %>% 
+        dplyr::select(-c(n))
+    )
+}
+# get_perp_line(my_line = f_line_temp, interval = 0, proportion = F)
 
 # 5) now get perpendicular lines in dataset which we can iterate over to make cuts
-perp_line_sf_temp = 1:length(line_pts_temp) %>% 
-  purrr::map(function(xxx){
-    return(
-      perp_line(
-        sf::st_coordinates(line_pts_temp)[xxx,]
-        , angle = st_ends_heading(f_line_temp)["head"]
-          # angle_fn_temp(sf::st_coordinates(f_pts_temp)[1,], sf::st_coordinates(f_pts_temp)[2,])
-        , dist_m = sf::st_length(f_line_temp) %>% as.numeric() # %>% `*`(2)
-        , crs = sf::st_crs(x)
-      ) %>% 
-      sf::st_set_geometry("geometry") %>% 
-      dplyr::mutate(line_n = xxx)
-  )}) %>% 
-  dplyr::bind_rows()
+perp_line_sf_temp = 
+  # for every 1 m along line length, get a new perp line
+  seq(
+      from = 0
+      , to = sf::st_length(f_line_temp) %>% as.numeric() %>% floor()
+      , by = 1
+    ) %>% 
+  purrr::map(
+    get_perp_line
+    , my_line = f_line_temp, proportion = F
+  ) %>% 
+  dplyr::bind_rows() %>% 
+  dplyr::mutate(line_n = dplyr::row_number())
 
 perp_line_sf_temp %>% 
     ggplot() +
     geom_sf(color = "cyan", lwd = 0.5) +
+    geom_sf(data = f_line_temp, color = "blue", lwd = 1.5) +
+    # geom_sf(data = line_pts_temp, color = "red", size = 1.5, fill = NA, shape = 21) +
+    geom_sf(data = clump_polys_temp %>% dplyr::filter(clump_id==x$clump_id[1]), fill = NA) +
+    geom_sf(data = x, color = "gray") +
+    labs(
+      subtitle = paste0("example ", x$clump_n_trees_grp[1], " clump group")
+      , caption = "*potential cut lines shown in light blue"
+    ) +
+    theme_void()
+```
+
+```{r, include=FALSE, eval=FALSE}
+# nah!!!!!!!!!!!!!!!!!!
+# what about adding another potential line cut?
+perp_line_sf_temp = dplyr::bind_rows(
+  ##### perpendicular to f line
+    # for every 1 m along line length, get a new perp line
+    seq(
+        from = 0
+        , to = sf::st_length(f_line_temp) %>% as.numeric() %>% floor()
+        , by = 1
+      ) %>% 
+    purrr::map(
+      get_perp_line
+      , my_line = f_line_temp, proportion = F
+    ) %>% 
+    dplyr::bind_rows()
+  , ##### horizontal to f line
+    # for every 1 m along line length, get a new perp line
+    seq(
+        from = 0
+        , to = get_perp_line(my_line = f_line_temp, interval = 0.5, proportion = T) %>% 
+          sf::st_length() %>% 
+          as.numeric() %>% 
+          floor()
+        , by = 1
+      ) %>% 
+    purrr::map(
+      get_perp_line
+      , my_line = get_perp_line(my_line = f_line_temp, interval = 0.5, proportion = T)
+      , proportion = F
+    ) %>% 
+    dplyr::bind_rows()
+) %>% 
+dplyr::mutate(line_n = dplyr::row_number())
+
+perp_line_sf_temp %>% 
+ggplot() +
+    geom_sf(color = "cyan", lwd = 0.2) +
     geom_sf(data = f_line_temp, color = "blue", lwd = 1.5) +
     # geom_sf(data = line_pts_temp, color = "red", size = 1.5, fill = NA, shape = 21) +
     geom_sf(data = clump_polys_temp %>% dplyr::filter(clump_id==x$clump_id[1]), fill = NA) +
@@ -1542,6 +1608,39 @@ perp_line_sf_temp %>%
 
 start cutting at the narrowest places using the shortest cut line intersection length until we get the desired clump size group(s) (i.e. the next smallest clump size)
 
+```{r, include=FALSE, eval=FALSE}
+# nah!!!!!!!!!!!!!!!!!!
+# joint cut line length to individual trees to prioritize trees with lowest total cut length for removal
+# perp_line_sf_temp %>% sf::st_drop_geometry() %>% dplyr::glimpse()
+cut_trees_rank_temp = 
+  x %>% 
+    sf::st_buffer(tree_clump_dist_m/2) %>% 
+    sf::st_join(perp_line_sf_temp) %>% 
+    sf::st_drop_geometry() %>% 
+    dplyr::select(treeID, line_n, len_m) %>% 
+    dplyr::group_by(treeID) %>% 
+    dplyr::summarise(total_len_m = sum(len_m)) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::arrange(total_len_m) %>% 
+    dplyr::mutate(cut_tree_rank = dplyr::row_number())
+# plot it
+x %>% 
+  dplyr::inner_join(cut_trees_rank_temp) %>% 
+  sf::st_buffer(tree_clump_dist_m/2) %>% 
+  ggplot() +
+    geom_sf(mapping = aes(fill = cut_tree_rank), color = NA) +
+    scale_fill_distiller(palette = "Greys", direction = -1) +
+    geom_sf(data = f_line_temp, color = "blue", lwd = 1.5) +
+    # geom_sf(data = line_pts_temp, color = "red", size = 1.5, fill = NA, shape = 21) +
+    geom_sf(data = clump_polys_temp %>% dplyr::filter(clump_id==x$clump_id[1]), fill = NA) +
+    geom_sf(data = x, color = "gray") +
+    labs(
+      subtitle = paste0("example ", x$clump_n_trees_grp[1], " clump group")
+      , fill = "tree cut rank"
+    ) +
+    theme_void()
+```
+
 ```{r}
 # 7) make cuts at the points where there is the least overlap with the clump polygon
   # list of potential line cut + tree combinations
@@ -1553,6 +1652,7 @@ start cutting at the narrowest places using the shortest cut line intersection l
       dplyr::select(treeID, line_n, len_m) %>% 
       dplyr::arrange(len_m, line_n, treeID) %>% 
       dplyr::mutate(n = dplyr::row_number())
+
   ###############################################################
   # while
   ###############################################################
@@ -1564,64 +1664,76 @@ start cutting at the narrowest places using the shortest cut line intersection l
     cut_trees_temp = cut_tree_lines_temp %>% 
       dplyr::slice(1:i) %>% 
       dplyr::distinct(treeID)
-    # cut them from the clump and check the new dbscan
-    my_dbscan_temp = x %>% 
+    
+    # get the remaining trees not cut
+    trees_remain_temp = x %>% 
       sf::st_drop_geometry() %>% 
       dplyr::anti_join(cut_trees_temp, by = "treeID") %>% 
-      dplyr::select(X,Y) %>% 
-      dbscan::dbscan(eps = tree_clump_dist_m, minPts = 2)
+      dplyr::select(X,Y)
     
-    # count the groups
-    desired_grps_n_temp = dplyr::tibble(
-        dbscan_cluster = my_dbscan_temp$cluster
-      ) %>% 
-      dplyr::mutate(
-        # unique dbscan_cluster for individuals
-        clump_id = dplyr::case_when(
-          dbscan_cluster == 0 ~ max(my_dbscan_temp$cluster)+dplyr::row_number()
-          , T ~ dbscan_cluster
-        ) %>% 
-        factor()
-      ) %>% 
-      dplyr::group_by(clump_id) %>% 
-      dplyr::summarise(clump_n_trees = dplyr::n()) %>% 
-      dplyr::ungroup() %>% 
-      # create groups
-      dplyr::mutate(
-        clump_n_trees_grp = cut(
-            clump_n_trees
-            ,breaks = c(0,1,4,9,15,Inf)
-            , labels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+    # ensure that there are trees
+    if(nrow(trees_remain_temp)==0){
+      # there are no more possible cuts :/
+      best_cuts = dplyr::tibble(treeID = character())
+      # stop it
+      while_temp = 0
+    }else{
+        # cut them from the clump and check the new dbscan
+        my_dbscan_temp = trees_remain_temp %>% 
+          dbscan::dbscan(eps = tree_clump_dist_m, minPts = 2)
+        
+        # count the groups
+        desired_grps_n_temp = dplyr::tibble(
+            dbscan_cluster = my_dbscan_temp$cluster
           ) %>% 
-          factor(
-            ordered = T
-            , levels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
-          )
-      ) %>% 
-      # do we have group sizes we want?
-      dplyr::filter(clump_n_trees_grp == ntree_target_temp) %>% 
-      nrow()
-    ### store best cut list
-    if(i==1){
-      best_cuts = cut_trees_temp
-      best_desired_grps_n_temp = desired_grps_n_temp
-    }else if(desired_grps_n_temp>best_desired_grps_n_temp){ # is this better than the best
-      best_cuts = cut_trees_temp
-      best_desired_grps_n_temp = desired_grps_n_temp
-    }else if(
-      best_desired_grps_n_temp>0 
-      & desired_grps_n_temp<best_desired_grps_n_temp
-    ){ # is this worse than the best which was successful?
-      # stop it
-      while_temp = 0
-    }else if( # is this the end?
-      i==nrow(cut_tree_lines_temp)
-    ){
-      # stop it
-      while_temp = 0
+          dplyr::mutate(
+            # unique dbscan_cluster for individuals
+            clump_id = dplyr::case_when(
+              dbscan_cluster == 0 ~ max(my_dbscan_temp$cluster)+dplyr::row_number()
+              , T ~ dbscan_cluster
+            ) %>% 
+            factor()
+          ) %>% 
+          dplyr::group_by(clump_id) %>% 
+          dplyr::summarise(clump_n_trees = dplyr::n()) %>% 
+          dplyr::ungroup() %>% 
+          # create groups
+          dplyr::mutate(
+            clump_n_trees_grp = cut(
+                clump_n_trees
+                ,breaks = c(0,1,4,9,15,Inf)
+                , labels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+              ) %>% 
+              factor(
+                ordered = T
+                , levels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+              )
+          ) %>% 
+          # do we have group sizes we want?
+          dplyr::filter(clump_n_trees_grp == ntree_target_temp) %>% 
+          nrow()
+        ### store best cut list
+        if(i==1){
+          best_cuts = cut_trees_temp
+          best_desired_grps_n_temp = desired_grps_n_temp
+        }else if(desired_grps_n_temp>=best_desired_grps_n_temp){ # is this better than the best
+          best_cuts = cut_trees_temp
+          best_desired_grps_n_temp = desired_grps_n_temp
+        }else if(
+          best_desired_grps_n_temp>0 
+          & desired_grps_n_temp<best_desired_grps_n_temp
+        ){ # is this worse than the best which was successful?
+          # stop it
+          while_temp = 0
+        }else if( # is this the end?
+          i==nrow(cut_tree_lines_temp)
+        ){
+          # stop it
+          while_temp = 0
+        }
+        ### increment
+        i = i+1
     }
-    ### increment
-    i = i+1
   }
 # plot it
   x %>% 
@@ -1650,7 +1762,6 @@ start cutting at the narrowest places using the shortest cut line intersection l
       , caption = "*cut trees shown in red"
     ) +
     theme_void()
-  
 ```
 
 and here are the remaining clump sizes after cutting
@@ -1724,355 +1835,370 @@ remove(
   , cut_tree_lines_temp, while_temp, i
   , cut_trees_temp, my_dbscan_temp
   , desired_grps_n_temp, best_cuts, best_desired_grps_n_temp
-  , t_temp
+  , t_temp, st_ends_heading, st_extend_line
+  , euclidean_distance, get_perp_line, trees_remain_temp
 )
 gc()
 ```
 
-**put that entire process into a function to use with the clump tree list which we'll nest by clump size**
+#### Function to cut clumps
 
-```{r, include=F, eval=F}
-###### !!!!!!!!!!!!!!!!! CUT BY PINCH POINTS?
-clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees") %>% mapview()
-# data for passing to function with nest()
-id_temp = 45
+put the entire process outlined immediately above into a function to use with the tree list which we'll nest by `clump_id` to cut each clump and then we'll select the desired proportion of clumps
 
-x = ttops_temp %>% 
-  dplyr::filter(clump_n_trees_grp == ">15 trees") %>%
-  dplyr::filter(clump_id == id_temp)
+##### define intermediate functions
 
-ggplot() +
-  geom_sf(data = clump_polys_temp %>% dplyr::filter(clump_id==x$clump_id[1]), fill = NA) +
-  geom_sf(data = x, aes(color = dbh_cm)) +
-  theme_void()
+define intermediate functions
 
-# find the next group size for target
-# !!! going to have to change the process for clump_n_trees_grp == "Individual"
-ntree_target_temp = target_data_temp %>%
-  dplyr::mutate(l = dplyr::lag(clump_n_trees_grp)) %>%
-  dplyr::filter(clump_n_trees_grp == x$clump_n_trees_grp[1]) %>%
-  dplyr::pull(l)
-
-# find farthest distance between points
-dist_temp = sf::st_distance(x)
-# get the points
-f_pts_temp = 
-  x %>% 
-    dplyr::ungroup() %>% 
-    dplyr::slice(
-      # get the farthest points from distance matrix
-      which(dist_temp == max(dist_temp), arr.ind = TRUE)[1,]
-    )
-
-# draw a line between the farthest two points
-f_line_temp = f_pts_temp %>% 
-    # convert to linestring
-    dplyr::group_by(clump_id) %>% 
-    dplyr::summarise(n=dplyr::n()) %>%
-    sf::st_cast("LINESTRING") %>%
-    dplyr::ungroup()
-# we need to extend the line...
-# borrowing from https://github.com/metafor-ulaval/ALSroads/blob/main/R/line_tools.R
+```{r}
+##############################################
+# working with sf LINESTRINGS
+##############################################
+  # first two functions borrowed from https://github.com/metafor-ulaval/ALSroads/blob/main/R/line_tools.R
+  ########
   # Get heading of both ends of a line
-  st_ends_heading <- function(line){
-    M <- sf::st_coordinates(line)
-    i <- c(2, nrow(M) - 1)
-    j <- c(1, -1)
-    
-    headings <- mapply(i, j, FUN = function(i, j) {
-      Ax = M[i-j,1]
-      Ay = M[i-j,2]
-      Bx = M[i,1]
-      By = M[i,2]
-      atan2(Ay-By, Ax-Bx)*180/pi
-    })
-    names(headings) <- c("head", "tail")
-    return(headings)
-  }
-  
-  # extend the line on both ends
-  st_extend_line <- function(line, distance, end = "BOTH"){
-    if (!(end %in% c("BOTH", "HEAD", "TAIL")) | length(end) != 1) stop("'end' must be 'BOTH', 'HEAD' or 'TAIL'")
-  
-    M <- sf::st_coordinates(line)[,-3]
-    keep <- !(end == c("TAIL", "HEAD"))
-    
-    ends <- c(1, nrow(M))[keep]
-    headings <- st_ends_heading(line)[keep] / 180 * pi
-    distances <- if (length(distance) == 1) rep(distance, 2) else distance[1:2]
-    
-    M[ends, 1:2] <- M[ends, 1:2] + distances[keep] * c(cos(headings), sin(headings))
-    newline <- sf::st_linestring(M)
-  
-    # If input is sfc_LINESTRING and not sfg_LINESTRING
-    if (is.list(line)) newline <- sf::st_sfc(newline, crs = sf::st_crs(line))
-    
-    return(newline)
-  }
-
-# and apply the line extension
-  f_line_temp = st_extend_line(f_line_temp, distance = tree_clump_dist_m)
-  
-  ggplot() +
-    geom_sf(data = f_line_temp, color = "blue", lwd = 1.5) +
-    geom_sf(data = clump_polys_temp %>% dplyr::filter(clump_id==x$clump_id[1]), fill = NA) +
-    geom_sf(data = x, aes(color = dbh_cm)) +
-    theme_void()
-
-#### draw lines perpendicular to current line
-# 1) points along the f line
-  line_pts_temp = f_line_temp %>% 
-    sf::st_line_sample(
-      # n = # number of points = length line / (d/2)
-      #   sf::st_length(f_line_temp) %>% 
-      #   as.numeric() %>% 
-      #   `/`(tree_clump_dist_m/2) %>% 
-      #   ceiling()
-      , density = 1 # density (points per distance unit) of the sampling: 2=0.5m
-      , type = "regular"
-    ) %>% 
-    sf::st_cast("POINT")
-
-  ggplot() +
-    geom_sf(data = f_line_temp, color = "blue", lwd = 1.5) +
-    geom_sf(data = line_pts_temp, color = "red", size = 1.5, fill = NA, shape = 21) +
-    geom_sf(data = clump_polys_temp %>% dplyr::filter(clump_id==x$clump_id[1]), fill = NA) +
-    geom_sf(data = x, aes(color = dbh_cm)) +
-    theme_void()
-  
-# 2) get angle of f line 
-  st_ends_heading(f_line_temp)["head"]
-    # angle_fn_temp = function(stcoord1, stcoord2){
-    #   # a = 90 - 180 * atan(
-    #   #   (stcoord2["Y"]-stcoord1["Y"]) / # RISE
-    #   #     (stcoord2["X"]-stcoord1["X"]) # RUN
-    #   # ) / pi
-    #   # alternative?
-    #   a = atan(
-    #     (stcoord2["Y"]-stcoord1["Y"]) / # RISE
-    #       (stcoord2["X"]-stcoord1["X"]) # RUN
-    #   )
-    #   if(a<0){a = a + pi * 2} # make negative angles positive by adding 360 degrees
-    #   a = a * ( 180 / pi ) # convert angle from radians to degrees
-    #   ## return
-    #   return(a-180)
-    # }
-    # angle_fn_temp(sf::st_coordinates(f_pts_temp)[1,], sf::st_coordinates(f_pts_temp)[2,])
-
-# 3) make a line perpendicular to our farthest line based on a point on the f line
-perp_line = function(stcoord1, angle, dist_m, crs = sf::st_crs(x)){
-  # get new coordinate 1
-  y1 = (dist_m/2) * cos(90 + angle)
-  x1 = (dist_m/2) * sin(90 + angle)
-  stcoord3 = ( stcoord1 + c(x1, y1) ) %>% 
-    sf::st_point() %>% 
-    sf::st_sfc()
-  sf::st_crs(stcoord3) = crs
-  # get new coordinate 2
-  y1 = -(dist_m/2) * cos(90 + angle)
-  x1 = -(dist_m/2) * sin(90 + angle)
-  stcoord4 = ( stcoord1 + c(x1, y1) ) %>% 
-    sf::st_point() %>% 
-    sf::st_sfc()
-  sf::st_crs(stcoord4) = crs
-  # draw a line
-  l = sf::st_union(stcoord3,stcoord4) %>% 
-    sf::st_cast("LINESTRING") %>% 
-    sf::st_as_sf()
-  return(l)
-}
-
-perp_line(
-  stcoord1 = sf::st_coordinates(line_pts_temp)[15,]
-  , angle = st_ends_heading(f_line_temp)["head"]
-    # angle_fn_temp(sf::st_coordinates(f_pts_temp)[1,], sf::st_coordinates(f_pts_temp)[2,])
-  , dist_m = sf::st_length(f_line_temp) %>% as.numeric() %>% `*`(2)
-  , crs = sf::st_crs(x)
-) %>% 
-  ggplot() +
-    geom_sf(color = "cyan", lwd = 1.5) +
-    geom_sf(data = f_line_temp, color = "blue", lwd = 1.5) +
-    geom_sf(data = line_pts_temp, color = "red", size = 1.5, fill = NA, shape = 21) +
-    geom_sf(data = clump_polys_temp %>% dplyr::filter(clump_id==x$clump_id[1]), fill = NA) +
-    geom_sf(data = x, aes(color = dbh_cm)) +
-    theme_void()
-
-# 5) now get perpendicular lines in dataset which we can iterate over to make cuts
-perp_line_sf_temp = 1:length(line_pts_temp) %>% 
-  purrr::map(function(xxx){
-    return(
-      perp_line(
-        sf::st_coordinates(line_pts_temp)[xxx,]
-        , angle = angle_fn_temp(sf::st_coordinates(f_pts_temp)[1,], sf::st_coordinates(f_pts_temp)[2,])
-        , dist_m = sf::st_length(f_line_temp) %>% as.numeric() # %>% `*`(2)
-        , crs = sf::st_crs(x)
-      ) %>% 
-      sf::st_set_geometry("geometry") %>% 
-      dplyr::mutate(line_n = xxx)
-  )}) %>% 
-  dplyr::bind_rows()
-
-perp_line_sf_temp %>% 
-    ggplot() +
-    geom_sf(color = "cyan", lwd = 0.5) +
-    geom_sf(data = f_line_temp, color = "blue", lwd = 1.5) +
-    geom_sf(data = line_pts_temp, color = "red", size = 1.5, fill = NA, shape = 21) +
-    geom_sf(data = clump_polys_temp %>% dplyr::filter(clump_id==x$clump_id[1]), fill = NA) +
-    geom_sf(data = x, aes(color = dbh_cm)) +
-    theme_void()
-
-# 6) find intersection of lines with the polygon and add length of intersection to perp line data
-perp_line_sf_temp = perp_line_sf_temp %>% 
-  dplyr::inner_join(
-    # intersect and calc len
-    perp_line_sf_temp %>% 
-      sf::st_intersection(
-        clump_polys_temp %>% 
-          dplyr::ungroup() %>% 
-          dplyr::select(clump_id) %>% 
-          dplyr::filter(clump_id == x$clump_id[1])
-      ) %>% 
-      dplyr::mutate(len_m = sf::st_length(geometry) %>% as.numeric()) %>% 
-      sf::st_drop_geometry()
-    , by = "line_n"
-  )
-
-perp_line_sf_temp %>% 
-  sf::st_intersection(
-    clump_polys_temp %>% 
-      dplyr::ungroup() %>% 
-      dplyr::select(clump_id) %>% 
-      dplyr::filter(clump_id == x$clump_id[1])
-  ) %>% 
-  dplyr::mutate(len_m = sf::st_length(geometry) %>% as.numeric()) %>% 
-  ggplot() +
-    geom_sf(mapping = aes(color = len_m), lwd = 0.8) +
-    scale_color_distiller(palette = "Greys", direction = -1) +
-    geom_sf(data = f_line_temp, color = "blue", lwd = 1.5) +
-    geom_sf(data = line_pts_temp, color = "red", size = 1.5, fill = NA, shape = 21) +
-    geom_sf(data = clump_polys_temp %>% dplyr::filter(clump_id==x$clump_id[1]), fill = NA) +
-    geom_sf(data = x, color = "gray") +
-    theme_void()
-  # perp_line_sf_temp %>% ggplot(aes(x = len_m)) + geom_histogram()
-
-# 7) make cuts at the points where there is the least overlap with the clump polygon
-  # list of potential line cut + tree combinations
-  cut_tree_lines_temp = 
-    x %>% 
-      sf::st_buffer(tree_clump_dist_m/2) %>% 
-      sf::st_join(perp_line_sf_temp) %>% 
-      sf::st_drop_geometry() %>% 
-      dplyr::select(treeID, line_n, len_m) %>% 
-      dplyr::arrange(len_m, line_n, treeID) %>% 
-      dplyr::mutate(n = dplyr::row_number())
-  ###############################################################
-  # while
-  ###############################################################
-  # cut until the desired clump size is achieved
-  while_temp = 1
-  i = 1
-  while(while_temp==1) {
-    # cut trees
-    cut_trees_temp = cut_tree_lines_temp %>% 
-      dplyr::slice(1:i) %>% 
-      dplyr::distinct(treeID)
-    # cut them from the clump and check the new dbscan
-    my_dbscan_temp = x %>% 
-      sf::st_drop_geometry() %>% 
-      dplyr::anti_join(cut_trees_temp, by = "treeID") %>% 
-      dplyr::select(X,Y) %>% 
-      dbscan::dbscan(eps = tree_clump_dist_m, minPts = 2)
-    
-    # count the groups
-    desired_grps_n_temp = dplyr::tibble(
-        dbscan_cluster = my_dbscan_temp$cluster
-      ) %>% 
-      dplyr::mutate(
-        # unique dbscan_cluster for individuals
-        clump_id = dplyr::case_when(
-          dbscan_cluster == 0 ~ max(my_dbscan_temp$cluster)+dplyr::row_number()
-          , T ~ dbscan_cluster
-        ) %>% 
-        factor()
-      ) %>% 
-      dplyr::group_by(clump_id) %>% 
-      dplyr::summarise(clump_n_trees = dplyr::n()) %>% 
-      dplyr::ungroup() %>% 
-      # create groups
-      dplyr::mutate(
-        clump_n_trees_grp = cut(
-            clump_n_trees
-            ,breaks = c(0,1,4,9,15,Inf)
-            , labels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
-          ) %>% 
-          factor(
-            ordered = T
-            , levels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
-          )
-      ) %>% 
-      # do we have group sizes we want?
-      dplyr::filter(clump_n_trees_grp == ntree_target_temp) %>% 
-      nrow()
-    ### store best cut list
-    if(i==1){
-      best_cuts = cut_trees_temp
-      best_desired_grps_n_temp = desired_grps_n_temp
-    }else if(desired_grps_n_temp>best_desired_grps_n_temp){ # is this better than the best
-      best_cuts = cut_trees_temp
-      best_desired_grps_n_temp = desired_grps_n_temp
-    }else if(
-      best_desired_grps_n_temp>0 
-      & desired_grps_n_temp<best_desired_grps_n_temp
-    ){ # is this worse than the best which was successful?
-      # stop it
-      while_temp = 0
-    }else if( # is this the end?
-      i==nrow(cut_tree_lines_temp)
-    ){
-      # stop it
-      while_temp = 0
+  ########
+    st_ends_heading <- function(line){
+      M <- sf::st_coordinates(line)
+      i <- c(2, nrow(M) - 1)
+      j <- c(1, -1)
+      
+      headings <- mapply(i, j, FUN = function(i, j) {
+        Ax = M[i-j,1]
+        Ay = M[i-j,2]
+        Bx = M[i,1]
+        By = M[i,2]
+        atan2(Ay-By, Ax-Bx)*180/pi
+      })
+      names(headings) <- c("head", "tail")
+      return(headings)
     }
-    ### increment
-    i = i+1
-  }
-  
-  x %>% 
-    dplyr::inner_join(best_cuts, by = "treeID") %>% 
-  ggplot() +
-    geom_sf(
-      data = # cut line segs
-        perp_line_sf_temp %>% 
-        sf::st_intersection(
-          clump_polys_temp %>% 
-            dplyr::ungroup() %>% 
-            dplyr::select(clump_id) %>% 
-            dplyr::filter(clump_id == x$clump_id[1])
-        ) %>% 
-        dplyr::mutate(len_m = sf::st_length(geometry) %>% as.numeric())
-      , mapping = aes(color = len_m), lwd = 0.8
-    ) +
-    scale_color_distiller(palette = "Greys", direction = -1) +
-    geom_sf(data = f_line_temp, color = "blue", lwd = 1.5) +
-    geom_sf(data = clump_polys_temp %>% dplyr::filter(clump_id==x$clump_id[1]), fill = NA) +
-    geom_sf(data = x, color = "gray") +
-    geom_sf(color = "red") + 
-    labs(caption = "*cut trees shown in red") +
-    theme_void()
-  
-  # # return treelist with cut/keep
-  # # join to original data and pull
-  # d_temp = x %>%
-  #   sf::st_drop_geometry() %>%
-  #   dplyr::left_join(
-  #     best_cuts %>% dplyr::mutate(is_keep_tree = 0)
-  #     , by = dplyr::join_by("treeID")
-  #   ) %>%
-  #   dplyr::mutate(is_keep_tree = dplyr::coalesce(is_keep_tree, 1)) %>% 
-  #   dplyr::pull(is_keep_tree)
-  # return(d_temp)
+  ########
+  # extend the line on both ends
+  ########
+    st_extend_line <- function(line, distance, end = "BOTH"){
+      if (!(end %in% c("BOTH", "HEAD", "TAIL")) | length(end) != 1) stop("'end' must be 'BOTH', 'HEAD' or 'TAIL'")
+    
+      M <- sf::st_coordinates(line)[,-3]
+      keep <- !(end == c("TAIL", "HEAD"))
+      
+      ends <- c(1, nrow(M))[keep]
+      headings <- st_ends_heading(line)[keep] / 180 * pi
+      distances <- if (length(distance) == 1) rep(distance, 2) else distance[1:2]
+      
+      M[ends, 1:2] <- M[ends, 1:2] + distances[keep] * c(cos(headings), sin(headings))
+      newline <- sf::st_linestring(M)
+    
+      # If input is sfc_LINESTRING and not sfg_LINESTRING
+      if (is.list(line)) newline <- sf::st_sfc(newline, crs = sf::st_crs(line))
+      
+      return(newline)
+    }
+  ########
+  # pass an sf dataframe of points and return a line between the farthest points
+  ########
+    st_points_to_line <- function(pts, line_ext=0) {
+      if(max(class(ttops_temp) %in% c("sf"))!=1){
+        stop("must provide an object of class `sf`")
+      }
+      # find farthest distance between points
+      dist_temp = sf::st_distance(pts)
+      
+      # get the points
+      f_pts_temp = 
+        pts %>% 
+          dplyr::ungroup() %>% 
+          dplyr::slice(
+            # get the farthest points from distance matrix
+            which(dist_temp == max(dist_temp), arr.ind = TRUE)[1,]
+          )
+      
+      # draw a line between the farthest two points
+      f_line_temp = f_pts_temp %>% 
+          # convert to linestring
+          dplyr::ungroup() %>% 
+          dplyr::summarise(n=dplyr::n()) %>%
+          sf::st_cast("LINESTRING") %>%
+          dplyr::ungroup() %>% 
+          dplyr::select(-c(n))
+      
+      # and apply the line extension
+        farthest_line = st_extend_line(f_line_temp, distance = line_ext)
+      # return
+        return(farthest_line)
+    }
+    # st_points_to_line(ttops_temp %>% dplyr::slice_head(prop = .1), line_ext = 6) %>% 
+    #   ggplot() + geom_sf() + geom_sf(data = ttops_temp %>% dplyr::slice_head(prop = .1)) + theme_void()
+
+  ########
+  # Function to calculate Euclidean distance between 2 points
+  ########
+    st_euclidean_distance <- function(p1,p2) {
+        return(sqrt((p2[1] - p1[1])^2 + (p2[2] - p1[2])^2))
+    }
+
+  ########
+  # return a line perpendicular to current line
+  ########
+  ### https://stackoverflow.com/questions/56771058/perpendicular-lines-at-regular-intervals-along-lines-with-multiple-nodes
+    # Function to calculate 2 points on a line perpendicular to another defined by 2 points p1,p2
+    # For point at interval, which can be a proportion of the segment length, or a constant
+    st_perp_line <- function(interval=0.5, my_line, proportion=TRUE) {
+      # get end points of line
+      p1 = my_line %>% sf::st_cast("POINT") %>% sf::st_coordinates() %>% .[1,]
+      p2 = my_line %>% sf::st_cast("POINT") %>% sf::st_coordinates() %>% .[2,]
+      # get length of line to return equal length line
+      line_len = sf::st_length(my_line) %>% as.numeric() %>% `/`(2)      
+      # get crs of line
+      my_crs = sf::st_crs(my_line)
+      
+      # Calculate x and y distances
+      x_len <- p2[1] - p1[1]
+      y_len <- p2[2] - p1[2]
+      
+      # If proportion calculate reference point from tot_length
+      if (proportion) {
+          point <- c(p1[1]+x_len*interval,p1[2]+y_len*interval)
+      }
+      # Else use the constant value
+      else {
+          tot_len <- st_euclidean_distance(p1,p2)
+          point <- c(p1[1]+x_len/tot_len*interval,p1[2]+y_len/tot_len*interval)
+      }    
+      
+      # Calculate the x and y distances from reference point to point on line line_len distance away    
+      ref_len <- st_euclidean_distance(point,p2)
+      xn_len <- (line_len / ref_len) * (p2[1] - point[1])
+      yn_len <- (line_len / ref_len) * (p2[2] - point[2])
+      
+      # Invert the x and y lengths and add/subtract from the refrence point
+      # ref_points <- rbind(point,c(point[1] + yn_len,point[2] - xn_len),c(point[1] - yn_len,point[2] + xn_len))
+      ref_points <- rbind(c(point[1] + yn_len,point[2] - xn_len),c(point[1] - yn_len,point[2] + xn_len))
+      
+      # use the reference points to return a line
+      return(
+        ref_points %>% 
+          dplyr::as_tibble() %>% 
+          dplyr::rename_with(tolower) %>% 
+          sf::st_as_sf(coords = c("x", "y"), crs = my_crs, remove = F) %>%
+          dplyr::summarise(n=dplyr::n()) %>%
+          sf::st_cast("LINESTRING") %>%
+          dplyr::ungroup() %>% 
+          dplyr::select(-c(n))
+      )
+    }
+    # st_perp_line(
+    #   my_line = st_points_to_line(ttops_temp %>% dplyr::slice_head(prop = .1), line_ext = 6)
+    # ) %>% 
+    #   ggplot() + 
+    #     geom_sf(data = ttops_temp %>% dplyr::slice_head(prop = .1)) + # points
+    #     geom_sf(color = "blue") + # perp line
+    #     geom_sf( # farthest line
+    #       data = st_points_to_line(ttops_temp %>% dplyr::slice_head(prop = .1), line_ext = 6)
+    #       , color = "black"
+    #     ) + 
+    #     theme_void()
 ```
 
-```{r, include=F, eval=F}
+##### function to pass a clump
+
+generate data using clumping functions above, pass that data, return tree list with cut/keep flag
+
+```{r}
+##############################################
+# get cut keep tree flag
+##############################################
+get_keep_tree_flag <- function(
+  x # x = data from the get_tree_clumps function filtered for a SINGLE clump_id (meant to be used with nest())
+  , clumps # clumps = data from the get_clump_summary function
+  , tgt # tgt = data from the get_target_check_prescription function
+) {
+  # !!! going to have to change the process for clump_n_trees_grp == "Individual"
+  if(
+    x %>% 
+      dplyr::filter(clump_n_trees_grp == "Individual") %>% 
+      nrow() > 0
+  ){
+    stop("cannot cut individual trees...remove from the `x` data")
+  }
+  # is there more than one clump id
+  if(
+    x %>% 
+      dplyr::distinct(clump_id_duplicate) %>% 
+      nrow() > 1
+  ){
+    stop(
+      "please provide data with only a single `clump_id`...or try to nest data:\n"
+      , " dplyr::group_by(clump_id) %>% tidyr::nest() %>%\n"
+      , "  dplyr::mutate(is_keep_tree = purrr::map(data, get_cut_keep_flag))"
+    )
+  }
+  # get the tree_clump_dist_m distance used with the dbscan in get_tree_clumps
+  dist_temp = x$tree_clump_dist_m[1]
+  
+  # find the next group size for target
+  ntree_target_temp = tgt %>%
+    dplyr::ungroup() %>% 
+    dplyr::arrange(clump_n_trees_grp) %>% 
+    dplyr::mutate(l = dplyr::lag(clump_n_trees_grp)) %>%
+    dplyr::filter(clump_n_trees_grp == x$clump_n_trees_grp[1]) %>%
+    dplyr::pull(l)
+  
+  # get the farthest line between points
+  f_line_temp = st_points_to_line(x, line_ext = dist_temp)
+  
+  # get perpendicular lines in dataset which we can iterate over to make cuts
+  perp_line_sf_temp = 
+    # for every 1 m along line length, get a new perp line
+    seq(
+        from = 0
+        , to = sf::st_length(f_line_temp) %>% as.numeric() %>% floor()
+        , by = 1
+      ) %>% 
+    purrr::map(
+      st_perp_line
+      , my_line = f_line_temp
+      , proportion = F
+    ) %>% 
+    dplyr::bind_rows() %>% 
+    dplyr::mutate(line_n = dplyr::row_number())
+  
+  # find intersection of lines with the polygon and add length of intersection to perp line data
+  perp_line_sf_temp = perp_line_sf_temp %>% 
+    dplyr::inner_join(
+      # intersect and calc len
+      perp_line_sf_temp %>% 
+        sf::st_intersection(
+          clumps %>% 
+            dplyr::ungroup() %>% 
+            dplyr::select(clump_id) %>% 
+            dplyr::filter(clump_id == x$clump_id_duplicate[1])
+        ) %>% 
+        dplyr::mutate(len_m = sf::st_length(geometry) %>% as.numeric()) %>% 
+        sf::st_drop_geometry()
+      , by = "line_n"
+    )
+  
+  # make cuts at the points where there is the least overlap with the clump polygon
+    # list of potential line cut + tree combinations
+    cut_tree_lines_temp = 
+      x %>% 
+        sf::st_buffer(dist_temp/2) %>% 
+        sf::st_join(perp_line_sf_temp) %>% 
+        sf::st_drop_geometry() %>% 
+        dplyr::select(treeID, line_n, len_m) %>% 
+        dplyr::arrange(len_m, line_n, treeID) %>% 
+        dplyr::mutate(n = dplyr::row_number())
+    ###############################################################
+    # while
+    ###############################################################
+    # cut until the desired clump size is achieved
+    while_temp = 1
+    i = 1
+    while(while_temp==1) {
+      # cut trees
+      cut_trees_temp = cut_tree_lines_temp %>% 
+        dplyr::slice(1:i) %>% 
+        dplyr::distinct(treeID)
+      # get the remaining trees not cut
+      trees_remain_temp = x %>% 
+        sf::st_drop_geometry() %>% 
+        dplyr::anti_join(cut_trees_temp, by = "treeID") %>% 
+        dplyr::select(X,Y)
+      
+      # ensure that there are trees
+      if(nrow(trees_remain_temp)==0){
+        # there are no more possible cuts :/
+        best_cuts = dplyr::tibble(treeID = character())
+        # stop it
+        while_temp = 0
+      }else{
+          # cut them from the clump and check the new dbscan
+          my_dbscan_temp = trees_remain_temp %>% 
+            dbscan::dbscan(eps = tree_clump_dist_m, minPts = 2)
+          
+          # count the groups
+          desired_grps_n_temp = dplyr::tibble(
+              dbscan_cluster = my_dbscan_temp$cluster
+            ) %>% 
+            dplyr::mutate(
+              # unique dbscan_cluster for individuals
+              clump_id = dplyr::case_when(
+                dbscan_cluster == 0 ~ max(my_dbscan_temp$cluster)+dplyr::row_number()
+                , T ~ dbscan_cluster
+              ) %>% 
+              factor()
+            ) %>% 
+            dplyr::group_by(clump_id) %>% 
+            dplyr::summarise(clump_n_trees = dplyr::n()) %>% 
+            dplyr::ungroup() %>% 
+            # create groups
+            dplyr::mutate(
+              clump_n_trees_grp = cut(
+                  clump_n_trees
+                  ,breaks = c(0,1,4,9,15,Inf)
+                  , labels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+                ) %>% 
+                factor(
+                  ordered = T
+                  , levels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+                )
+            ) %>% 
+            # do we have group sizes we want?
+            dplyr::filter(clump_n_trees_grp == ntree_target_temp) %>% 
+            nrow()
+          ### store best cut list
+          if(i==1){
+            best_cuts = cut_trees_temp
+            best_desired_grps_n_temp = desired_grps_n_temp
+          }else if(desired_grps_n_temp>=best_desired_grps_n_temp){ # is this better than the best
+            best_cuts = cut_trees_temp
+            best_desired_grps_n_temp = desired_grps_n_temp
+          }else if(
+            best_desired_grps_n_temp>0 
+            & desired_grps_n_temp<best_desired_grps_n_temp
+          ){ # is this worse than the best which was successful?
+            # stop it
+            while_temp = 0
+          }else if( # is this the end?
+            i==nrow(cut_tree_lines_temp)
+          ){
+            # stop it
+            while_temp = 0
+          }
+          ### increment
+          i = i+1
+      }
+    }
+  # return it
+    # return treelist with cut/keep
+    # join to original data and pull
+    d_temp = x %>%
+      sf::st_drop_geometry() %>%
+      dplyr::left_join(
+        best_cuts %>% dplyr::mutate(is_keep_tree = 0)
+        , by = dplyr::join_by("treeID")
+      ) %>%
+      dplyr::mutate(is_keep_tree = dplyr::coalesce(is_keep_tree, 1)) %>%
+      dplyr::pull(is_keep_tree)
+    return(d_temp)
+}
+
+# get_keep_tree_flag(
+#   x = ttops_temp %>% 
+#     dplyr::filter(
+#       clump_id == ttops_temp %>% 
+#         dplyr::arrange(desc(clump_n_trees)) %>% 
+#         dplyr::pull(clump_id) %>% 
+#         .[1]
+#     )
+#   , clumps = clump_polys_temp
+#   , tgt = target_data_temp
+# )
+```
+
+#### Cut one group size example
+
+```{r}
 # use target data to get cut trees by clump size group
 # !!!! need this first:
   # target_data_temp = get_target_check_prescription(
@@ -2083,53 +2209,16 @@ perp_line_sf_temp %>%
   # )
 cut_grp_ex_temp = ttops_temp %>%
   dplyr::filter(clump_n_trees_grp == ">15 trees") %>%
-  dplyr::group_by(clump_id) %>%
-  tidyr::nest() %>%
+  dplyr::ungroup() %>% 
+  tidyr::nest(.by = c(clump_id)) %>%
   dplyr::mutate(
-    is_keep_tree = purrr::map(data, function(x, tgt = target_data_temp){
-      # get next size group n tree target
-      ntree_target_temp = tgt %>%
-        dplyr::mutate(l = dplyr::lag(mean_clump_n_trees)) %>%
-        dplyr::filter(clump_n_trees_grp == x$clump_n_trees_grp[1]) %>%
-        dplyr::pull(l) %>%
-        dplyr::coalesce(0)
-      # join to gridded area based on the tree clump distance
-      grid = x %>%
-        sf::st_bbox() %>%
-        sf::st_make_grid(
-          cellsize = round(tree_clump_dist_m/2,0)
-        ) %>%
-        sf::st_as_sf() %>%
-        dplyr::mutate(
-          grid_n = dplyr::row_number()
+    is_keep_tree = data %>%
+      purrr::map(\(data) get_keep_tree_flag(
+          data
+          , clumps = clump_polys_temp
+          , tgt = target_data_temp
         )
-      x_grid = x %>% 
-        sf::st_join(grid) %>% 
-        dplyr::group_by(treeID) %>% 
-        dplyr::filter(dplyr::row_number()==1) %>% 
-        dplyr::ungroup()
-      # get the biggest tree grid_n
-      big_grid = x_grid %>% dplyr::arrange(desc(dbh_cm), desc(tree_height_m)) %>% dplyr::pull(grid_n) %>% .[1]
-      # start with biggest tree keep adding cells until desired n trees reached
-      x_grid = x_grid %>%
-        dplyr::mutate(
-          sorter = abs(grid_n-big_grid)
-        ) %>%
-        dplyr::arrange(sorter, desc(dbh_cm), desc(tree_height_m)) %>%
-        dplyr::mutate(
-          is_keep_tree = (dplyr::row_number() <= ntree_target_temp) %>% as.numeric()
-        )
-      # join to original data and pull
-      d = x %>%
-        sf::st_drop_geometry() %>%
-        dplyr::left_join(
-          x_grid %>% sf::st_drop_geometry() %>% dplyr::select(treeID, is_keep_tree) #is_keep_tree
-          , by = dplyr::join_by("treeID")
-        ) %>%
-        dplyr::pull(is_keep_tree)
-      # return
-      return(d)
-    })
+      )
   ) %>%
   tidyr::unnest(cols = c(data, is_keep_tree)) %>%
   sf::st_set_geometry("geom") %>% # set it cuz it got lost
@@ -2138,7 +2227,7 @@ cut_grp_ex_temp = ttops_temp %>%
 cut_grp_ex_temp %>% dplyr::glimpse()
 ```
 
-```{r, include=F, eval=F}
+```{r}
 ggplot() + 
     geom_sf(data = harvests %>% dplyr::filter(suid == my_suid), fill = NA, color = "black") +
     geom_sf(
@@ -2162,6 +2251,8 @@ ggplot() +
     theme_void() + 
     guides(color = guide_legend(override.aes = list(size = 5)))
 ```
+
+**some clumps got no cuts...need to fix ;\**
 
 ```{r, include=F, eval=F}
 ###### !!!!!!!!!!!!!!!!! CUT BY BBOX GRID ????
@@ -2409,7 +2500,7 @@ ggplot() +
 ```{r, include=F, eval=F}
 ###### !!!!!!!!!!!!!!!!! CUT BY RASTER GRID ????
 ###### !!!!!!!!!!!!!!!!! CUT BY RASTER GRID ????
-# clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees") %>% mapview()
+clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees") %>% mapview()
 # data for passing to function with nest()
 id_temp = 45
 

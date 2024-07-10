@@ -99,3 +99,7 @@ obtain-targets-for-clump-proportions
 select-target-clump-proportions-for-your-stand
 combine-clump-and-opening-targets-with-leave-tree-criteria-into-marking-guidelines
 example-for-one-clump
+function-to-cut-clumps
+define-intermediate-functions
+function-to-pass-a-clump
+cut-one-group-size-example
