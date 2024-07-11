@@ -1,8 +1,10 @@
-# UAS Tree Spatial Arrangement{#tree_spatial}
+# UAS Tree Spatial Arrangement and ICO Example{#tree_spatial}
 
-## Example Tree Group Workflow
+In this section, we'll outline the steps needed to start with a UAS tree list, identify tree clump grouping, set prescription targets and generate cut/leave trees to define a prescription.
 
-For now we'll just make a visual overview of the UAS-SfM forest inventory process to present at the 2024 National Silvicultural Workshop.
+## Example Tree Clump Grouping
+
+Let's go through the tree clump grouping process for a single stand
 
 ```{r}
 # focus on one harvest unit
@@ -410,7 +412,7 @@ ortho_plt_fn(my_suid) +
     labs(color = "within clump\nN.N. dist. (m)")
 ```
 
-#### Create function to get tree list with clumps
+#### Create function to get tree list with clumps{#clump_trees}
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
 remove(list = ls()[grep("_temp",ls())])
@@ -532,7 +534,7 @@ ttops_temp = get_tree_clumps(
 )
 ```
 
-### Clump Polygons and Metrics
+### Clump Polygons and Metrics{#clump_sum}
 
 [Churchill et al. (2016)](https://scholarworks.umt.edu/ico/3) provide instructions for implementing the clump identification (Plotkin et al. 2002) in ArcGIS:
 
@@ -781,7 +783,7 @@ plt_fnl_temp + (plt_open_temp + theme(legend.position = "none"))
 ggplot2::ggsave("../data/NSW_09.jpeg", dpi = "print", height = 11, width = 8, device = "jpeg")
 ```
 
-### Clump Metrics
+### Clump Metrics{#clump_metrics}
 
 create a function to summarize by number of tree clump grouping variable
 
@@ -1075,7 +1077,7 @@ clump_n_trees_grp_summary_temp %>%
   kableExtra::kable_styling()
 ```
 
-### 5. Obtain targets for clump proportions
+### 5. Obtain targets for clump proportions{#set_targets}
 
 Step 5 in [Churchill et al. (2016)](https://scholarworks.umt.edu/ico/3): 
 
@@ -1645,6 +1647,8 @@ x %>%
 ```{r}
 # 7) make cuts at the points where there is the least overlap with the clump polygon
   # list of potential line cut + tree combinations
+  # aggregate the mean length of the intersecting cut lines to the tree level
+  # prioritize trees for removal that have smallest length
   cut_tree_lines_temp = 
     x %>% 
       sf::st_buffer(tree_clump_dist_m/2) %>% 
@@ -1652,6 +1656,7 @@ x %>%
       sf::st_drop_geometry() %>% 
       dplyr::group_by(treeID) %>% 
       dplyr::summarise(len_m = mean(len_m, na.rm = T)) %>% 
+      dplyr::ungroup() %>% 
       dplyr::arrange(len_m, treeID) %>% 
       dplyr::mutate(n = dplyr::row_number())
   ###############################################################
@@ -1724,6 +1729,72 @@ x %>%
           best_desired_grps_n_temp>0 
           & desired_grps_n_temp<best_desired_grps_n_temp
         ){ # is this worse than the best which was successful?
+          ###############################
+          # add trees back in until gets worse
+          ###############################
+          j = 1
+          while_add = 1
+          while(while_add==1){
+            # cut trees
+            cut_trees_temp = best_cuts %>% 
+              # add trees back in (i.e. remove them from the cut trees)
+              dplyr::anti_join(
+                cut_tree_lines_temp %>% 
+                  dplyr::slice(1:j) %>% 
+                  dplyr::distinct(treeID)
+                , by = "treeID"
+              )
+            # get the remaining trees not cut
+            trees_remain_temp = x %>% 
+              sf::st_drop_geometry() %>% 
+              dplyr::anti_join(cut_trees_temp, by = "treeID") %>% 
+              dplyr::select(X,Y)
+            
+            # check the new dbscan
+            my_dbscan_temp = trees_remain_temp %>% 
+              dbscan::dbscan(eps = tree_clump_dist_m, minPts = 2)
+            
+            # count the groups
+            desired_grps_n_temp = dplyr::tibble(
+                dbscan_cluster = my_dbscan_temp$cluster
+              ) %>% 
+              dplyr::mutate(
+                # unique dbscan_cluster for individuals
+                clump_id = dplyr::case_when(
+                  dbscan_cluster == 0 ~ max(my_dbscan_temp$cluster)+dplyr::row_number()
+                  , T ~ dbscan_cluster
+                ) %>% 
+                factor()
+              ) %>% 
+              dplyr::group_by(clump_id) %>% 
+              dplyr::summarise(clump_n_trees = dplyr::n()) %>% 
+              dplyr::ungroup() %>% 
+              # create groups
+              dplyr::mutate(
+                clump_n_trees_grp = cut(
+                    clump_n_trees
+                    ,breaks = c(0,1,4,9,15,Inf)
+                    , labels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+                  ) %>% 
+                  factor(
+                    ordered = T
+                    , levels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+                  )
+              ) %>% 
+              # do we have group sizes we want?
+              dplyr::filter(clump_n_trees_grp == ntree_target_temp) %>% 
+              nrow()
+            
+            if(desired_grps_n_temp>=best_desired_grps_n_temp){ # is this better than the best
+              best_cuts = cut_trees_temp
+              best_desired_grps_n_temp = desired_grps_n_temp
+            }else(
+              # stop it
+              while_add = 0  
+            )
+            # increment
+            j = j + 1
+          }
           # stop it
           while_temp = 0
         }else if( # is this the end?
@@ -1736,6 +1807,7 @@ x %>%
         i = i+1
     }
   }
+  
 # plot it
   x %>% 
     dplyr::inner_join(best_cuts, by = "treeID") %>% 
@@ -1838,11 +1910,12 @@ remove(
   , desired_grps_n_temp, best_cuts, best_desired_grps_n_temp
   , t_temp, st_ends_heading, st_extend_line
   , euclidean_distance, get_perp_line, trees_remain_temp
+  , while_add, j, add_trees_temp
 )
 gc()
 ```
 
-#### Function to cut clumps
+#### Function to cut clumps{#cut_clump_ex}
 
 put the entire process outlined immediately above into a function to use with the tree list which we'll nest by `clump_id` to cut each clump and then we'll select the desired proportion of clumps
 
@@ -2081,6 +2154,8 @@ get_keep_tree_flag <- function(
   
   # make cuts at the points where there is the least overlap with the clump polygon
     # list of potential line cut + tree combinations
+    # aggregate the mean length of the intersecting cut lines to the tree level
+    # prioritize trees for removal that have smallest length
     cut_tree_lines_temp = 
       x %>% 
         sf::st_buffer(tree_clump_dist_m/2) %>% 
@@ -2088,6 +2163,7 @@ get_keep_tree_flag <- function(
         sf::st_drop_geometry() %>% 
         dplyr::group_by(treeID) %>% 
         dplyr::summarise(len_m = mean(len_m, na.rm = T)) %>% 
+        dplyr::ungroup() %>% 
         dplyr::arrange(len_m, treeID) %>% 
         dplyr::mutate(n = dplyr::row_number())
     ###############################################################
@@ -2101,6 +2177,7 @@ get_keep_tree_flag <- function(
       cut_trees_temp = cut_tree_lines_temp %>% 
         dplyr::slice(1:i) %>% 
         dplyr::distinct(treeID)
+      
       # get the remaining trees not cut
       trees_remain_temp = x %>% 
         sf::st_drop_geometry() %>% 
@@ -2152,13 +2229,79 @@ get_keep_tree_flag <- function(
           if(i==1){
             best_cuts = cut_trees_temp
             best_desired_grps_n_temp = desired_grps_n_temp
-          }else if(desired_grps_n_temp>=best_desired_grps_n_temp){ # is this better than the best
+          }else if(desired_grps_n_temp>best_desired_grps_n_temp){ # is this better than the best
             best_cuts = cut_trees_temp
             best_desired_grps_n_temp = desired_grps_n_temp
           }else if(
             best_desired_grps_n_temp>0 
             & desired_grps_n_temp<best_desired_grps_n_temp
           ){ # is this worse than the best which was successful?
+            ###############################
+            # add trees back in until gets worse
+            ###############################
+            j = 1
+            while_add = 1
+            while(while_add==1){
+              # cut trees
+              cut_trees_temp = best_cuts %>% 
+                # add trees back in (i.e. remove them from the cut trees)
+                dplyr::anti_join(
+                  cut_tree_lines_temp %>% 
+                    dplyr::slice(1:j) %>% 
+                    dplyr::distinct(treeID)
+                  , by = "treeID"
+                )
+              # get the remaining trees not cut
+              trees_remain_temp = x %>% 
+                sf::st_drop_geometry() %>% 
+                dplyr::anti_join(cut_trees_temp, by = "treeID") %>% 
+                dplyr::select(X,Y)
+              
+              # check the new dbscan
+              my_dbscan_temp = trees_remain_temp %>% 
+                dbscan::dbscan(eps = tree_clump_dist_m, minPts = 2)
+              
+              # count the groups
+              desired_grps_n_temp = dplyr::tibble(
+                  dbscan_cluster = my_dbscan_temp$cluster
+                ) %>% 
+                dplyr::mutate(
+                  # unique dbscan_cluster for individuals
+                  clump_id = dplyr::case_when(
+                    dbscan_cluster == 0 ~ max(my_dbscan_temp$cluster)+dplyr::row_number()
+                    , T ~ dbscan_cluster
+                  ) %>% 
+                  factor()
+                ) %>% 
+                dplyr::group_by(clump_id) %>% 
+                dplyr::summarise(clump_n_trees = dplyr::n()) %>% 
+                dplyr::ungroup() %>% 
+                # create groups
+                dplyr::mutate(
+                  clump_n_trees_grp = cut(
+                      clump_n_trees
+                      ,breaks = c(0,1,4,9,15,Inf)
+                      , labels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+                    ) %>% 
+                    factor(
+                      ordered = T
+                      , levels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+                    )
+                ) %>% 
+                # do we have group sizes we want?
+                dplyr::filter(clump_n_trees_grp == ntree_target_temp) %>% 
+                nrow()
+              
+              if(desired_grps_n_temp>=best_desired_grps_n_temp){ # is this better than the best
+                best_cuts = cut_trees_temp
+                best_desired_grps_n_temp = desired_grps_n_temp
+              }else(
+                # stop it
+                while_add = 0  
+              )
+              # increment
+              j = j + 1
+            }
             # stop it
             while_temp = 0
           }else if( # is this the end?
@@ -2171,6 +2314,7 @@ get_keep_tree_flag <- function(
           i = i+1
       }
     }
+  
   # return it
     # return treelist with cut/keep
     # join to original data and pull
@@ -2226,7 +2370,7 @@ cut_grp_ex_temp = ttops_temp %>%
   sf::st_set_geometry("geom") %>% # set it cuz it got lost
   dplyr::ungroup()
 # what?
-cut_grp_ex_temp %>% dplyr::glimpse()
+# cut_grp_ex_temp %>% dplyr::glimpse()
 ```
 
 example group cut and keep trees
@@ -2314,13 +2458,47 @@ t_temp = cut_grp_ex_temp %>%
         , color = "red"
         , size = 0.5
     ) +
-    labs(caption = "*cut trees shown in red")+
+    labs(caption = "*cut trees shown in red", subtitle = "cut trees in clumps sized >15 trees")+
     theme_void() 
 ```
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
 remove(t_temp, my_dbscan_temp)
 gc()
+```
+
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(list = ls()[grep("_temp",ls())])
+gc()
+```
+
+## Full ICO Prescription Process{#implement}
+
+Above we outlined the individual steps needed to start with a UAS tree list, identify tree clump grouping, set prescription targets and generate cut/leave trees to define a prescription. Now, we'll put all of those steps together into a single flow.
+
+* identify current stand clump groupings:
+  + [clump individual trees](#clump_trees)
+  + generate clump [vectors](#clump_sum) and [summary metrics](#clump_metrics)
+* [set ICO targets](#set_targets)
+* [implement the prescription](#cut_clump_ex)
+  + start with the largest clump size currently with trees
+  + cut trees to the next largest clump size until desired # clumps is reached
+  + repeat with each successive clump size through to individual tree selection
+  + if possible, cut in same clump until desired proportions are reached to minimize machine time
+
+---
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(list = ls()[grep("_temp",ls())])
+gc()
+######################################################################
+######################################################################
+# below here is old stuff in which I figured out some methods 
+# that I might want to use sometime in the future
+######################################################################
+######################################################################
 ```
 
 ```{r, include=F, eval=F}
@@ -2389,7 +2567,6 @@ ggplot(x) + geom_sf(aes(color = dbh_cm)) +
       
       plot(grid)
 ```
-
 
 ```{r, include=F, eval=F}
 ###### !!!!!!!!!!!!!!!!! CUT BY BBOX LINES ????
