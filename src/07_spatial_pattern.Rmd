@@ -1318,9 +1318,10 @@ Example for one clump where we identify the "narrow" areas of the clump polygon 
 example clump
 
 ```{r}
+# clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees") %>% mapview()
 ###### !!!!!!!!!!!!!!!!! CUT BY NARROW AREAS?
 # just one clump example
-id_temp = # 113
+id_temp = # 141
   clump_polys_temp %>% 
   dplyr::filter(clump_n_trees_grp == ">15 trees") %>% 
   dplyr::slice_sample(prop = .3) %>% 
@@ -1649,10 +1650,10 @@ x %>%
       sf::st_buffer(tree_clump_dist_m/2) %>% 
       sf::st_join(perp_line_sf_temp) %>% 
       sf::st_drop_geometry() %>% 
-      dplyr::select(treeID, line_n, len_m) %>% 
-      dplyr::arrange(len_m, line_n, treeID) %>% 
+      dplyr::group_by(treeID) %>% 
+      dplyr::summarise(len_m = mean(len_m, na.rm = T)) %>% 
+      dplyr::arrange(len_m, treeID) %>% 
       dplyr::mutate(n = dplyr::row_number())
-
   ###############################################################
   # while
   ###############################################################
@@ -1716,7 +1717,7 @@ x %>%
         if(i==1){
           best_cuts = cut_trees_temp
           best_desired_grps_n_temp = desired_grps_n_temp
-        }else if(desired_grps_n_temp>=best_desired_grps_n_temp){ # is this better than the best
+        }else if(desired_grps_n_temp>best_desired_grps_n_temp){ # is this better than the best
           best_cuts = cut_trees_temp
           best_desired_grps_n_temp = desired_grps_n_temp
         }else if(
@@ -2082,11 +2083,12 @@ get_keep_tree_flag <- function(
     # list of potential line cut + tree combinations
     cut_tree_lines_temp = 
       x %>% 
-        sf::st_buffer(dist_temp/2) %>% 
+        sf::st_buffer(tree_clump_dist_m/2) %>% 
         sf::st_join(perp_line_sf_temp) %>% 
         sf::st_drop_geometry() %>% 
-        dplyr::select(treeID, line_n, len_m) %>% 
-        dplyr::arrange(len_m, line_n, treeID) %>% 
+        dplyr::group_by(treeID) %>% 
+        dplyr::summarise(len_m = mean(len_m, na.rm = T)) %>% 
+        dplyr::arrange(len_m, treeID) %>% 
         dplyr::mutate(n = dplyr::row_number())
     ###############################################################
     # while
@@ -2227,6 +2229,8 @@ cut_grp_ex_temp = ttops_temp %>%
 cut_grp_ex_temp %>% dplyr::glimpse()
 ```
 
+example group cut and keep trees
+
 ```{r}
 ggplot() + 
     geom_sf(data = harvests %>% dplyr::filter(suid == my_suid), fill = NA, color = "black") +
@@ -2238,7 +2242,7 @@ ggplot() +
     ) +
     scale_fill_manual(
       values = 
-        viridis::mako(
+        viridis::turbo(
           clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees") %>% 
           dplyr::pull(clump_id) %>% 
           unique() %>% length()
@@ -2246,13 +2250,78 @@ ggplot() +
     ) + 
     # tree points
     geom_sf(data = cut_grp_ex_temp, mapping = aes(color = as.factor(is_keep_tree)), size = 0.5) +
-    scale_color_manual(values = c("firebrick", "gold")) +
-    labs(color = "is keep tree?") +
+    scale_color_manual(values = c("gray", "black")) +
+    labs(color = "is keep tree?", caption = "*existing clumps distinguished by color") +
     theme_void() + 
     guides(color = guide_legend(override.aes = list(size = 5)))
 ```
 
-**some clumps got no cuts...need to fix ;\**
+residual clump group size
+
+```{r}
+# get dbscan
+  my_dbscan_temp = cut_grp_ex_temp %>% 
+      dplyr::filter(is_keep_tree == 1) %>% 
+      sf::st_drop_geometry() %>% 
+      dplyr::select(X,Y) %>% 
+      dbscan::dbscan(eps = tree_clump_dist_m, minPts = 2)
+# attach dbscan
+t_temp = cut_grp_ex_temp %>% 
+  dplyr::filter(is_keep_tree == 1) %>% 
+  dplyr::mutate(dbscan_cluster = my_dbscan_temp$cluster) %>% 
+  dplyr::group_by(dbscan_cluster) %>% 
+  dplyr::mutate(
+    # unique dbscan_cluster for individuals
+    clump_id = dplyr::case_when(
+      dbscan_cluster == 0 ~ max(my_dbscan_temp$cluster)+dplyr::row_number()
+      , T ~ dbscan_cluster
+    ) %>% 
+    factor()
+  ) %>% 
+  dplyr::group_by(clump_id) %>% 
+  dplyr::mutate(
+    dbscan_cluster = factor(dbscan_cluster)
+    , clump_n_trees = dplyr::n()
+    , clump_n_trees_grp = cut(
+        clump_n_trees
+        ,breaks = c(0,1,4,9,15,Inf)
+        , labels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+      ) %>% 
+      factor(
+        ordered = T
+        , levels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+      )
+  ) %>% 
+  dplyr::ungroup()
+
+# plot it
+  ggplot() + 
+    geom_sf(data = harvests %>% dplyr::filter(suid == my_suid), fill = NA, color = "black") +
+    geom_sf(
+      data = clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees")
+      , fill = NA
+      , show.legend = F
+    ) +
+    geom_sf(
+      data = t_temp %>% sf::st_buffer(tree_clump_dist_m/2)
+      , mapping = aes(fill = clump_n_trees_grp)
+      , color = NA
+    ) +
+    scale_fill_viridis_d(option="mako", direction = -1, name = "Residual\nclump size") + 
+    # tree points
+    geom_sf(data = cut_grp_ex_temp %>% 
+        dplyr::filter(is_keep_tree == 0)
+        , color = "red"
+        , size = 0.5
+    ) +
+    labs(caption = "*cut trees shown in red")+
+    theme_void() 
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+remove(t_temp, my_dbscan_temp)
+gc()
+```
 
 ```{r, include=F, eval=F}
 ###### !!!!!!!!!!!!!!!!! CUT BY BBOX GRID ????
