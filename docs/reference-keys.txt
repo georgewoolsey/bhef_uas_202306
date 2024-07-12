@@ -2,10 +2,10 @@ tab:fld-dta-tp-data
 tab:fld-dta-sum-rmse
 tab:uas-fld-regentab
 tab:regen-dta-sum-rmse
-tab:unnamed-chunk-52
-tab:unnamed-chunk-54
+tab:unnamed-chunk-53
 tab:unnamed-chunk-55
-tab:unnamed-chunk-60
+tab:unnamed-chunk-56
+tab:unnamed-chunk-61
 introduction
 objective
 data_prep
@@ -103,4 +103,5 @@ cut_clump_ex
 define-intermediate-functions
 function-to-pass-a-clump
 cut-one-group-size-example
+process-to-cut-groups-incrementally
 implement
