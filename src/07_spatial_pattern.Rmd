@@ -359,7 +359,7 @@ plt_grps_temp = ortho_plt_fn(my_suid) +
       , mapping = aes(color = clump_n_trees_grp)
       , size = 1
     ) +
-    scale_color_viridis_d(option="mako", direction = -1) + 
+    scale_color_viridis_d(option="mako", direction = -1, drop = F) + 
     labs(color = "") +
     theme(legend.key = element_rect(color = NA, fill = NA), legend.margin = margin(6.5,0,6.5,0)) +
     guides(size = "none", color = guide_legend(override.aes = list(size = 5)))
@@ -421,13 +421,19 @@ gc()
 
 first, create a general function to apply `dbscan::dbscan` to point data of class `sf` 
 
+With respect to clump size groupings, [Churchill et al. (2016)](https://scholarworks.umt.edu/ico/3) note that:
+
+>Proportions for clump sizes should be lumped into four or five bins for operational simplicity. We use 4 or 5 bins (Fig 5): individual trees, small clumps (2-4 trees), medium clumps (5-9 trees), and large clumps (10-20+ trees). Note that when instructed to leave a large clump (e.g. 10-20 trees), marking crews often have difficulty leaving the upper end of the size range (e.g. an 18, 19, or 20 tree clump). Thus adding a fifth bin for “super clumps” may be necessary (e.g. 15-20 trees or 20-25+ trees), especially if the upper size range of clumps is desired. (p. 12-13)
+
+In their prescription worksheet [Excel file](https://www.dropbox.com/sh/4pb5qpbni32dpwt/AACATRPixTM4clBJ28yNJsYYa?e=1&dl=0) [Churchill et al. (2016)](https://scholarworks.umt.edu/ico/3) have the following group sizes: 1, 2-4 (Mean clump size: 3), 5-9 (7), 10-15 (12), 16-25 (20). To be able to cut clumps down to achieve the desired largest "16-25" group, we'll add a "super" group with >25 trees. This same principle can be applied if you desire a clump size group larger than this (i.e. 25-35), whereby a group above this should be added so that the resulting prescription cuts the "super" group to ensure the proper sizing of the desired largest group.
+
 ```{r}
 # function to clump data that are sf points
-sp_clump_points <- function(
+st_clump_points <- function(
   x # point data of class `sf` 
   , clump_dist_m = 6 # size (radius) of the epsilon neighborhood = maximum distance between points to add to clump
-  , clump_breaks = c(0,1,4,9,15,Inf) # where to break the clump size groups
-  , clump_labels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees") # what to name the clump size groups
+  , clump_breaks = c(0,1,4,9,15,25,Inf) # where to break the clump size groups
+  , clump_labels = c("Individual","2-4 trees","5-9 trees","10-15 trees","16-25 trees",">25 trees") # what to name the clump size groups
 ) {
   # get points as x,y
     point_clusters = x %>% 
@@ -483,7 +489,7 @@ sp_clump_points <- function(
 }
 ```
 
-function specific to this project to filter the tree points attached to harvest bounds and apply the `sp_clump_points` function
+function specific to this project to filter the tree points attached to harvest bounds and apply the `st_clump_points` function
 
 ```{r, warning=T}
 # create function to pass a unit id and return list of trees with clump groupings
@@ -520,7 +526,7 @@ get_tree_clumps = function(
   }
   
   ### Place trees into clusters using an inter-tree distance of 6 m
-  ttops_temp = sp_clump_points(
+  ttops_temp = st_clump_points(
     x = ttops_temp
     , clump_dist_m = tree_clump_dist_m
   )
@@ -566,7 +572,7 @@ ttops_temp = get_tree_clumps(
 >Use the Buffer tool (in the Proximity toolset within the Analysis toolbox) to create a buffer of distance d/2, one half the inter-tree distance, around each point. This quantity d/2 is meant to approximate the crown radius of a "typical" overstory tree. Set the Dissolve Type option to ALL, which dissolves overlapping buffers, creating a reduced set of spatially non-overlapping polygons stored as a multipart polygon feature...[Sanchez Meador et al. (2011)](https://scholar.google.com/scholar?cluster=15721451396848616769&oi=gsb&hl=en&as_sdt=0,6) provide some useful examples of how clump attributes can be summarized...The method described here can be modified to use measured or modeled crown radii for each tree in place of d/2 (p.36)
 
 ```{r}
-# create function to pass a return from sp_clump_points/get_tree_clumps and create clump polygons with summary stats
+# create function to pass a return from st_clump_points/get_tree_clumps and create clump polygons with summary stats
 get_clump_summary = function(dta){
   # get tree_clump_dist_m
   tree_clump_dist_m = min(dta$tree_clump_dist_m, na.rm = T)
@@ -748,6 +754,7 @@ plt_fnl_temp =
       , na.value = "transparent"
       , direction = 1
       , name = "distance to\nnearest tree (m)"
+      , limits = c(0,22)
     ) +
     # openings
     geom_sf(data = dist_rast_temp$openings_vect, mapping = aes(color = openining_area_m2), fill = NA) +
@@ -764,7 +771,7 @@ plt_fnl_temp =
       , mapping = aes(fill = clump_n_trees_grp)
       , color = NA
     ) +
-    scale_fill_viridis_d(option="mako", direction = -1, name = "clump size") + 
+    scale_fill_viridis_d(option="mako", direction = -1, name = "clump size", drop = F) + 
     # tree points
     geom_sf(data = ttops_temp, color = "gray88", shape = ".") +
     theme_void()
@@ -785,7 +792,7 @@ plt_open_temp =
         , mapping = aes(fill = clump_n_trees_grp)
         , color = NA
       ) +
-      scale_fill_viridis_d(option="mako", direction = -1, name = "clump size") + 
+      scale_fill_viridis_d(option="mako", direction = -1, name = "clump size", drop = F) + 
       # openings
       ggnewscale::new_scale_fill() +
       geom_sf(data = dist_rast_temp$openings_vect, mapping = aes(fill = openining_area_m2), color = NA) +
@@ -1143,10 +1150,10 @@ knitr::include_graphics("https://i.ibb.co/N1hpzLj/churchilletal2016-table2.jpg")
 # desired QMD
   target_qmd = 11
 # desired proportion (%) of trees in each clump size
-  # !cannot be create larger proportion of ">15 trees" clump as this would require adding trees...
-  # c("Individual", "2-4 trees", 	"5-9 trees", 	"10-15 trees", ">15 trees")
+  # !cannot be create larger proportion of ">25 trees" clump as this would require adding trees...
+  # c("Individual", "2-4 trees", 	"5-9 trees", 	"10-15 trees","16-25 trees",">25 trees")
   # c(.18, .33, .24, .10, .15)
-  target_pcts = c(.18, .33, .24, .10, .15)
+  target_pcts = c(.18, .33, .24, .10, .15, 0)
 ########################################################################################
 ########################################################################################
 # desired BA, QMD, and proportion of trees in each clump size
@@ -1154,7 +1161,7 @@ knitr::include_graphics("https://i.ibb.co/N1hpzLj/churchilletal2016-table2.jpg")
 ########################################################################################
 ```
 
-Check set up and define data with targets
+Check set up and define data with targets based on [Churchill et al. (2016)](https://scholarworks.umt.edu/ico/3) and their prescription worksheet [Excel file](https://www.dropbox.com/sh/4pb5qpbni32dpwt/AACATRPixTM4clBJ28yNJsYYa?e=1&dl=0) to help develop ICO prescriptions
 
 ```{r, warning=TRUE}
 get_target_check_prescription = function(
@@ -1192,7 +1199,7 @@ get_target_check_prescription = function(
   # define data with current and target
   # ... this is "smart" in that percentages are adj based on:
   # ... 0) are there missing targets?
-  # ... ... if < 5 numbers provided in `target_pcts` then the largest tree groups get targets of 0
+  # ... ... if < 6 numbers provided in `target_pcts` then the largest tree groups get targets of 0
   # ... 1) do targets sum to 1? 
   # ... ... if not trees are distributed proportionally based on targets provided and trees available
   # ... 2) is target in largest clump size > current conditions?
@@ -1203,17 +1210,16 @@ get_target_check_prescription = function(
     target_data = 
       # create data for joining if missing clump groups
       dplyr::tibble(
-        suid = rep(clump_n_trees_grp_summary_dta$suid[1],5)
-        , stand_area_ac = rep(clump_n_trees_grp_summary_dta$stand_area_ac[1],5)
+        suid = rep(clump_n_trees_grp_summary_dta$suid[1],6)
+        , stand_area_ac = rep(clump_n_trees_grp_summary_dta$stand_area_ac[1],6)
         , clump_n_trees_grp = factor(
-          c(1:5)
-            # cuts : c(0,1,4,9,15,Inf)
-          , labels = c("Individual", "2-4 trees", 	"5-9 trees", 	"10-15 trees", ">15 trees")
+          c(1:6)
+          , labels = c("Individual", "2-4 trees", 	"5-9 trees", 	"10-15 trees","16-25 trees",">25 trees")
           , ordered = T
         )
-        , mean_clump_n_trees = c(1,3,7,12,20)
-        , min_clump_n_trees = c(1,2,5,10,16)
-        , max_clump_n_trees = c(1,4,9,15,25)
+        , mean_clump_n_trees = c(1,3,7,12,20,30)
+        , min_clump_n_trees = c(1,2,5,10,16,26)
+        , max_clump_n_trees = c(1,4,9,15,25,99999)
       ) %>% 
       dplyr::left_join(
         clump_n_trees_grp_summary_dta %>% 
@@ -1226,7 +1232,7 @@ get_target_check_prescription = function(
       ) %>% 
       # add targets
       dplyr::bind_cols(
-        pct_stand_n_trees_target = c(as.numeric(target_pcts), rep(0,5))[1:5] # pad target with 0's
+        pct_stand_n_trees_target = c(as.numeric(target_pcts), rep(0,6))[1:6] # pad target with 0's
       ) %>% 
       # adjust target based on difference from 1
       dplyr::mutate(
@@ -1285,7 +1291,7 @@ get_target_check_prescription = function(
   # target_data %>% glimpse()
   
     # issue warning about targets
-    if(min(target_data$pct_stand_n_trees_target == c(as.numeric(target_pcts), rep(0,5))[1:5])==0){
+    if(min(target_data$pct_stand_n_trees_target == c(as.numeric(target_pcts), rep(0,6))[1:6])==0){
       warning(
         "proportion of trees in each clump size target `target_pcts` adjusted!!!"
         , "\nfrom : ", paste(round(target_pcts,2),collapse = ",")
@@ -1358,19 +1364,19 @@ Example for one clump where we identify the "narrow" areas of the clump polygon 
 example clump
 
 ```{r}
-# clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees") %>% mapview()
+# clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == "16-25 trees") %>% mapview()
 ###### !!!!!!!!!!!!!!!!! CUT BY NARROW AREAS?
 # just one clump example
 id_temp = # 141
   clump_polys_temp %>% 
-  dplyr::filter(clump_n_trees_grp == ">15 trees") %>% 
+  dplyr::filter(clump_n_trees_grp == "16-25 trees") %>% 
   dplyr::slice_sample(prop = .3) %>% 
   dplyr::arrange(desc(n_trees)) %>% 
   dplyr::pull(clump_id) %>% 
   .[1]
 # data for passing to function with nest()
 x = ttops_temp %>% 
-  dplyr::filter(clump_n_trees_grp == ">15 trees") %>%
+  dplyr::filter(clump_n_trees_grp == "16-25 trees") %>%
   dplyr::filter(clump_id == id_temp)
 # plot it
 ggplot() +
@@ -1729,7 +1735,7 @@ x %>%
     }else{
         # count the groups remaining after cuts
         desired_grps_n_temp = trees_remain_temp %>% 
-          sp_clump_points(clump_dist_m = tree_clump_dist_m) %>% 
+          st_clump_points(clump_dist_m = tree_clump_dist_m) %>% 
           sf::st_drop_geometry() %>% 
           # do we have group sizes we want?
           dplyr::filter(clump_n_trees_grp == ntree_target_temp) %>% 
@@ -1766,7 +1772,7 @@ x %>%
             
             # count the groups remaining after cuts
             desired_grps_n_temp = trees_remain_temp %>% 
-              sp_clump_points(clump_dist_m = tree_clump_dist_m) %>% 
+              st_clump_points(clump_dist_m = tree_clump_dist_m) %>% 
               sf::st_drop_geometry() %>% 
               # do we have group sizes we want?
               dplyr::filter(clump_n_trees_grp == ntree_target_temp) %>% 
@@ -1827,41 +1833,10 @@ x %>%
 and here are the remaining clump sizes after cutting
 
 ```{r}
-# get dbscan
-  my_dbscan_temp = x %>% 
-      sf::st_drop_geometry() %>% 
-      dplyr::anti_join(best_cuts, by = "treeID") %>%
-      dplyr::select(X,Y) %>% 
-      dbscan::dbscan(eps = tree_clump_dist_m, minPts = 2)
 # attach dbscan
 t_temp = x %>% 
   dplyr::anti_join(best_cuts, by = "treeID") %>% 
-  dplyr::mutate(dbscan_cluster = my_dbscan_temp$cluster) %>% 
-  dplyr::group_by(dbscan_cluster) %>% 
-  dplyr::mutate(
-    # unique dbscan_cluster for individuals
-    clump_id = dplyr::case_when(
-      dbscan_cluster == 0 ~ max(my_dbscan_temp$cluster)+dplyr::row_number()
-      , T ~ dbscan_cluster
-    ) %>% 
-    factor()
-  ) %>% 
-  dplyr::group_by(clump_id) %>% 
-  dplyr::mutate(
-    dbscan_cluster = factor(dbscan_cluster)
-    , clump_n_trees = dplyr::n()
-    , clump_n_trees_grp = cut(
-        clump_n_trees
-        ,breaks = c(0,1,4,9,15,Inf)
-        , labels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
-      ) %>% 
-      factor(
-        ordered = T
-        , levels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
-      )
-  ) %>% 
-  dplyr::ungroup()
-
+  st_clump_points(clump_dist_m = tree_clump_dist_m)
 
 # plot it
   ggplot() +
@@ -1871,7 +1846,7 @@ t_temp = x %>%
       , mapping = aes(fill = clump_n_trees_grp)
       , color = NA
     ) +
-    scale_fill_viridis_d(option="mako", direction = -1, name = "clump size") + 
+    scale_fill_viridis_d(option="mako", direction = -1, name = "clump size", drop = F) + 
     geom_sf(data = clump_polys_temp %>% dplyr::filter(clump_id==x$clump_id[1]), fill = NA) +
     geom_sf(data = t_temp, color = "gray") +
     geom_sf(
@@ -1904,7 +1879,7 @@ gc()
 
 #### Function to cut clumps{#cut_clump_ex}
 
-put the entire process outlined immediately above into a function to use with the tree list which we'll nest by `clump_id` to cut each clump and then we'll select the desired proportion of clumps
+put the entire process outlined immediately above into a function to use with the tree list to cut each clump and then we'll select the desired proportion of clumps
 
 ##### define intermediate functions
 
@@ -2077,9 +2052,9 @@ generate data using clumping functions above, pass that data, return tree list w
 # function to cut a single clump
 cut_clump_fn <- function(
       c # clump id from need_cut_trees data 
-      , need_cut_trees # data with clumps already defined returned by sp_clump_points()
-      , tgt = tgt # select one level of input passed to sp_clump_points() ...
-          # ... clump_labels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees") 
+      , need_cut_trees # data with clumps already defined returned by st_clump_points()
+      , tgt = tgt # select one level of input passed to st_clump_points() ...
+          # ... clump_labels = c("Individual","2-4 trees","5-9 trees","10-15 trees","16-25 trees",">25 trees")
 ){
   # use only the current clump
   curr_dta = need_cut_trees %>% 
@@ -2089,11 +2064,11 @@ cut_clump_fn <- function(
     stop("cannot find data with the clump_id == `c` in `need_cut_trees` data")
   }
   
-  # get distance used to create clumps in sp_clump_points()
+  # get distance used to create clumps in st_clump_points()
   dist_temp = curr_dta$tree_clump_dist_m[1]
   
   # do we even need to cut?
-  reclump = sp_clump_points(x = curr_dta, clump_dist_m = dist_temp)
+  reclump = st_clump_points(x = curr_dta, clump_dist_m = dist_temp)
   if(
     (
       reclump %>% 
@@ -2102,7 +2077,7 @@ cut_clump_fn <- function(
         length()
     ) != 1
   ){
-    stop("this is not a clump...send the `need_cut_trees` data through the sp_clump_points function again")
+    stop("this is not a clump...send the `need_cut_trees` data through the st_clump_points function again")
   }
   # do we even need to cut?
   if(
@@ -2187,8 +2162,46 @@ cut_clump_fn <- function(
     if(nrow(trees_remain_temp)==0){
       if(best_desired_grps_n_temp==0){
         # there are no more possible cuts :/
-        best_cuts = dplyr::tibble(treeID = character())
-        warning("could not find any solution to this cutting problem ;/")
+        # ... so we're going to add trees until the desired clump size is reached
+        # start with biggest tree and keep adding trees until the desired clump size is reached
+          start_tree = curr_dta %>% 
+            dplyr::arrange(desc(dbh_cm)) %>% 
+            dplyr::filter(dplyr::row_number() == 1)
+          
+          increment_m = 0.5
+          k = 1
+          keep_trees = dplyr::tibble(treeID = character(0))
+          while(nrow(keep_trees)==0){
+            # create a polygon to intersect with tree points and keep trees until number of trees met
+            poly_keep = start_tree %>% 
+              sf::st_buffer( (dist_temp/2) + increment_m*k ) %>% 
+              dplyr::mutate(dummy = 1) %>% 
+              dplyr::select(dummy)
+            # intersect and clump
+            i_trees = curr_dta %>% 
+              sf::st_intersection(poly_keep) %>% 
+              st_clump_points(clump_dist_m = dist_temp)
+            i_trees %>% sf::st_drop_geometry() %>% dplyr::count(clump_n_trees_grp, clump_id)
+            # keep only the desired clump
+            keep_trees = i_trees %>% 
+              sf::st_drop_geometry() %>% 
+              dplyr::filter(
+                clump_id == 
+                  i_trees %>% 
+                    dplyr::filter(clump_n_trees_grp == tgt) %>% 
+                    dplyr::pull(clump_id) %>% 
+                    .[1] %>% 
+                    dplyr::coalesce("nope")
+              ) %>% 
+              dplyr::select(treeID)
+            # increment
+            k = k+1
+          }
+          # the remaining trees are cuts
+          best_cuts = curr_dta %>% 
+            sf::st_drop_geometry() %>% 
+            dplyr::anti_join(keep_trees, by = "treeID") %>% 
+            dplyr::select(treeID)
       }else if(
         best_desired_grps_n_temp>0 
       ){ 
@@ -2213,7 +2226,7 @@ cut_clump_fn <- function(
           
           # count the groups remaining after cuts
           desired_grps_n_temp = trees_remain_temp %>% 
-            sp_clump_points(clump_dist_m = dist_temp) %>% 
+            st_clump_points(clump_dist_m = dist_temp) %>% 
             sf::st_drop_geometry() %>% 
             # do we have group sizes we want?
             dplyr::filter(clump_n_trees_grp == tgt) %>% 
@@ -2235,7 +2248,7 @@ cut_clump_fn <- function(
     }else{ # if(nrow(trees_remain_temp)==0)
       # count the groups remaining after cuts
       desired_grps_n_temp = trees_remain_temp %>% 
-        sp_clump_points(clump_dist_m = dist_temp) %>% 
+        st_clump_points(clump_dist_m = dist_temp) %>% 
         sf::st_drop_geometry() %>% 
         # do we have group sizes we want?
         dplyr::filter(clump_n_trees_grp == tgt) %>% 
@@ -2278,7 +2291,7 @@ cut_clump_fn <- function(
           
           # count the groups remaining after cuts
           desired_grps_n_temp = trees_remain_temp %>% 
-            sp_clump_points(clump_dist_m = dist_temp) %>% 
+            st_clump_points(clump_dist_m = dist_temp) %>% 
             sf::st_drop_geometry() %>% 
             # do we have group sizes we want?
             dplyr::filter(clump_n_trees_grp == tgt) %>% 
@@ -2310,6 +2323,8 @@ cut_clump_fn <- function(
   # join to original data and pull
   d_temp = curr_dta %>%
     sf::st_drop_geometry() %>%
+    dplyr::mutate(is_keep_tree = as.numeric(NA)) %>% 
+    dplyr::select(-c(is_keep_tree)) %>% 
     dplyr::left_join(
       best_cuts %>% dplyr::mutate(is_keep_tree = 0)
       , by = dplyr::join_by("treeID")
@@ -2337,9 +2352,9 @@ there are some cases where the `cut_clumps_fn` may not return the desired tree c
 ```{r}
 get_cut_clump <- function(
   c # clump id from need_cut_trees data 
-  , need_cut_trees # data with clumps already defined returned by sp_clump_points()
-  , tgt = tgt # select one level of input passed to sp_clump_points() ...
-      # ... clump_labels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees") 
+  , need_cut_trees # data with clumps already defined returned by st_clump_points()
+  , tgt = tgt # select one level of input passed to st_clump_points() ...
+      # ... clump_labels = c("Individual","2-4 trees","5-9 trees","10-15 trees","16-25 trees",">25 trees")
 ) {
   # what if we need to keep cutting because could not find a solution based on initial cut lines?
   cuts_first = cut_clump_fn(
@@ -2354,7 +2369,7 @@ get_cut_clump <- function(
         cuts_first %>% dplyr::filter(is_keep_tree == 1) %>% dplyr::select(treeID)
         , by = "treeID"
       ) %>%
-      sp_clump_points()
+      st_clump_points()
   # new_clumps %>% sf::st_drop_geometry() %>% dplyr::count(clump_n_trees_grp)
   
   while(
@@ -2388,7 +2403,7 @@ get_cut_clump <- function(
           cuts_first %>% dplyr::filter(is_keep_tree == 1) %>% dplyr::select(treeID)
           , by = "treeID"
         ) %>%
-        sp_clump_points()
+        st_clump_points()
     # new_clumps %>% sf::st_drop_geometry() %>% dplyr::count(clump_n_trees_grp)
   } # end while
   return(cuts_first) 
@@ -2406,8 +2421,8 @@ function to pass a whole tree list of sf point data
 ##############################################
 get_keep_tree_flag <- function(
   x # x = sf point data
-  , tgt # tgt = clump_n_trees_grp level defined in sp_clump_points: ...
-    ## ... clump_labels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+  , tgt # tgt = clump_n_trees_grp level defined in st_clump_points: ...
+    ## ... clump_labels = c("Individual","2-4 trees","5-9 trees","10-15 trees","16-25 trees",">25 trees")
   , clump_dist_m = 6 # size (radius) of the epsilon neighborhood = maximum distance between points to add to clump
 ) {
   # MAKE CUTS INDEPENDENT OF CURRENT CLUMP GROUPING...
@@ -2421,7 +2436,7 @@ get_keep_tree_flag <- function(
   # 1) apply the clump grouping 
   #############################
   new_clump_trees = x %>% 
-    sp_clump_points(clump_dist_m = clump_dist_m)
+    st_clump_points(clump_dist_m = clump_dist_m)
     
   # need cutting still
   need_cut_trees = new_clump_trees %>% 
@@ -2471,7 +2486,7 @@ example for random sample of trees
 # random sample the data
 rand_trees = ttops_temp %>%
   dplyr::slice_sample(prop = 0.55) %>%
-  sp_clump_points()
+  st_clump_points()
 # check these grps
 rand_trees %>%
   sf::st_drop_geometry() %>%
@@ -2488,12 +2503,18 @@ ggplot() +
   geom_sf(
     data = rand_trees %>%
       dplyr::filter(is_keep_tree==1) %>%
-      sp_clump_points() %>%
+      st_clump_points() %>%
       get_clump_summary()
     , mapping = aes(fill = clump_n_trees_grp)
     , color = NA
   ) +
-  geom_sf(data = rand_trees %>% dplyr::filter(is_keep_tree==0), mapping = aes(color = "cut tree"), shape = 4, size = 0.7) +
+  geom_sf(
+    data = rand_trees %>% dplyr::filter(is_keep_tree==0)
+    , mapping = aes(color = "cut tree")
+    , size = 0.7
+  ) +
+  scale_fill_viridis_d(option="mako", direction = -1, name = "clump size", drop = F) + 
+  scale_color_manual(values = c("red"), name = "") +
   theme_void()
 ```
 
@@ -2514,13 +2535,13 @@ gc()
   #   , target_pcts = target_pcts
   # )
 cut_grp_ex_temp = ttops_temp %>%
-  dplyr::filter(clump_n_trees_grp == ">15 trees") %>%
+  dplyr::filter(clump_n_trees_grp == ">25 trees") %>%
   dplyr::ungroup()
 
 # get the flag
 cut_grp_ex_temp$is_keep_tree = get_keep_tree_flag(
     x = cut_grp_ex_temp
-    , tgt = "10-15 trees"
+    , tgt = "16-25 trees"
     , clump_dist_m = tree_clump_dist_m
   )
 # what?
@@ -2533,7 +2554,7 @@ example group cut and keep trees
 ggplot() + 
     geom_sf(data = harvests %>% dplyr::filter(suid == my_suid), fill = NA, color = "black") +
     geom_sf(
-      data = clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees")
+      data = clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == "16-25 trees")
       , mapping = aes(fill = clump_id)
       , color = NA
       , show.legend = F
@@ -2541,7 +2562,7 @@ ggplot() +
     scale_fill_manual(
       values = 
         viridis::turbo(
-          clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees") %>% 
+          clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == "16-25 trees") %>% 
           dplyr::pull(clump_id) %>% 
           unique() %>% length()
         ) %>% sample()
@@ -2549,7 +2570,7 @@ ggplot() +
     # tree points
     geom_sf(data = cut_grp_ex_temp, mapping = aes(color = as.factor(is_keep_tree)), size = 0.5) +
     scale_color_manual(values = c("gray", "black")) +
-    labs(color = "is keep tree?", caption = "*existing clumps distinguished by color") +
+    labs(color = "is keep tree?", caption = "*existing clumps distinguished by color", subtitle = "cut trees in clumps sized 16-25 trees") +
     theme_void() + 
     guides(color = guide_legend(override.aes = list(size = 5)))
 ```
@@ -2557,46 +2578,16 @@ ggplot() +
 residual clump group size
 
 ```{r}
-# get dbscan
-  my_dbscan_temp = cut_grp_ex_temp %>% 
-      dplyr::filter(is_keep_tree == 1) %>% 
-      sf::st_drop_geometry() %>% 
-      dplyr::select(X,Y) %>% 
-      dbscan::dbscan(eps = tree_clump_dist_m, minPts = 2)
 # attach dbscan
 t_temp = cut_grp_ex_temp %>% 
   dplyr::filter(is_keep_tree == 1) %>% 
-  dplyr::mutate(dbscan_cluster = my_dbscan_temp$cluster) %>% 
-  dplyr::group_by(dbscan_cluster) %>% 
-  dplyr::mutate(
-    # unique dbscan_cluster for individuals
-    clump_id = dplyr::case_when(
-      dbscan_cluster == 0 ~ max(my_dbscan_temp$cluster)+dplyr::row_number()
-      , T ~ dbscan_cluster
-    ) %>% 
-    factor()
-  ) %>% 
-  dplyr::group_by(clump_id) %>% 
-  dplyr::mutate(
-    dbscan_cluster = factor(dbscan_cluster)
-    , clump_n_trees = dplyr::n()
-    , clump_n_trees_grp = cut(
-        clump_n_trees
-        ,breaks = c(0,1,4,9,15,Inf)
-        , labels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
-      ) %>% 
-      factor(
-        ordered = T
-        , levels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
-      )
-  ) %>% 
-  dplyr::ungroup()
+  st_clump_points(clump_dist_m = tree_clump_dist_m)
 
 # plot it
   ggplot() + 
     geom_sf(data = harvests %>% dplyr::filter(suid == my_suid), fill = NA, color = "black") +
     geom_sf(
-      data = clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees")
+      data = clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == "16-25 trees")
       , fill = NA
       , show.legend = F
     ) +
@@ -2619,7 +2610,7 @@ t_temp = cut_grp_ex_temp %>%
     ) +
     scale_color_manual(values = c("red"), name = "") +
     labs(
-      subtitle = "cut trees in clumps sized >15 trees"
+      subtitle = "cut trees in clumps sized 16-25 trees"
       # caption = "*cut trees shown in red"
     ) +
     theme_void() +
@@ -2667,6 +2658,9 @@ grp_temp = target_data_temp %>%
   dplyr::slice(1) %>% 
   dplyr::pull(clump_n_trees_grp)
 
+message(
+  paste("started cutting", grp_temp, "at", Sys.time())
+)
 # identify clumps to leave untouched
 # clump_polys_temp = get_clump_summary(ttops_temp)
 keep_clumps_temp = 
@@ -2751,6 +2745,9 @@ if(
     dplyr::ungroup() %>% 
     dplyr::select(treeID, is_keep_tree)
 }
+message(
+  paste("done cutting", grp_temp, "at", Sys.time())
+)
 ###############################################
 # now process to go on to the next groups
 ###############################################
@@ -2762,9 +2759,9 @@ if(
     dplyr::pull(clump_n_trees_grp)
 
 while(grp_temp>=sm_grp_temp & grp_temp != "Individual"){
-  # print(
-  #   paste("starting: ", grp_temp, Sys.time())
-  # )
+  message(
+    paste("started cutting", grp_temp, "at", Sys.time())
+  )
   # identify clumps to leave untouched
   # clump_polys_temp = get_clump_summary(ttops_temp)
   keep_clumps_temp =
@@ -2830,7 +2827,7 @@ while(grp_temp>=sm_grp_temp & grp_temp != "Individual"){
           remaining_trees %>% dplyr::filter(is_keep_tree == 1) %>% dplyr::select(treeID)
           , by = "treeID"
         ) %>% 
-        sp_clump_points(clump_dist_m = tree_clump_dist_m) %>% 
+        st_clump_points(clump_dist_m = tree_clump_dist_m) %>% 
         # ggplot() + geom_sf(aes(fill = clump_n_trees_grp)) + theme_void()
         # get the original clump id to prioritize new clump groups in the same area
         dplyr::inner_join(
@@ -2916,9 +2913,9 @@ while(grp_temp>=sm_grp_temp & grp_temp != "Individual"){
   }
   
   # increment
-    # print(
-    #   paste("done: ", grp_temp, Sys.time())
-    # )
+    message(
+      paste("done cutting", grp_temp, "at", Sys.time())
+    )
   # get the next group
   grp_temp = target_data_temp %>%
     dplyr::filter(clump_n_trees_grp<grp_temp) %>% 
@@ -2929,6 +2926,9 @@ while(grp_temp>=sm_grp_temp & grp_temp != "Individual"){
 }
 # now individuals
 if(sm_grp_temp == "Individual"){
+  message(
+    paste("started cutting", sm_grp_temp, "at", Sys.time())
+  )
   potential_trees = 
     # original data
     ttops_temp %>% 
@@ -2944,7 +2944,7 @@ if(sm_grp_temp == "Individual"){
     ) %>% 
     # make sure that these are all individuals
     dplyr::mutate(is_orig = ifelse(clump_n_trees_grp=="Individual", 1, 0)) %>% 
-    sp_clump_points(clump_dist_m = tree_clump_dist_m) %>% 
+    st_clump_points(clump_dist_m = tree_clump_dist_m) %>% 
     dplyr::filter(clump_n_trees_grp == "Individual")
   
     # pick trees from potential trees based on target
@@ -2964,6 +2964,10 @@ if(sm_grp_temp == "Individual"){
           dplyr::select(treeID)
       ) %>% 
       dplyr::mutate(is_keep_tree = 1)
+    
+  message(
+    paste("done cutting", sm_grp_temp, "at", Sys.time())
+  )
 }
 # get the final prescription
 prescription_trees = ttops_temp %>% 
@@ -2986,7 +2990,7 @@ prescription_trees = prescription_trees %>%
     # reclump
     prescription_trees %>% 
       dplyr::filter(is_keep_tree == 1) %>% 
-      sp_clump_points(clump_dist_m = tree_clump_dist_m) %>% 
+      st_clump_points(clump_dist_m = tree_clump_dist_m) %>% 
       sf::st_drop_geometry() %>% 
       dplyr::select(treeID, clump_n_trees_grp) %>% 
       dplyr::rename(new_clump_n_trees_grp = clump_n_trees_grp)
@@ -3007,7 +3011,7 @@ remove(
 gc()
 ```
 
-check the distribution of current vs prescription trees
+check the distribution of current vs prescription tree clump sizes
 
 ```{r}
 prescription_trees %>% 
@@ -3021,7 +3025,7 @@ prescription_trees %>%
   kableExtra::kbl() %>% 
   kableExtra::kable_styling() %>% 
   kableExtra::add_header_above(
-    c(" "=1,"Old"=5)
+    c(" "=1,"Old"=6)
   )
 ```
 
@@ -3033,7 +3037,7 @@ plot the distance raster and openings vector data we just got with overlaid tree
 ttops_temp2 = prescription_trees %>% 
   dplyr::filter(is_keep_tree == 1) %>% 
   dplyr::select(suid, stand_area_ha, treeID, dbh_cm, tree_height_m, basal_area_m2) %>% 
-  sp_clump_points(clump_dist_m = tree_clump_dist_m)
+  st_clump_points(clump_dist_m = tree_clump_dist_m)
 clump_polys_temp2 = get_clump_summary(ttops_temp2)
 dist_rast_temp2 = get_clump_dist_rast(clump_polys_temp2)
 
@@ -3049,6 +3053,7 @@ plt_fnl_temp2 =
       , na.value = "transparent"
       , direction = 1
       , name = "distance to\nnearest tree (m)"
+      , limits = c(0,22)
     ) +
     # openings
     geom_sf(data = dist_rast_temp2$openings_vect, mapping = aes(color = openining_area_m2), fill = NA) +
@@ -3065,7 +3070,7 @@ plt_fnl_temp2 =
       , mapping = aes(fill = clump_n_trees_grp)
       , color = NA
     ) +
-    scale_fill_viridis_d(option="mako", direction = -1, name = "clump size") + 
+    scale_fill_viridis_d(option="mako", direction = -1, name = "clump size", drop = F) + 
     # tree points
     geom_sf(data = ttops_temp2, color = "gray88", shape = ".") +
     theme_void()
@@ -3086,7 +3091,7 @@ plt_open_temp2 =
         , mapping = aes(fill = clump_n_trees_grp)
         , color = NA
       ) +
-      scale_fill_viridis_d(option="mako", direction = -1, name = "clump size") + 
+      scale_fill_viridis_d(option="mako", direction = -1, name = "clump size", drop = F) + 
       # openings
       ggnewscale::new_scale_fill() +
       geom_sf(data = dist_rast_temp2$openings_vect, mapping = aes(fill = openining_area_m2), color = NA) +
@@ -3155,6 +3160,12 @@ target_data_temp %>%
       )
     , by = "clump_n_trees_grp"
   ) %>% 
+  dplyr::mutate(
+    dplyr::across(
+      tidyselect::where(is.numeric)
+      , ~ dplyr::coalesce(.x,0)
+    )
+  ) %>% 
   dplyr::relocate(
     pct_stand_n_trees_presc
     , .after = pct_stand_n_trees_target  
@@ -3188,6 +3199,60 @@ target_data_temp %>%
   kableExtra::add_header_above(
     c(" "=1,"% Trees"=3, "TPA"=3)
   )
+```
+
+check the pre- and post-treatment summary
+
+```{r}
+# call it
+clump_n_trees_grp_summary_temp2 = get_clump_n_trees_grp_summary(
+  trees = ttops_temp2
+  , clumps = clump_polys_temp2
+  )
+
+# table it
+clump_n_trees_grp_summary_temp2 %>% 
+  dplyr::mutate(presc = "post-treatment") %>% 
+  dplyr::bind_rows(
+    clump_n_trees_grp_summary_temp %>% 
+      dplyr::mutate(presc = "pre-treatment")
+  ) %>% 
+  dplyr::arrange(clump_n_trees_grp, desc(presc)) %>% 
+  dplyr::select(
+    clump_n_trees_grp, presc
+    , n_trees
+    , mean_dbh_in
+    , qmd_in
+    , mean_tree_height_ft
+    , loreys_height_ft
+    , trees_per_ac
+    , basal_area_ft2_per_ac, pct_stand_basal_area, pct_stand_n_trees
+  ) %>% 
+  dplyr::mutate(
+    dplyr::across(
+      .cols = c(pct_stand_basal_area, pct_stand_n_trees) 
+      , .fns = ~ scales::percent(.x, accuracy = 1)
+    )
+  ) %>% 
+  kableExtra::kbl(
+    digits = 1
+    , escape = F
+    , caption = paste0("Pre- and Post-treatment overstory tree clump summary<br>", "stand suid: ", clump_n_trees_grp_summary_temp$suid[1])
+    , col.names = c(
+      ".", ""
+      , "trees"
+      , "mean<br>DBH (in)"
+      , "QMD (in)"
+      , "mean<br>Ht. (ft)"
+      , "Loreys<br>Ht. (ft)"
+      , "TPA"
+      , "BA<br>ft<sup>2</sup> ac<sup>-1</sup>"
+      , "%<br>stand BA"
+      , "%<br>stand trees"
+      )
+  ) %>% 
+  kableExtra::kable_styling() %>% 
+  kableExtra::collapse_rows(columns = 1, valign = "top")
 ```
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
@@ -3225,12 +3290,12 @@ gc()
 ```{r, include=F, eval=F}
 ###### !!!!!!!!!!!!!!!!! CUT BY BBOX GRID ????
 ###### !!!!!!!!!!!!!!!!! CUT BY BBOX GRID ????
-clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees") %>% mapview()
+clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == "16-25 trees") %>% mapview()
 # data for passing to function with nest()
 id_temp = 45
 
 x = ttops_temp %>% 
-  dplyr::filter(clump_n_trees_grp == ">15 trees") %>%
+  dplyr::filter(clump_n_trees_grp == "16-25 trees") %>%
   dplyr::filter(clump_id == id_temp) #45 
 
 ggplot(x) + geom_sf(aes(color = dbh_cm)) +
@@ -3292,12 +3357,12 @@ ggplot(x) + geom_sf(aes(color = dbh_cm)) +
 ```{r, include=F, eval=F}
 ###### !!!!!!!!!!!!!!!!! CUT BY BBOX LINES ????
 ###### !!!!!!!!!!!!!!!!! CUT BY BBOX LINES ????
-# clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees") %>% mapview()
+# clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == "16-25 trees") %>% mapview()
 # data for passing to function with nest()
 id_temp = 35
 
 x = ttops_temp %>% 
-  dplyr::filter(clump_n_trees_grp == ">15 trees") %>%
+  dplyr::filter(clump_n_trees_grp == "16-25 trees") %>%
   dplyr::filter(clump_id == id_temp) #45 
 
 ggplot(x) + geom_sf(aes(color = dbh_cm)) +
@@ -3422,11 +3487,11 @@ cut_trees_temp =
           , clump_n_trees_grp = cut(
               clump_n_trees
               ,breaks = c(0,1,4,9,15,Inf)
-              , labels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+              , labels = c("Individual","2-4 trees","5-9 trees","10-15 trees","16-25 trees",">25 trees")
             ) %>% 
             factor(
               ordered = T
-              , levels = c("Individual","2-4 trees","5-9 trees","10-15 trees",">15 trees")
+              , levels = c("Individual","2-4 trees","5-9 trees","10-15 trees","16-25 trees",">25 trees")
             )
         ) %>% 
         dplyr::ungroup()
@@ -3467,12 +3532,12 @@ ggplot() +
 ```{r, include=F, eval=F}
 ###### !!!!!!!!!!!!!!!!! CUT BY RASTER GRID ????
 ###### !!!!!!!!!!!!!!!!! CUT BY RASTER GRID ????
-clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == ">15 trees") %>% mapview()
+clump_polys_temp %>% dplyr::filter(clump_n_trees_grp == "16-25 trees") %>% mapview()
 # data for passing to function with nest()
 id_temp = 45
 
 x = ttops_temp %>% 
-  dplyr::filter(clump_n_trees_grp == ">15 trees") %>%
+  dplyr::filter(clump_n_trees_grp == "16-25 trees") %>%
   dplyr::filter(clump_id == id_temp) #45 
 
 # ggplot(x) + geom_sf(aes(color = dbh_cm)) + 
