@@ -6,6 +6,7 @@ tab:unnamed-chunk-53
 tab:unnamed-chunk-55
 tab:unnamed-chunk-56
 tab:unnamed-chunk-61
+tab:unnamed-chunk-90
 introduction
 objective
 data_prep
@@ -102,6 +103,7 @@ example-for-one-clump
 cut_clump_ex
 define-intermediate-functions
 function-to-pass-a-clump
+function-to-pass-a-tree-list
 cut-one-group-size-example
 process-to-cut-groups-incrementally
 implement
