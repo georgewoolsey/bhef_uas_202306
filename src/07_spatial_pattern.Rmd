@@ -2535,13 +2535,13 @@ gc()
   #   , target_pcts = target_pcts
   # )
 cut_grp_ex_temp = ttops_temp %>%
-  dplyr::filter(clump_n_trees_grp == ">25 trees") %>%
+  dplyr::filter(clump_n_trees_grp == "16-25 trees") %>%
   dplyr::ungroup()
 
 # get the flag
 cut_grp_ex_temp$is_keep_tree = get_keep_tree_flag(
     x = cut_grp_ex_temp
-    , tgt = "16-25 trees"
+    , tgt = "10-15 trees"
     , clump_dist_m = tree_clump_dist_m
   )
 # what?
